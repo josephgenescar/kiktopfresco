@@ -1,0 +1,11 @@
+[build]
+  # Sa se kòmand ki pral ranplase "URL_SUPABASE_OU" ak "KEY_ANON_OU" ak vrè kle Netlify yo
+  command = "sed -i \"s|URL_SUPABASE_OU|$SUPABASE_URL|g\" *.html && sed -i \"s|KEY_ANON_OU|$SUPABASE_KEY|g\" *.html"
+
+  # Katab kote fichye yo ye a
+  publish = "."
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

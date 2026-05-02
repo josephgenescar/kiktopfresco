@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KikTop Fresco – Snack Bar</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0D2B5E">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0D2B5E;--blue:#1A4494;--yellow:#F5C518;--bg:#F8F9FD;--white:#fff;--gray:#636E72;--lgray:#DFE6E9;--red:#D63031;--green:#00B894;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);padding-top:70px;overflow-x:hidden;}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(13,43,94,0.95);height:70px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,0.05);}
+.nav-logo{font-family:'Fredoka One',cursive;font-size:24px;text-decoration:none;color:white;}
+.nav-logo span{color:var(--yellow);}
+.pts-chip{background:rgba(245,197,24,0.15);padding:7px 16px;border-radius:30px;cursor:pointer;font-weight:800;font-size:13px;color:var(--yellow);}
+.cart-btn{background:var(--yellow);border:none;border-radius:50%;width:45px;height:45px;cursor:pointer;position:relative;box-shadow:0 4px 10px rgba(245,197,24,0.3);}
+.cart-badge{position:absolute;top:-5px;right:-5px;background:var(--red);color:white;width:20px;height:20px;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid var(--navy);font-weight:900;}
+
+#hero-banner { width:100%; overflow:hidden; }
+.banner-slide { width:100%; display:flex; align-items:center; justify-content:center; padding:15px; color:white; font-weight:700; cursor:pointer; min-height:54px; text-align:center; }
+.banner-slide img { max-height:180px; width:100%; object-fit:cover; border-radius:12px; }
+
+#hero{background:linear-gradient(135deg,#060e22,var(--navy));padding:80px 20px;text-align:center;color:white;}
+.hero-title{font-family:'Fredoka One',cursive;font-size:clamp(45px,10vw,85px);line-height:1;margin-bottom:10px;}
+.hero-title span{color:var(--yellow);}
+
+#menu{padding:40px 20px;max-width:1200px;margin:0 auto;}
+.main-tabs{display:flex;gap:10px;justify-content:center;margin-bottom:35px;}
+.mtab{padding:12px 25px;border-radius:15px;border:2px solid var(--lgray);cursor:pointer;font-weight:800;background:white;transition:.2s;}
+.mtab.active{background:var(--navy);color:white;border-color:var(--navy);}
+
+.prods-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:25px;}
+.pcard{background:white;border-radius:25px;overflow:hidden;box-shadow:var(--shadow-sm);transition:.3s;cursor:pointer;border:1px solid #f0f0f0;}
+.pcard:hover{transform:translateY(-8px);box-shadow:0 15px 30px rgba(0,0,0,0.1);}
+.pcard-img{height:170px;background:#f9f9f9;}
+.pcard-img img{width:100%;height:100%;object-fit:cover;}
+.pcard-body{padding:18px;}
+.pcard-name{font-weight:800;font-size:16px;color:var(--navy);margin-bottom:5px;}
+.pcard-price{font-family:'Fredoka One',cursive;font-size:22px;color:var(--blue);}
+
+.cart-drawer{position:fixed;top:0;right:-100%;width:100%;max-width:400px;height:100%;background:white;z-index:2001;transition:.3s;padding:25px;display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(0,0,0,0.15);}
+.cart-drawer.open{right:0;}
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:3000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.mbox{background:white;padding:35px;border-radius:30px;width:92%;max-width:420px;text-align:center;}
+.inp{width:100%;padding:15px;margin-bottom:12px;border:2px solid #eee;border-radius:15px;outline:none;font-family:inherit;}
+.btn-p{width:100%;padding:16px;background:var(--yellow);border:none;border-radius:15px;font-weight:900;cursor:pointer;color:var(--navy);font-size:16px;}
+
+.rv{opacity:0;transform:translateY(30px);transition:.8s ease-out;}
+.rv.v{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">KIK<span>TOP</span></a>
+  <div class="nav-right">
+    <div class="pts-chip" onclick="openProfile()">⭐ <span id="navPts">0</span> pts</div>
+    <button class="cart-btn" onclick="toggleCart()">🛒<span class="cart-badge" id="cartCount">0</span></button>
+  </div>
+</nav>
+
+<div id="hero-banner"></div>
+
+<section id="hero" class="rv">
+  <div class="hero-content">
+    <h1 class="hero-title">KIK<span>TOP</span> FRESCO</h1>
+    <p style="font-size:18px; color:rgba(255,255,255,0.8); font-family:'Dancing Script', cursive;">Savè Natyèl Lòt Nivo!</p>
+  </div>
+</section>
+
+<!-- SUNDAY SPECIAL -->
+<div id="sunday-box" style="display:none; background:var(--red); color:white; padding:20px; text-align:center; font-weight:800;">
+  <h3 id="sun-msg">🌟 Specyal Dimanch!</h3>
+  <button class="btn-p" id="sun-btn" style="width:auto; margin-top:10px; padding:8px 25px;">Ajoute pou <span id="sun-price">0</span> G</button>
+</div>
+
+<section id="menu">
+  <div class="main-tabs rv">
+    <div class="mtab active" id="tab-manger" onclick="switchTab('manger')">🍽️ Manje</div>
+    <div class="mtab" id="tab-boisson" onclick="switchTab('boisson')">🥤 Bwason</div>
+    <div class="mtab" id="tab-alcool" onclick="switchTab('alcool')">🍺 Alkòl</div>
+  </div>
+  <div class="prods-grid" id="prodsGrid"></div>
+</section>
+
+<div class="cart-drawer" id="cartDrawer">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <h2 style="font-family:'Fredoka One',cursive;">Panye ou</h2>
+    <button onclick="toggleCart()" style="background:none; border:none; font-size:28px; cursor:pointer;">✕</button>
+  </div>
+  <div id="cartItems" style="flex:1; margin:25px 0; overflow-y:auto;"></div>
+
+  <div id="ptsRedeemBox" style="display:none; background:#f0f7ff; padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid #c2e0ff;">
+    <p style="font-size:12px; font-weight:700; color:var(--navy);">🎁 Ou gen 100 pwen! Itilize yo pou kòmand sa a gratis.</p>
+    <button class="btn-p" id="btnUsePts" style="margin-top:8px; font-size:13px; padding:10px;">Itilize 100 Pwen</button>
+  </div>
+
+  <div id="cartTotal" style="font-size:22px; font-weight:900; margin-bottom:20px;">Total: 0 HTG</div>
+  <button class="btn-p" onclick="processOrder()">Konfime Kòmand la</button>
+</div>
+
+<div class="moverlay" id="mLogin">
+  <div class="mbox">
+    <h2 style="font-family:'Fredoka One',cursive;">Byenvini! 👋</h2>
+    <p style="margin:15px 0 25px; font-size:15px; color:gray;">Inskri pou'w ka fè pwen epi gen kòmand GRATIS!</p>
+    <input type="text" id="regName" class="inp" placeholder="Non ou">
+    <input type="tel" id="regPhone" class="inp" placeholder="Nimewo Telefòn">
+    <button class="btn-p" onclick="handleAuth()">Kòmanse Fè Pwen</button>
+  </div>
+</div>
+
+<div class="moverlay" id="mProfile">
+  <div class="mbox" id="profileContent"></div>
+</div>
+
+<script>
+// --- KONFIGIRASYON SUPABASE ---
+const SB_URL = "URL_SUPABASE_OU";
+const SB_KEY = "KEY_ANON_OU";
+const supabase = supabase.createClient(SB_URL, SB_KEY);
+
+let products = [], banners = [], cart = [], user = null, sunSpecial = null, usingPoints = false;
+let currentTab = 'manger';
+const urlParams = new URLSearchParams(window.location.search);
+if(urlParams.has('ref')) localStorage.setItem('kt_ref', urlParams.get('ref'));
+
+async function init() {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+
+  // Chaje Done
+  const { data: b } = await supabase.from('banners').select('*').eq('active', true);
+  banners = b || [];
+  const { data: p } = await supabase.from('products').select('*').eq('status', 'active');
+  products = p || [];
+  const { data: s } = await supabase.from('sunday_special').select('*, products(*)').maybeSingle();
+  sunSpecial = s;
+
+  renderBanners();
+  renderSunday();
+  renderProducts();
+
+  const savedPhone = localStorage.getItem('kt_phone');
+  if(savedPhone) await loginUser(savedPhone);
+  setupReveal();
+}
+
+function renderBanners() {
+  const cont = document.getElementById('hero-banner');
+  if(!banners.length) return cont.style.display = 'none';
+  cont.innerHTML = banners.map(b =>
+    b.type === 'image'
+    ? `<div class="banner-slide" onclick="location.href='${b.link || '#'}'"><img src="${b.img}"></div>`
+    : `<div class="banner-slide" style="background:${b.bg}" onclick="location.href='${b.link || '#'}'">${b.title} - ${b.body}</div>`
+  ).join('');
+}
+
+function renderSunday() {
+  if(sunSpecial && sunSpecial.product_id) {
+    document.getElementById('sunday-box').style.display = 'block';
+    document.getElementById('sun-msg').innerText = sunSpecial.message;
+    document.getElementById('sun-price').innerText = sunSpecial.price;
+    document.getElementById('sun-btn').onclick = () => {
+       const p = sunSpecial.products;
+       addToCart(p.id, sunSpecial.price, true);
+    }
+  }
+}
+
+function renderProducts() {
+  const grid = document.getElementById('prodsGrid');
+  const list = products.filter(p => p.tab === currentTab);
+  grid.innerHTML = list.map(p => `
+    <div class="pcard rv" onclick="addToCart(${p.id})">
+      <div class="pcard-img"><img src="${p.img}" onerror="this.src='https://via.placeholder.com/300'"></div>
+      <div class="pcard-body">
+        <div class="pcard-name">${p.name_kr || p.name_fr}</div>
+        <div class="pcard-price">${p.price} HTG</div>
+      </div>
+    </div>`).join('');
+  setupReveal();
+}
+
+function addToCart(id, priceOverride = null, isSun = false) {
+  const p = products.find(x => x.id === id);
+  const exists = cart.find(x => x.id === id && x.isSun === isSun);
+  const price = priceOverride || p.price;
+  if(exists) exists.qty++; else cart.push({...p, price, qty: 1, isSun});
+  updateCartUI();
+  document.getElementById('cartDrawer').classList.add('open');
+}
+
+function updateCartUI() {
+  const count = cart.reduce((s, i) => s + i.qty, 0);
+  let total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+
+  if(user && user.points >= 100 && cart.length > 0) {
+    document.getElementById('ptsRedeemBox').style.display = 'block';
+    document.getElementById('btnUsePts').onclick = () => { usingPoints = true; updateCartUI(); };
+    if(usingPoints) {
+      total = 0;
+      document.getElementById('btnUsePts').innerText = "✅ Kòmand Gratis Aktive";
+      document.getElementById('btnUsePts').style.background = "#00B894";
+      document.getElementById('btnUsePts').style.color = "white";
+    }
+  } else {
+    document.getElementById('ptsRedeemBox').style.display = 'none';
+    usingPoints = false;
+  }
+
+  document.getElementById('cartCount').innerText = count;
+  document.getElementById('cartTotal').innerText = "Total: " + total + " HTG";
+  document.getElementById('cartItems').innerHTML = cart.map(i => `
+    <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+      <span><b>${i.qty}x</b> ${i.name_fr}</span>
+      <span style="font-weight:800">${i.price * i.qty} G</span>
+    </div>`).join('');
+}
+
+async function handleAuth() {
+  const name = document.getElementById('regName').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const refBy = localStorage.getItem('kt_ref');
+  if(!name || !phone) return alert("Ranpli non ak nimewo a");
+
+  // Chèche si li egziste
+  let { data: existing } = await supabase.from('customers').select('*').eq('phone', phone).maybeSingle();
+
+  if(!existing) {
+    const { data: created, error } = await supabase.from('customers').insert({ phone, name, ref_by: refBy }).select().single();
+    if(!error) {
+       user = created;
+       if(refBy && refBy !== phone) await supabase.rpc('increment_points', { phone_val: refBy, amt: 5 });
+       alert("Byenvini " + name + "!");
+    }
+  } else {
+    user = existing;
+  }
+
+  localStorage.setItem('kt_phone', phone);
+  document.getElementById('navPts').innerText = user.points;
+  document.getElementById('mLogin').style.display = 'none';
+  updateCartUI();
+}
+
+async function loginUser(phone) {
+  const { data } = await supabase.from('customers').select('*').eq('phone', phone).single();
+  if(data) { user = data; document.getElementById('navPts').innerText = user.points; updateCartUI(); }
+}
+
+async function processOrder() {
+  if(!cart.length) return;
+  if(!user) { document.getElementById('mLogin').style.display = 'flex'; return; }
+
+  const total = usingPoints ? 0 : cart.reduce((s, i) => s + (i.price * i.qty), 0);
+  const ptsEarned = usingPoints ? 0 : Math.floor(total / 100);
+
+  const { error } = await supabase.from('orders').insert({
+    customer: user.name, phone: user.phone,
+    items: cart.map(c => `${c.qty}x ${c.name_fr}`).join(', '),
+    total: total, pts_earned: ptsEarned, used_points: usingPoints
+  });
+
+  if(!error) {
+    if(usingPoints) await supabase.rpc('increment_points', { phone_val: user.phone, amt: -100 });
+    else await supabase.rpc('increment_points', { phone_val: user.phone, amt: ptsEarned });
+
+    alert(usingPoints ? "Kòmand GRATIS resevwa!" : "Kòmand resevwa! Ou fè " + ptsEarned + " pwen.");
+    cart = []; usingPoints = false; updateCartUI(); toggleCart();
+    await loginUser(user.phone);
+  }
+}
+
+function switchTab(t) {
+  currentTab = t;
+  document.querySelectorAll('.mtab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  renderProducts();
+}
+
+function toggleCart(forceOpen = false) {
+  const d = document.getElementById('cartDrawer');
+  if(forceOpen) d.classList.add('open'); else d.classList.toggle('open');
+}
+
+function openProfile() {
+  if(!user) return document.getElementById('mLogin').style.display = 'flex';
+  const refLink = window.location.origin + window.location.pathname + "?ref=" + user.phone;
+  document.getElementById('mProfile').style.display = 'flex';
+  document.getElementById('profileContent').innerHTML = `
+    <h3 style="font-family:'Fredoka One',cursive;">Pwofil ou</h3>
+    <h1 style="font-size:50px; color:var(--navy); margin:15px 0;">${user.points} <small style="font-size:15px">pwen</small></h1>
+    <div style="background:#f4f4f4; padding:20px; border-radius:20px;">
+      <p style="font-size:12px; font-weight:800; margin-bottom:8px;">Lyen pa'w la (Bay yon moun li pou fè 5 pwen):</p>
+      <input type="text" readonly value="${refLink}" class="inp" style="background:white; font-size:11px;" onclick="this.select(); document.execCommand('copy'); alert('Lyen kopye!')">
+    </div>
+    <button class="btn-p" style="margin-top:20px; background:#ddd;" onclick="document.getElementById('mProfile').style.display='none'">Fèmen</button>`;
+}
+
+function setupReveal() {
+  const obs = new IntersectionObserver(ents => ents.forEach(e => { if(e.isIntersecting) e.target.classList.add('v'); }));
+  document.querySelectorAll('.rv').forEach(el => obs.observe(el));
+}
+
+init();
+</script>
+</body>
+</html>
