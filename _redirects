@@ -1,0 +1,3 @@
+# KikTop Fresco — Netlify _redirects
+/admin      /admin.html   200
+/sw.js      /sw.js        200

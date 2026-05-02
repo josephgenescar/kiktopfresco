@@ -1,11 +1,60 @@
-[build]
-  # Sa se kòmand ki pral ranplase "URL_SUPABASE_OU" ak "KEY_ANON_OU" ak vrè kle Netlify yo
-  command = "sed -i \"s|URL_SUPABASE_OU|$SUPABASE_URL|g\" *.html && sed -i \"s|KEY_ANON_OU|$SUPABASE_KEY|g\" *.html"
+# ============================================================
+#  KikTop Fresco — Netlify Configuration
+# ============================================================
 
-  # Katab kote fichye yo ye a
+[build]
   publish = "."
+  command = "echo 'Static site — no build needed'"
+
+# ── HEADERS ─────────────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options         = "SAMEORIGIN"
+    X-Content-Type-Options  = "nosniff"
+    X-XSS-Protection        = "1; mode=block"
+    Referrer-Policy         = "strict-origin-when-cross-origin"
+    Permissions-Policy      = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Content-Type  = "application/manifest+json"
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
+
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ── REDIRECTS ───────────────────────────────────────────────
+[[redirects]]
+  from   = "/admin"
+  to     = "/admin.html"
+  status = 200
 
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+  from   = "/menu"
+  to     = "/#menu"
+  status = 301
+
+[[redirects]]
+  from   = "/points"
+  to     = "/#points"
+  status = 301
+
+# ── ENVIRONMENT VARIABLES (mete nan Netlify dashboard) ──────
+# SUPABASE_URL    = https://XXXX.supabase.co
+# SUPABASE_ANON   = eyJ...
+

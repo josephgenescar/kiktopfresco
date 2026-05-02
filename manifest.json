@@ -1,22 +1,50 @@
 {
-  "name": "KikTop Fresco",
+  "name": "KikTop Fresco – Snack Bar",
   "short_name": "KikTop",
-  "description": "Snack Bar - Savè Natyèl Lòt Nivo",
-  "start_url": "./KikTop_Site_Final.html",
+  "description": "Manje, Bwason, Alcool. Gagner des points & commander en ligne!",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#0D2B5E",
-  "theme_color": "#0D2B5E",
+  "theme_color": "#F5C518",
+  "lang": "fr",
+  "categories": ["food", "shopping"],
   "icons": [
+    { "src": "/icons/icon-72.png",   "sizes": "72x72",   "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-96.png",   "sizes": "96x96",   "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-128.png",  "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-144.png",  "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-152.png",  "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192.png",  "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-384.png",  "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png",  "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
     {
-      "src": "https://raw.githubusercontent.com/ai-code-snippets/icons/main/kiktop-192.png",
-      "sizes": "192x192",
+      "src": "/screenshots/home.png",
+      "sizes": "390x844",
       "type": "image/png",
-      "purpose": "any maskable"
+      "form_factor": "narrow",
+      "label": "Page Akèy KikTop Fresco"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Menu",
+      "short_name": "Menu",
+      "description": "Wè tout meni a",
+      "url": "/#menu",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
     },
     {
-      "src": "https://raw.githubusercontent.com/ai-code-snippets/icons/main/kiktop-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "name": "Mes Points",
+      "short_name": "Points",
+      "description": "Wè pwen ou",
+      "url": "/#points",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
     }
-  ]
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }
