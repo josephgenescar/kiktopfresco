@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KikTop Admin Panel</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0D2B5E;--blue:#1A4494;--yellow:#F5C518;--gold:#E8A500;--red:#C0392B;--green:#27AE60;--bg:#0a0f1e;--card:#0f1b35;--border:rgba(255,255,255,0.07);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:white;min-height:100vh;}
+#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#06101f,var(--navy));display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:40px;width:350px;text-align:center;}
+.lf{width:100%;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);color:white;border-radius:12px;padding:12px;margin-bottom:15px;outline:none;}
+.btn-login{width:100%;background:var(--yellow);color:var(--navy);border:none;border-radius:12px;padding:14px;font-weight:900;cursor:pointer;}
+#app{display:none;}
+.topbar{background:var(--card);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:fixed;top:0;left:0;right:0;z-index:100;border-bottom:1px solid var(--border);}
+.tb-brand{font-family:'Fredoka One',cursive;font-size:20px;}
+.sidebar{width:200px;background:var(--card);position:fixed;top:60px;left:0;bottom:0;padding:20px 0;border-right:1px solid var(--border);}
+.nav-item{padding:12px 20px;cursor:pointer;color:rgba(255,255,255,0.6);font-weight:700;}
+.nav-item.active{color:white;background:rgba(255,255,255,0.05);border-left:4px solid var(--yellow);}
+.content{margin-left:200px;padding:80px 30px 30px;}
+.card{background:var(--card);padding:20px;border-radius:15px;margin-bottom:20px;border:1px solid var(--border);}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin-bottom:20px;}
+.stat-card{background:var(--card);padding:20px;border-radius:15px;text-align:center;border:1px solid var(--border);}
+.stat-card h4{color:gray;font-size:12px;text-transform:uppercase;}
+.stat-card div{font-family:'Fredoka One',cursive;font-size:24px;color:var(--yellow);margin-top:5px;}
+.tbl{width:100%;border-collapse:collapse;margin-top:15px;}
+.tbl th{text-align:left;padding:10px;color:gray;font-size:11px;text-transform:uppercase;}
+.tbl td{padding:12px 10px;border-bottom:1px solid var(--border);font-size:13px;}
+.fg{margin-bottom:15px;}
+.fg label{display:block;font-size:11px;color:gray;margin-bottom:5px;text-transform:uppercase;}
+.fg input,.fg select,.fg textarea{width:100%;background:#162040;border:1px solid var(--border);color:white;padding:10px;border-radius:8px;outline:none;}
+.btn-save{background:var(--yellow);border:none;padding:10px 20px;border-radius:8px;font-weight:900;cursor:pointer;}
+.btn-danger{background:var(--red); color:white; padding:5px 10px; border:none; border-radius:5px; cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <h2 style="font-family:'Fredoka One',cursive; margin-bottom:10px;">KIKTOP Admin</h2>
+    <input type="password" id="pwd" class="lf" placeholder="Modpas Admin">
+    <button class="btn-login" onclick="login()">Antre</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="tb-brand">KIKTOP <span>Admin</span></div>
+    <button onclick="location.reload()" style="background:none;border:none;color:white;cursor:pointer;font-weight:800;">🚪 Soti</button>
+  </div>
+
+  <div class="sidebar">
+    <div class="nav-item active" id="ni-dashboard" onclick="show('dashboard')">📊 Dashboard</div>
+    <div class="nav-item" id="ni-products" onclick="show('products')">🍽️ Pwodui</div>
+    <div class="nav-item" id="ni-sunday" onclick="show('sunday')">🌟 Specyal Dimanch</div>
+    <div class="nav-item" id="ni-orders" onclick="show('orders')">📦 Komand</div>
+    <div class="nav-item" id="ni-customers" onclick="show('customers')">👥 Kliyan</div>
+    <div class="nav-item" id="ni-banners" onclick="show('banners')">📢 Annonces</div>
+  </div>
+
+  <div class="content">
+    <!-- DASHBOARD -->
+    <div id="sec-dashboard" class="page">
+      <h2>Dashboard</h2>
+      <div class="stats-grid">
+        <div class="stat-card"><h4>Revni Total</h4><div id="stat-rev">0 G</div></div>
+        <div class="stat-card"><h4>Kliyan</h4><div id="stat-cust">0</div></div>
+        <div class="stat-card"><h4>Komand</h4><div id="stat-ord">0</div></div>
+      </div>
+      <div class="card">
+        <h3>Dènye Kòmand</h3>
+        <table class="tbl">
+          <thead><tr><th>#</th><th>Kliyan</th><th>Total</th><th>Dat</th></tr></thead>
+          <tbody id="db-order-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div id="sec-products" class="page" style="display:none">
+      <h2>Jere Pwodui</h2>
+      <div class="card">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+          <div class="fg"><label>Non (FR)</label><input type="text" id="p-name-fr"></div>
+          <div class="fg"><label>Non (KR)</label><input type="text" id="p-name-kr"></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+          <div class="fg"><label>Pri (HTG)</label><input type="number" id="p-price"></div>
+          <div class="fg"><label>Kategori</label><select id="p-tab"><option value="manger">Manje</option><option value="boisson">Bwason</option><option value="alcool">Alkòl</option></select></div>
+        </div>
+        <div class="fg"><label>URL Imaj</label><input type="text" id="p-img"></div>
+        <button class="btn-save" onclick="saveProd()">Sove Pwodui</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>Imaj</th><th>Non</th><th>Pri</th><th>Aksyon</th></tr></thead>
+          <tbody id="prod-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SUNDAY -->
+    <div id="sec-sunday" class="page" style="display:none">
+      <h2>🌟 Specyal Dimanch</h2>
+      <div class="card">
+        <div class="fg"><label>Chwazi Pwodui</label><select id="sun-prod-sel"></select></div>
+        <div class="fg"><label>Pri Specyal (HTG)</label><input type="number" id="sun-price"></div>
+        <div class="fg"><label>Mesaj Piblisite</label><input type="text" id="sun-msg"></div>
+        <button class="btn-save" onclick="saveSunday()">Aktive Specyal</button>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div id="sec-orders" class="page" style="display:none">
+      <h2>Tout Kòmand</h2>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>#</th><th>Kliyan</th><th>Atik</th><th>Total</th><th>Pwen</th></tr></thead>
+          <tbody id="full-order-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div id="sec-customers" class="page" style="display:none">
+      <h2>Lis Kliyan</h2>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>Non</th><th>Telefòn</th><th>Pwen</th><th>Referal</th></tr></thead>
+          <tbody id="cust-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BANNERS -->
+    <div id="sec-banners" class="page" style="display:none">
+      <h2>Hero Banner (Annonces)</h2>
+      <div class="card">
+        <div class="fg"><label>Tip</label><select id="b-type"><option value="text">Tèks</option><option value="image">Imaj</option></select></div>
+        <div class="fg"><label>Tit</label><input type="text" id="b-title"></div>
+        <div class="fg"><label>Mesaj / Imaj URL</label><input type="text" id="b-body"></div>
+        <div class="fg"><label>Koulè Background</label><input type="color" id="b-bg" value="#0D2B5E"></div>
+        <button class="btn-save" onclick="saveBanner()">Pibliye Annonce</button>
+      </div>
+      <div id="banner-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL = "URL_SUPABASE_OU";
+const SB_KEY = "KEY_ANON_OU";
+const supabase = supabase.createClient(SB_URL, SB_KEY);
+
+function login(){
+  if(document.getElementById('pwd').value==='kiktop2026'){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    show('dashboard');
+  } else { alert("Modpas pa bon!"); }
+}
+
+async function show(id){
+  document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).style.display='block';
+  document.getElementById('ni-'+id).classList.add('active');
+
+  if(id==='dashboard') loadDash();
+  if(id==='products') loadProducts();
+  if(id==='orders') loadOrders();
+  if(id==='customers') loadCustomers();
+  if(id==='banners') loadBanners();
+  if(id==='sunday') loadSundayConfig();
+}
+
+async function loadDash(){
+  const { data: ords } = await supabase.from('orders').select('*');
+  const { data: custs } = await supabase.from('customers').select('*');
+  document.getElementById('stat-ord').innerText = ords.length;
+  document.getElementById('stat-cust').innerText = custs.length;
+  document.getElementById('stat-rev').innerText = ords.reduce((s,o)=>s+o.total,0) + " G";
+  document.getElementById('db-order-list').innerHTML = ords.slice(-5).reverse().map(o=>`<tr><td>#${o.id}</td><td>${o.customer}</td><td>${o.total}G</td><td>${o.date}</td></tr>`).join('');
+}
+
+async function saveProd(){
+  const p = { name_fr: document.getElementById('p-name-fr').value, name_kr: document.getElementById('p-name-kr').value, price: document.getElementById('p-price').value, tab: document.getElementById('p-tab').value, img: document.getElementById('p-img').value };
+  await supabase.from('products').insert([p]);
+  alert("Pwodui sove!"); loadProducts();
+}
+
+async function loadProducts(){
+  const { data } = await supabase.from('products').select('*').order('id', {ascending:false});
+  document.getElementById('prod-list').innerHTML = data.map(p=>`<tr><td><img src="${p.img}" width="30" height="30" style="border-radius:5px;"></td><td>${p.name_fr}</td><td>${p.price}G</td><td><button class="btn-danger" onclick="deleteProd(${p.id})">Efase</button></td></tr>`).join('');
+  document.getElementById('sun-prod-sel').innerHTML = data.map(p=>`<option value="${p.id}">${p.name_fr}</option>`).join('');
+}
+
+async function loadSundayConfig(){
+  const { data } = await supabase.from('sunday_special').select('*').single();
+  if(data){ document.getElementById('sun-prod-sel').value=data.product_id; document.getElementById('sun-price').value=data.price; document.getElementById('sun-msg').value=data.message; }
+}
+
+async function saveSunday(){
+  await supabase.from('sunday_special').upsert([{id:1, product_id:document.getElementById('sun-prod-sel').value, price:document.getElementById('sun-price').value, message:document.getElementById('sun-msg').value}]);
+  alert("Specyal sove!");
+}
+
+async function loadOrders(){
+  const { data } = await supabase.from('orders').select('*').order('id', {ascending:false});
+  document.getElementById('full-order-list').innerHTML = data.map(o=>`<tr><td>#${o.id}</td><td>${o.customer}</td><td>${o.items}</td><td>${o.total}G</td><td>${o.pts_earned}</td></tr>`).join('');
+}
+
+async function loadCustomers(){
+  const { data } = await supabase.from('customers').select('*').order('points', {ascending:false});
+  document.getElementById('cust-list').innerHTML = data.map(c=>`<tr><td>${c.name}</td><td>${c.phone}</td><td>${c.points}</td><td>${c.ref_by||'-'}</td></tr>`).join('');
+}
+
+async function saveBanner(){
+  await supabase.from('banners').insert([{ type:document.getElementById('b-type').value, title:document.getElementById('b-title').value, body:document.getElementById('b-body').value, bg:document.getElementById('b-bg').value, active:true }]);
+  loadBanners();
+}
+
+async function loadBanners(){
+  const { data } = await supabase.from('banners').select('*');
+  document.getElementById('banner-list').innerHTML = data.map(b=>`<div class="card" style="background:${b.bg}"><h4>${b.title}</h4><p>${b.body}</p><button class="btn-danger" onclick="deleteBanner(${b.id})">Efase</button></div>`).join('');
+}
+
+async function deleteProd(id){ await supabase.from('products').delete().eq('id', id); loadProducts(); }
+async function deleteBanner(id){ await supabase.from('banners').delete().eq('id', id); loadBanners(); }
+</script>
+</body>
+</html>
