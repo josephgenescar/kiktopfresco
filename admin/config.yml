@@ -1,0 +1,141 @@
+backend:
+  name: git-gateway
+  branch: main
+
+local_backend: true
+
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+
+collections:
+  # ═══════════════════════════════════════
+  # ANNOUNCEMENTS (Annonces)
+  # ═══════════════════════════════════════
+  - name: "announcements"
+    label: "📢 Annonces"
+    folder: "content/announcements"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { label: "Titre de l'Annonce", name: "title", widget: "string" }
+      - { label: "Description", name: "body", widget: "markdown" }
+      - { label: "Type", name: "type", widget: "select", options: ["texte", "image"] }
+      - { label: "Image (si type=image)", name: "image", widget: "image", required: false }
+      - { label: "Couleur de fond", name: "bgColor", widget: "color", required: false, default: "#D63031" }
+      - { label: "Texte couleur", name: "textColor", widget: "color", required: false, default: "#ffffff" }
+      - { label: "Actif", name: "active", widget: "boolean", default: true }
+      - { label: "Date de début", name: "startDate", widget: "datetime", required: false }
+      - { label: "Date de fin", name: "endDate", widget: "datetime", required: false }
+      - { label: "Position", name: "position", widget: "number", default: 0 }
+    editor:
+      preview: false
+
+  # ═══════════════════════════════════════
+  # CATEGORIES (Catégories de Produits)
+  # ═══════════════════════════════════════
+  - name: "categories"
+    label: "🏷️ Catégories"
+    folder: "content/categories"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Nom", name: "name", widget: "string" }
+      - { label: "Description", name: "description", widget: "text" }
+      - { label: "Emoji/Icon", name: "icon", widget: "string", default: "🍴" }
+      - { label: "Position", name: "position", widget: "number", default: 0 }
+      - { label: "Afficher", name: "visible", widget: "boolean", default: true }
+    editor:
+      preview: false
+
+  # ═══════════════════════════════════════
+  # PRODUCTS (Produits)
+  # ═══════════════════════════════════════
+  - name: "products"
+    label: "🍔 Produits"
+    folder: "content/products"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Nom du Produit", name: "name", widget: "string" }
+      - { label: "Description", name: "description", widget: "text" }
+      - { label: "Catégorie", name: "category", widget: "relation", collection: "categories", search_fields: ["name"], value_field: "name", display_fields: ["name"] }
+      - { label: "Prix (en Gourdes)", name: "price", widget: "number", valueType: "int" }
+      - { label: "Prix Promo (optionnel)", name: "salePrice", widget: "number", valueType: "int", required: false }
+      - { label: "Image", name: "image", widget: "image" }
+      - { label: "En Stock", name: "inStock", widget: "boolean", default: true }
+      - { label: "Valeur Points", name: "pointValue", widget: "number", valueType: "int", default: 1 }
+      - { label: "Disponible", name: "available", widget: "boolean", default: true }
+      - { label: "Position", name: "position", widget: "number", default: 0 }
+    editor:
+      preview: false
+
+  # ═══════════════════════════════════════
+  # SPECIALS (Spécial Dimanche)
+  # ═══════════════════════════════════════
+  - name: "specials"
+    label: "✨ Spécial Dimanche"
+    folder: "content/specials"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Nom du Produit", name: "name", widget: "string" }
+      - { label: "Description", name: "description", widget: "markdown" }
+      - { label: "Image", name: "image", widget: "image" }
+      - { label: "Prix Original", name: "originalPrice", widget: "number", valueType: "int" }
+      - { label: "Prix Spécial", name: "salePrice", widget: "number", valueType: "int" }
+      - { label: "Jour (0=Dimanche, 1=Lundi...)", name: "day", widget: "number", default: 0 }
+      - { label: "Heure de fin (HH:MM)", name: "endTime", widget: "string", pattern: ["^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", "Format: HH:MM"] }
+      - { label: "Actif", name: "active", widget: "boolean", default: true }
+    editor:
+      preview: false
+
+  # ═══════════════════════════════════════
+  # SETTINGS (Paramètres Généraux)
+  # ═══════════════════════════════════════
+  - name: "settings"
+    label: "⚙️ Paramètres"
+    folder: "content/settings"
+    create: false
+    slug: "{{slug}}"
+    files:
+      - name: "general"
+        label: "Général"
+        file: "content/settings/general.yml"
+        fields:
+          - { label: "Nom du Site", name: "siteName", widget: "string", default: "KikTop Fresco" }
+          - { label: "Description", name: "siteDescription", widget: "text" }
+          - { label: "WhatsApp Number", name: "whatsappNumber", widget: "string", pattern: ["^[0-9]{10,15}$", "Format: ex 50936123456"] }
+          - { label: "Email", name: "email", widget: "string" }
+          - { label: "Adresse", name: "address", widget: "string" }
+          - { label: "Logo URL", name: "logo", widget: "image" }
+          - { label: "Couleur Principal", name: "primaryColor", widget: "color", default: "#0D2B5E" }
+          - { label: "Couleur Accent", name: "accentColor", widget: "color", default: "#F5C518" }
+
+# ═══════════════════════════════════════
+# CONFIGURATION NETLIIFY
+# ═══════════════════════════════════════
+publish_mode: editorial_workflow
+show_preview_links: true
+
+# Support pour media library
+media_library:
+  name: uploadcare
+  config:
+    publicKey: YOUR_UPLOADCARE_PUBLIC_KEY_HERE
+    multiple: false
+    imageShrink: "1920x1920"
+    previewStep: false
+    crop: true
+
+# Markdown widgets
+markdown:
+  buttons:
+    - bold
+    - italic
+    - code
+    - link
+    - heading-one
+    - heading-two
+    - quote
+    - bulleted-list
+    - numbered-list

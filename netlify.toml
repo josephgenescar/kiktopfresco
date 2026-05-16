@@ -41,13 +41,27 @@
 # ── REDIRECTS ───────────────────────────────────────────────
 [[redirects]]
   from   = "/admin"
-  to     = "/admin.html"
+  to     = "/admin/index.html"
   status = 200
 
 [[redirects]]
   from   = "/menu"
   to     = "/#menu"
   status = 301
+
+# ── NETLIFY CMS SUPPORT ─────────────────────────────────────
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+    X-Frame-Options = "SAMEORIGIN"
+
+# Content security policy for CMS
+[[headers]]
+  for = "/admin/index.html"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'self'"
+    X-Frame-Options = "SAMEORIGIN"
 
 [[redirects]]
   from   = "/points"

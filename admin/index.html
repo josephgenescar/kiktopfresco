@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>KikTop Fresco - Admin CMS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/netlify-cms-app@^2.9.1/dist/cms.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍔</text></svg>" />
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/netlify-identity-widget"></script>
+  <script src="https://cdn.jsdelivr.net/npm/netlify-cms-app@^2.9.1/dist/cms.js"></script>
+  
+  <script>
+    // Initialize Netlify Identity
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on("init", (user) => {
+        if (!user) {
+          window.netlifyIdentity.on("login", () => {
+            document.location.href = "/admin/";
+          });
+        }
+      });
+    }
+
+    // Custom branding
+    CMS.registerPreviewStyle(
+      "data:text/css;base64,Ym9keSB7IGZvbnQtZmFtaWx5OiAnTnVuaXRvJywgc2Fucy1zZXJpZjsgfQ=="
+    );
+
+    // Custom widget for WhatsApp number validation
+    CMS.registerWidget(
+      "whatsapp",
+      class WhatsAppControl extends window.NetlifyCMS.Widget {
+        render() {
+          return window.h("input", {
+            type: "tel",
+            placeholder: "Entrez le numéro WhatsApp (ex: 50936123456)",
+            pattern: "^[0-9]{10,15}$",
+          });
+        }
+      }
+    );
+
+    console.log("✅ Netlify CMS Admin initialized");
+  </script>
+
+  <style>
+    /* KikTop Fresco Branding */
+    :root {
+      --cms-primary: #0D2B5E;
+      --cms-accent: #F5C518;
+      --cms-success: #00B894;
+      --cms-danger: #D63031;
+    }
+
+    body {
+      font-family: "Nunito", sans-serif;
+    }
+
+    .nc-app-header {
+      background: linear-gradient(135deg, var(--cms-primary), #1A4494) !important;
+      color: white;
+    }
+
+    .nc-app-header h1 {
+      font-family: "Fredoka One", cursive;
+      letter-spacing: 2px;
+    }
+
+    .nc-collection-button {
+      background: var(--cms-accent) !important;
+      color: var(--cms-primary) !important;
+      border-radius: 8px !important;
+      font-weight: 700 !important;
+    }
+
+    .nc-entry-card:hover {
+      border-color: var(--cms-accent) !important;
+    }
+
+    .nc-workflow-button {
+      background: var(--cms-success) !important;
+    }
+
+    .nc-delete-button {
+      background: var(--cms-danger) !important;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .nc-root {
+        color-scheme: dark;
+      }
+    }
+  </style>
+</body>
+</html>
