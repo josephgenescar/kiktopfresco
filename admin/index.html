@@ -9,89 +9,132 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍔</text></svg>" />
 </head>
 <body>
-  <script src="https://cdn.jsdelivr.net/npm/netlify-identity-widget"></script>
-  <script src="https://cdn.jsdelivr.net/npm/netlify-cms-app@^2.9.1/dist/cms.js"></script>
-  
+  <script src="https://cdn.jsdelivr.net/npm/netlify-identity-widget@1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/netlify-cms@2.10.192"></script>
+  <script src="https://cdn.jsdelivr.net/npm/netlify-cms-locales@1.19.0"></script>
+
   <script>
-    // Initialize Netlify Identity
-    if (window.netlifyIdentity) {
-      window.netlifyIdentity.on("init", (user) => {
-        if (!user) {
-          window.netlifyIdentity.on("login", () => {
-            document.location.href = "/admin/";
-          });
+    // Initialize Netlify CMS
+    window.CMS_MANUAL_INIT = true;
+
+    // Wait for CMS to be available
+    if (window.CMS) {
+      CMS.init({
+        config: {
+          backend: {
+            name: 'git-gateway',
+            branch: 'main'
+          },
+          local_backend: true,
+          media_folder: 'images/uploads',
+          public_folder: '/images/uploads'
         }
       });
+
+      // Custom branding
+      CMS.registerPreviewStyle(
+        "data:text/css;base64,Ym9keSB7IGZvbnQtZmFtaWx5OiAnTnVuaXRvJywgc2Fucy1zZXJpZjsgfQ=="
+      );
+
+      console.log("✅ Netlify CMS Admin initialized successfully");
+    } else {
+      console.error("❌ CMS not loaded");
     }
 
-    // Custom branding
-    CMS.registerPreviewStyle(
-      "data:text/css;base64,Ym9keSB7IGZvbnQtZmFtaWx5OiAnTnVuaXRvJywgc2Fucy1zZXJpZjsgfQ=="
-    );
-
-    // Custom widget for WhatsApp number validation
-    CMS.registerWidget(
-      "whatsapp",
-      class WhatsAppControl extends window.NetlifyCMS.Widget {
-        render() {
-          return window.h("input", {
-            type: "tel",
-            placeholder: "Entrez le numéro WhatsApp (ex: 50936123456)",
-            pattern: "^[0-9]{10,15}$",
-          });
-        }
-      }
-    );
-
-    console.log("✅ Netlify CMS Admin initialized");
+    // Initialize Netlify Identity
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.init({
+        namerId: "KikTop-Fresco-CMS"
+      });
+    }
   </script>
 
   <style>
-    /* KikTop Fresco Branding */
+    /* KikTop Fresco CMS Branding */
     :root {
       --cms-primary: #0D2B5E;
       --cms-accent: #F5C518;
       --cms-success: #00B894;
       --cms-danger: #D63031;
+      --cms-gray: #636E72;
     }
 
-    body {
-      font-family: "Nunito", sans-serif;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    .nc-app-header {
+    html, body {
+      font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #F0F5FF;
+      color: #1a1a2e;
+      height: 100%;
+      width: 100%;
+    }
+
+    #nc-root {
+      height: 100vh;
+      width: 100%;
+    }
+
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+      html, body {
+        background: #1a1a2e;
+        color: #f0f0f0;
+      }
+    }
+
+    /* CMS Header Branding */
+    [class*="Header"] {
       background: linear-gradient(135deg, var(--cms-primary), #1A4494) !important;
-      color: white;
     }
 
-    .nc-app-header h1 {
-      font-family: "Fredoka One", cursive;
-      letter-spacing: 2px;
+    [class*="AppHeader"] {
+      background: linear-gradient(135deg, var(--cms-primary), #1A4494) !important;
+      color: white !important;
     }
 
-    .nc-collection-button {
+    [class*="TopBar"] {
+      background: linear-gradient(135deg, var(--cms-primary), #1A4494) !important;
+    }
+
+    /* Buttons */
+    [class*="Button"][type="primary"],
+    [class*="PrimaryButton"],
+    button.nc-button--primary {
       background: var(--cms-accent) !important;
       color: var(--cms-primary) !important;
-      border-radius: 8px !important;
       font-weight: 700 !important;
     }
 
-    .nc-entry-card:hover {
-      border-color: var(--cms-accent) !important;
+    button.nc-button--primary:hover {
+      opacity: 0.9 !important;
     }
 
-    .nc-workflow-button {
+    /* Success/Delete buttons */
+    [class*="SuccessButton"],
+    button.nc-button--success {
       background: var(--cms-success) !important;
     }
 
-    .nc-delete-button {
+    [class*="DeleteButton"],
+    button.nc-button--delete {
       background: var(--cms-danger) !important;
     }
 
-    @media (prefers-color-scheme: dark) {
-      .nc-root {
-        color-scheme: dark;
-      }
+    /* Loading and general */
+    body.loading {
+      opacity: 0.5;
+    }
+
+    /* Ensure CMS renders */
+    #nc-root, [data-react-root], .nc-app {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      height: 100% !important;
     }
   </style>
 </body>

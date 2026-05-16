@@ -159,14 +159,19 @@ nav{
 /* ============ HERO ============ */
 #hero{
   min-height:100vh;padding-top:66px;
-  background:linear-gradient(155deg,#060e22,#0D2B5E 50%,#0f3270);
+  background: linear-gradient(135deg, #060e22 0%, #0D2B5E 50%, #0f3270 100%);
+  background-attachment: fixed;
   display:flex;align-items:center;justify-content:center;
   position:relative;overflow:hidden;
 }
-.hblob{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;}
-.hblob1{width:450px;height:450px;background:rgba(245,197,24,.08);top:-100px;right:-100px;animation:hba 12s ease-in-out infinite;}
-.hblob2{width:350px;height:350px;background:rgba(0,184,148,.07);bottom:-80px;left:-80px;animation:hba 10s ease-in-out infinite 3s;}
-@keyframes hba{0%,100%{transform:translate(0,0);}50%{transform:translate(20px,-15px);}}
+#hero::before{
+  content:'';position:absolute;inset:0;background:rgba(6,14,34,.5);z-index:0;
+}
+.hblob{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;}
+.hblob1{width:500px;height:500px;background:rgba(245,197,24,.12);top:-150px;right:-150px;animation:hba 15s ease-in-out infinite;}
+.hblob2{width:400px;height:400px;background:rgba(0,184,148,.1);bottom:-120px;left:-120px;animation:hba 12s ease-in-out infinite 3s;}
+.hblob3{width:300px;height:300px;background:rgba(108,92,231,.08);top:50%;left:10%;animation:hba 18s ease-in-out infinite 5s;}
+@keyframes hba{0%,100%{transform:translate(0,0);}25%{transform:translate(30px,-20px);}50%{transform:translate(-10px,25px);}75%{transform:translate(20px,10px);}}
 
 .hero-content{position:relative;z-index:1;text-align:center;padding:40px 20px;}
 
@@ -174,16 +179,17 @@ nav{
 .logo-ring{
   position:relative;width:170px;height:170px;margin:0 auto 22px;
   animation:float 5s ease-in-out infinite;
+  filter: drop-shadow(0 0 30px rgba(245,197,24,.3));
 }
-@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-13px);}}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-15px);}}
 .logo-ring::before{
   content:'';position:absolute;inset:-7px;border-radius:50%;
-  background:conic-gradient(var(--yellow),var(--green),#6C5CE7,var(--yellow));
-  animation:spin 8s linear infinite;opacity:.4;
+  background:conic-gradient(#F5C518, #00B894, #6C5CE7, #F5C518);
+  animation:spin 8s linear infinite;opacity:.5;
 }
 @keyframes spin{to{transform:rotate(360deg);}}
 .logo-ring::after{content:'';position:absolute;inset:-2px;border-radius:50%;background:#0D2B5E;}
-.logo-ring img{position:relative;z-index:1;width:100%;height:100%;object-fit:contain;border-radius:50%;}
+.logo-ring img{position:relative;z-index:1;width:100%;height:100%;object-fit:contain;border-radius:50%;box-shadow:0 0 20px rgba(245,197,24,.2);}
 
 .h-pill{
   display:inline-block;background:rgba(245,197,24,.12);
@@ -1031,7 +1037,7 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
 ============================================================ -->
 <script>
 // ---- CONFIG ----
-var WA_NUMBER = "50931786463"; // <- METE NIMEWO REYEL OU ICI
+var WA_NUMBER = "31786463"; // <- METE NIMEWO REYEL OU ICI
 
 // ---- STORAGE ----
 function lsGet(k,d){try{var v=localStorage.getItem("kt_"+k);return v!==null?JSON.parse(v):d;}catch(e){return d;}}
