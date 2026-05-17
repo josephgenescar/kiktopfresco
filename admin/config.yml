@@ -3,7 +3,7 @@ backend:
   branch: main
   auth_endpoint: /auth
 
-local_backend: true
+# local_backend: true   ← Komante sa pou pwodiksyon!
 
 # ═══════════════════════════════════════
 # AUTHENTICATION & IDENTITY
@@ -127,20 +127,9 @@ collections:
 # ═══════════════════════════════════════
 # CONFIGURATION NETLIFY
 # ═══════════════════════════════════════
-publish_mode: editorial_workflow
-show_preview_links: true
+publish_mode: simple
 
-# Media library - using Netlify default (Git backend)
-# Images upload directly to repository
-# Note: To enable Uploadcare, get free account at uploadcare.com and add your public key
-# media_library:
-#   name: uploadcare
-#   config:
-#     publicKey: YOUR_UPLOADCARE_PUBLIC_KEY_HERE
-#     multiple: false
-#     imageShrink: "1920x1920"
-#     previewStep: false
-#     crop: true
+show_preview_links: true
 
 # Markdown widgets
 markdown:
