@@ -27,7 +27,7 @@ class KikTopCMSLoader {
 
       for (const file of files) {
         if (file.endsWith('.md')) {
-          const content = await this.readFile(file);
+          const content = await this.readFile('/content/announcements/' + file);
           const parsed = this.parseMarkdown(content);
           if (parsed.data.active !== false) {
             announcements.push(parsed);
@@ -54,7 +54,7 @@ class KikTopCMSLoader {
 
       for (const file of files) {
         if (file.endsWith('.md')) {
-          const content = await this.readFile(file);
+          const content = await this.readFile('/content/products/' + file);
           const parsed = this.parseMarkdown(content);
           
           if (parsed.data.available !== false && 
@@ -96,7 +96,7 @@ class KikTopCMSLoader {
 
       for (const file of files) {
         if (file.endsWith('.md')) {
-          const content = await this.readFile(file);
+          const content = await this.readFile('/content/specials/' + file);
           const parsed = this.parseMarkdown(content);
           
           if (parsed.data.active !== false && parsed.data.day === today) {
