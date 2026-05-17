@@ -1,10 +1,10 @@
 ---
-name: "Jus Frèch Oranges"
-description: "Jus frèch fèt avèk oranges pye yo. Santé ak delisye!"
-category: "boissons"
+name: Jus petit
+description: Jus frèch. Santé ak delisye!
+category: Boissons
 price: 75
 salePrice: null
-image: "/images/uploads/juice-sample.jpg"
+image: /images/uploads/whatsapp-image-2026-05-12-at-20.18.40-1-.jpeg
 inStock: true
 pointValue: 1
 available: true
