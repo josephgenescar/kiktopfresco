@@ -2,9 +2,14 @@
 #  KikTop Fresco — Netlify Configuration
 # ============================================================
 
-[build]
+
+
+  [build]
+  command = "node scripts/generate-data.js"
   publish = "."
-  command = "echo 'Static site — no build needed'"
+
+[build.environment]
+  NODE_VERSION = "18"
 
 # ── HEADERS ─────────────────────────────────────────────────
 [[headers]]
