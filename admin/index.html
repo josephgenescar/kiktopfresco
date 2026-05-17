@@ -6,10 +6,14 @@
   <meta name="robots" content="noindex" />
   <title>KikTop Fresco - Admin CMS</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/netlify-cms-app@^2.9.1/dist/cms.css" />
+  <link rel="stylesheet" href="https://unpkg.com/netlify-identity-widget@1.5.1/build/netlify-identity-widget.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍔</text></svg>" />
 </head>
 <body>
-  <script src="https://cdn.jsdelivr.net/npm/netlify-identity-widget@1"></script>
+  <!-- Netlify Identity Container pou login form -->
+  <div id="netlify-identity-container" style="position: fixed; top: 20px; right: 20px; z-index: 10000;"></div>
+
+  <script src="https://unpkg.com/netlify-identity-widget@1.5.1/build/netlify-identity-widget.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/netlify-cms@2.10.192"></script>
   <script src="https://cdn.jsdelivr.net/npm/netlify-cms-locales@1.19.0"></script>
 
@@ -17,54 +21,63 @@
     // Initialize Netlify CMS
     window.CMS_MANUAL_INIT = true;
 
-    // Initialize Netlify Identity FIRST
+    // Initialize Netlify Identity Widget
     if (window.netlifyIdentity) {
-      window.netlifyIdentity.init();
-      
-      // Check if user is authenticated
+      window.netlifyIdentity.init({
+        container: '#netlify-identity-container',
+        locale: 'en'
+      });
+
+      // Check authentication on page load
       window.netlifyIdentity.on('init', user => {
-        if (!user) {
-          console.log('ℹ️ Not logged in, redirecting to login...');
-          window.location.href = '/admin/login.html';
+        if (user) {
+          console.log('✅ User authenticated, loading CMS...');
+          initCMS();
         } else {
-          console.log('✅ User authenticated:', user);
+          console.log('ℹ️ Not logged in - Netlify Identity widget will handle login');
         }
       });
-      
-      // On logout, redirect to login page
+
+      // On login, init CMS
+      window.netlifyIdentity.on('login', user => {
+        console.log('✅ User logged in:', user);
+        initCMS();
+      });
+
+      // On logout
       window.netlifyIdentity.on('logout', () => {
         console.log('👋 User logged out');
-        window.location.href = '/admin/login.html';
+        location.reload();
       });
-      
+
       window.netlifyIdentity.on('error', err => {
-        console.error('❌ Identity error:', err);
+        console.error('❌ Auth error:', err);
       });
     }
 
-    // Wait for CMS to be available
-    if (window.CMS) {
-      CMS.init({
-        config: {
-          backend: {
-            name: 'git-gateway',
-            branch: 'main',
-            auth_endpoint: '/auth'
-          },
-          local_backend: true,
-          media_folder: 'images/uploads',
-          public_folder: '/images/uploads'
-        }
-      });
+    function initCMS() {
+      // Wait for CMS to be available
+      if (window.CMS) {
+        CMS.init({
+          config: {
+            backend: {
+              name: 'git-gateway',
+              branch: 'main',
+              auth_endpoint: '/auth'
+            },
+            local_backend: true,
+            media_folder: 'images/uploads',
+            public_folder: '/images/uploads'
+          }
+        });
 
-      // Custom branding
-      CMS.registerPreviewStyle(
-        "data:text/css;base64,Ym9keSB7IGZvbnQtZmFtaWx5OiAnTnVuaXRvJywgc2Fucy1zZXJpZjsgfQ=="
-      );
+        // Custom branding
+        CMS.registerPreviewStyle(
+          "data:text/css;base64,Ym9keSB7IGZvbnQtZmFtaWx5OiAnTnVuaXRvJywgc2Fucy1zZXJpZjsgfQ=="
+        );
 
-      console.log("✅ Netlify CMS Admin initialized successfully");
-    } else {
-      console.error("❌ CMS not loaded");
+        console.log("✅ Netlify CMS Admin initialized successfully");
+      }
     }
   </script>
 
