@@ -8,76 +8,145 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/netlify-cms-app@^2.9.1/dist/cms.css" />
   <link rel="stylesheet" href="https://unpkg.com/netlify-identity-widget@1.5.1/build/netlify-identity-widget.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍔</text></svg>" />
+  <style>
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    #nc-root { height: 100vh; }
+    .loading-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #0D2B5E 0%, #1a3a7a 100%);
+      color: white;
+      font-size: 18px;
+    }
+  </style>
 </head>
 <body>
-  <!-- Netlify Identity Container pou login form -->
-  <div id="netlify-identity-container" style="position: fixed; top: 20px; right: 20px; z-index: 10000;"></div>
-
+  <div id="nc-root"></div>
+  
+  <!-- Netlify Identity Widget -->
   <script src="https://unpkg.com/netlify-identity-widget@1.5.1/build/netlify-identity-widget.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/netlify-cms@2.10.192"></script>
-  <script src="https://cdn.jsdelivr.net/npm/netlify-cms-locales@1.19.0"></script>
 
   <script>
-    // Initialize Netlify CMS
-    window.CMS_MANUAL_INIT = true;
-
-    // Initialize Netlify Identity Widget
+    // Initialize Netlify Identity
     if (window.netlifyIdentity) {
-      window.netlifyIdentity.init({
-        container: '#netlify-identity-container',
-        locale: 'en'
-      });
-
-      // Check authentication on page load
-      window.netlifyIdentity.on('init', user => {
-        if (user) {
-          console.log('✅ User authenticated, loading CMS...');
-          initCMS();
-        } else {
-          console.log('ℹ️ Not logged in - Netlify Identity widget will handle login');
-        }
-      });
-
-      // On login, init CMS
-      window.netlifyIdentity.on('login', user => {
-        console.log('✅ User logged in:', user);
-        initCMS();
-      });
-
-      // On logout
-      window.netlifyIdentity.on('logout', () => {
-        console.log('👋 User logged out');
-        location.reload();
-      });
-
-      window.netlifyIdentity.on('error', err => {
-        console.error('❌ Auth error:', err);
-      });
+      window.netlifyIdentity.init();
     }
 
-    function initCMS() {
-      // Wait for CMS to be available
-      if (window.CMS) {
-        CMS.init({
-          config: {
-            backend: {
-              name: 'git-gateway',
-              branch: 'main',
-              auth_endpoint: '/auth'
-            },
-            local_backend: true,
-            media_folder: 'images/uploads',
-            public_folder: '/images/uploads'
+    // CMS Configuration
+    const cmsConfig = {
+      backend: {
+        name: 'git-gateway',
+        branch: 'main',
+        auth_endpoint: '/auth'
+      },
+      local_backend: true,
+      media_folder: 'images/uploads',
+      public_folder: '/images/uploads',
+      collections: [
+        {
+          name: 'announcements',
+          label: '📢 Annonces',
+          folder: 'content/announcements',
+          create: true,
+          slug: '{{year}}-{{month}}-{{day}}-{{slug}}',
+          fields: [
+            { label: 'Titre de l\'Annonce', name: 'title', widget: 'string' },
+            { label: 'Description', name: 'body', widget: 'markdown' },
+            { label: 'Type', name: 'type', widget: 'select', options: ['texte', 'image'] },
+            { label: 'Image (si type=image)', name: 'image', widget: 'image', required: false },
+            { label: 'Couleur de fond', name: 'bgColor', widget: 'color', required: false, default: '#D63031' },
+            { label: 'Texte couleur', name: 'textColor', widget: 'color', required: false, default: '#ffffff' },
+            { label: 'Actif', name: 'active', widget: 'boolean', default: true },
+            { label: 'Date de début', name: 'startDate', widget: 'datetime', required: false },
+            { label: 'Date de fin', name: 'endDate', widget: 'datetime', required: false },
+            { label: 'Position', name: 'position', widget: 'number', default: 0 }
+          ]
+        },
+        {
+          name: 'categories',
+          label: '🏷️ Catégories',
+          folder: 'content/categories',
+          create: true,
+          slug: '{{slug}}',
+          fields: [
+            { label: 'Nom', name: 'name', widget: 'string' },
+            { label: 'Description', name: 'description', widget: 'text' },
+            { label: 'Emoji/Icon', name: 'icon', widget: 'string', default: '🍴' },
+            { label: 'Position', name: 'position', widget: 'number', default: 0 },
+            { label: 'Afficher', name: 'visible', widget: 'boolean', default: true }
+          ]
+        },
+        {
+          name: 'settings',
+          label: '⚙️ Paramètres',
+          folder: 'content/settings',
+          create: false,
+          slug: '{{slug}}',
+          files: [
+            {
+              name: 'general',
+              label: 'Général',
+              file: 'content/settings/general.yml',
+              fields: [
+                { label: 'Nom du Site', name: 'siteName', widget: 'string', default: 'KikTop Fresco' },
+                { label: 'Description', name: 'siteDescription', widget: 'text' },
+                { label: 'WhatsApp Number', name: 'whatsappNumber', widget: 'string', pattern: ['^[0-9]{10,15}$', 'Format: ex 50936123456'] },
+                { label: 'Email', name: 'email', widget: 'string' },
+                { label: 'Adresse', name: 'address', widget: 'string' },
+                { label: 'Logo URL', name: 'logo', widget: 'image' },
+                { label: 'Couleur Principal', name: 'primaryColor', widget: 'color', default: '#0D2B5E' },
+                { label: 'Couleur Accent', name: 'accentColor', widget: 'color', default: '#F5C518' }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    // Wait for CMS and Identity to load
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.on('init', user => {
+          console.log('✅ Netlify Identity initialized');
+          
+          if (!user) {
+            console.log('ℹ️ No user logged in - showing login');
+            window.netlifyIdentity.open();
+          } else {
+            console.log('✅ User authenticated, initializing CMS...');
+            initCMS();
           }
         });
 
-        // Custom branding
-        CMS.registerPreviewStyle(
-          "data:text/css;base64,Ym9keSB7IGZvbnQtZmFtaWx5OiAnTnVuaXRvJywgc2Fucy1zZXJpZjsgfQ=="
-        );
+        window.netlifyIdentity.on('login', user => {
+          console.log('✅ User logged in');
+          initCMS();
+        });
 
-        console.log("✅ Netlify CMS Admin initialized successfully");
+        window.netlifyIdentity.on('logout', () => {
+          console.log('👋 User logged out');
+          window.location.reload();
+        });
+      } else {
+        console.error('❌ Netlify Identity not loaded');
       }
+    });
+
+    function initCMS() {
+      if (window.CMS) {
+        console.log('📝 Initializing Netlify CMS...');
+        window.CMS.init({ config: cmsConfig });
+        console.log('✅ Netlify CMS initialized successfully');
+      } else {
+        console.error('❌ CMS script not loaded');
+      }
+    }
+  </script>
+</body>
+</html>
     }
   </script>
 
