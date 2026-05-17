@@ -169,6 +169,55 @@ class KikTopCMSLoader {
   }
 
   /**
+   * 🆔 Générer un ID stable à partir d'une clé
+   */
+  generateId(seed) {
+    var str = String(seed || 'item');
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  /**
+   * 📦 Normaliser la catégorie en onglet pour le site
+   */
+  normalizeCategory(category) {
+    if (!category) return 'manger';
+    var c = category.toString().toLowerCase();
+    if (c.indexOf('alcool') !== -1 || c.indexOf('vin') !== -1 || c.indexOf('rhum') !== -1 || c.indexOf('cocktail') !== -1) return 'alcool';
+    if (c.indexOf('boisson') !== -1 || c.indexOf('boissons') !== -1 || c.indexOf('jus') !== -1 || c.indexOf('fresco') !== -1 || c.indexOf('soda') !== -1 || c.indexOf('ice') !== -1) return 'boisson';
+    return 'manger';
+  }
+
+  /**
+   * 🛒 Convertir un produit CMS en objet produit du site
+   */
+  mapProduct(product, index) {
+    var data = product.data || {};
+    var category = data.category || '';
+    var tab = this.normalizeCategory(category);
+    return {
+      id: data.id || this.generateId(product.path || data.name || data.description || index),
+      fr: data.name || '',
+      kr: data.kr || data.name || '',
+      tab: tab,
+      cat: category || '',
+      price: data.price || 0,
+      em: data.em || '',
+      df: data.description || '',
+      dk: data.krDescription || data.description || '',
+      badge: data.badge || '',
+      alc: tab === 'alcool',
+      status: data.available === false ? 'inactive' : 'active',
+      img: data.image || null,
+      position: data.position || index
+    };
+  }
+
+  /**
    * 📂 Lire contenu d'un fichier
    */
   async readFile(path) {
@@ -202,45 +251,26 @@ class KikTopCMSLoader {
     const announcements = await this.loadAnnouncements();
     if (!announcements.length) return;
 
-    const bannerZone = document.getElementById('banner-zone');
-    if (!bannerZone) return;
-
-    // Créer slides
-    announcements.forEach((ann, i) => {
-      const slide = document.createElement('div');
-      slide.className = 'bnslide' + (i === 0 ? ' active' : '');
-      slide.style.background = ann.data.bgColor || '#D63031';
-      slide.style.color = ann.data.textColor || '#fff';
-
-      if (ann.data.type === 'image' && ann.data.image) {
-        slide.innerHTML = `
-          <div class="bn-img-wrap">
-            <img src="${ann.data.image}" alt="${ann.data.title}">
-            <div class="bn-img-caption">
-              <div class="bnt">${ann.data.title}</div>
-              <div class="bnb">${ann.body}</div>
-            </div>
-          </div>
-        `;
-      } else {
-        slide.innerHTML = `
-          <div class="bn-txt">
-            <span class="bn-icon">📢</span>
-            <strong class="bn-title">${ann.data.title}</strong>
-            <span class="bn-body">${ann.body}</span>
-          </div>
-        `;
-      }
-
-      bannerZone.appendChild(slide);
+    const banners = announcements.map(function(ann){
+      return {
+        active: ann.data.active !== false,
+        type: ann.data.type === 'image' ? 'image' : 'text',
+        title: ann.data.title || '',
+        body: ann.body || '',
+        bg: ann.data.bgColor || '#0D2B5E',
+        color: ann.data.textColor || '#ffffff',
+        img: ann.data.type === 'image' ? (ann.data.image || '') : '',
+        icon: ann.data.icon || '📢',
+        position: ann.data.position || 0
+      };
     });
 
-    bannerZone.style.display = 'block';
-
-    // Auto rotation
-    if (announcements.length > 1) {
-      this.rotateAnnouncements();
+    banners.sort(function(a,b){return (a.position||0)-(b.position||0);});
+    try { localStorage.setItem('kt_banners', JSON.stringify(banners)); } catch(e) {}
+    if (typeof loadBanner === 'function') {
+      loadBanner();
     }
+    console.log('✅ Annonces CMS envoyées au site:', banners.length);
   }
 
   /**
@@ -267,9 +297,24 @@ class KikTopCMSLoader {
    */
   async injectProducts() {
     const products = await this.loadProducts();
-    // Integration avec votre système de menu existant
-    window.cmsProducts = products;
-    console.log('✅ Produits CMS chargés:', products.length);
+    if (!products.length) {
+      console.log('ℹ️ Aucun produit CMS trouvé');
+      return;
+    }
+
+    const mapped = products.map((product, index) => this.mapProduct(product, index));
+    try { localStorage.setItem('kt_products', JSON.stringify(mapped)); } catch(e) {}
+    if (window.products && Array.isArray(window.products)) {
+      window.products = mapped;
+      lsSet('products', mapped);
+      if (typeof switchTab === 'function') {
+        switchTab(window.curTab || 'manger');
+      }
+      if (typeof updSunday === 'function') {
+        updSunday();
+      }
+    }
+    console.log('✅ Produits CMS chargés et appliqués:', mapped.length);
   }
 
   /**
@@ -292,6 +337,8 @@ class KikTopCMSLoader {
    */
   async injectSettings() {
     const settings = await this.loadSettings();
+    if (!settings) return;
+    try { localStorage.setItem('kt_settings', JSON.stringify(settings)); } catch(e) {}
     if (settings.whatsappNumber) {
       window.waNumber = settings.whatsappNumber;
     }
@@ -300,6 +347,9 @@ class KikTopCMSLoader {
     }
     if (settings.accentColor) {
       document.documentElement.style.setProperty('--yellow', settings.accentColor);
+    }
+    if (typeof lsSet === 'function') {
+      lsSet('settings', settings);
     }
     console.log('✅ Settings CMS appliqués');
   }
