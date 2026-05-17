@@ -17,13 +17,39 @@
     // Initialize Netlify CMS
     window.CMS_MANUAL_INIT = true;
 
+    // Initialize Netlify Identity FIRST
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.init();
+      
+      // Check if user is authenticated
+      window.netlifyIdentity.on('init', user => {
+        if (!user) {
+          console.log('ℹ️ Not logged in, redirecting to login...');
+          window.location.href = '/admin/login.html';
+        } else {
+          console.log('✅ User authenticated:', user);
+        }
+      });
+      
+      // On logout, redirect to login page
+      window.netlifyIdentity.on('logout', () => {
+        console.log('👋 User logged out');
+        window.location.href = '/admin/login.html';
+      });
+      
+      window.netlifyIdentity.on('error', err => {
+        console.error('❌ Identity error:', err);
+      });
+    }
+
     // Wait for CMS to be available
     if (window.CMS) {
       CMS.init({
         config: {
           backend: {
             name: 'git-gateway',
-            branch: 'main'
+            branch: 'main',
+            auth_endpoint: '/auth'
           },
           local_backend: true,
           media_folder: 'images/uploads',
@@ -39,13 +65,6 @@
       console.log("✅ Netlify CMS Admin initialized successfully");
     } else {
       console.error("❌ CMS not loaded");
-    }
-
-    // Initialize Netlify Identity
-    if (window.netlifyIdentity) {
-      window.netlifyIdentity.init({
-        namerId: "KikTop-Fresco-CMS"
-      });
     }
   </script>
 

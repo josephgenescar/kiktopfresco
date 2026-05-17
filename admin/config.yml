@@ -1,8 +1,21 @@
 backend:
   name: git-gateway
   branch: main
+  auth_endpoint: /auth
 
 local_backend: true
+
+# ═══════════════════════════════════════
+# AUTHENTICATION & IDENTITY
+# ═══════════════════════════════════════
+auth:
+  base_url: https://kiktop.netlify.app
+  logo_url: https://kiktop.netlify.app/logo.svg
+
+external_auth_providers:
+  - name: google
+    auth_type: implicit
+    client_id: YOUR_GOOGLE_CLIENT_ID_HERE
 
 media_folder: "images/uploads"
 public_folder: "/images/uploads"
