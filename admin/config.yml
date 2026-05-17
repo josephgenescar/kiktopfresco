@@ -125,20 +125,22 @@ collections:
           - { label: "Couleur Accent", name: "accentColor", widget: "color", default: "#F5C518" }
 
 # ═══════════════════════════════════════
-# CONFIGURATION NETLIIFY
+# CONFIGURATION NETLIFY
 # ═══════════════════════════════════════
 publish_mode: editorial_workflow
 show_preview_links: true
 
-# Support pour media library
-media_library:
-  name: uploadcare
-  config:
-    publicKey: YOUR_UPLOADCARE_PUBLIC_KEY_HERE
-    multiple: false
-    imageShrink: "1920x1920"
-    previewStep: false
-    crop: true
+# Media library - using Netlify default (Git backend)
+# Images upload directly to repository
+# Note: To enable Uploadcare, get free account at uploadcare.com and add your public key
+# media_library:
+#   name: uploadcare
+#   config:
+#     publicKey: YOUR_UPLOADCARE_PUBLIC_KEY_HERE
+#     multiple: false
+#     imageShrink: "1920x1920"
+#     previewStep: false
+#     crop: true
 
 # Markdown widgets
 markdown:
