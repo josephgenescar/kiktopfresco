@@ -48,8 +48,13 @@
       // ✅ FIX #1: local_backend RETIRE — pa itilize nan pwodiksyon
       // local_backend: true,
 
-      // ✅ FIX #2: publish_mode simple — imaj parèt dirèkteman
-      publish_mode: 'simple',
+      // ✅ WORKFLOW ENABLED - Draft → In Review → Ready
+      publish_mode: 'editorial_workflow',
+      
+      editorial_workflow: {
+        status_path: '_workflow_state',
+        collections: ['products', 'announcements', 'specials']
+      },
 
       media_folder: 'images/uploads',
       public_folder: '/images/uploads',

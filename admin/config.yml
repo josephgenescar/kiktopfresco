@@ -6,6 +6,18 @@ backend:
 # local_backend: true   ← Komante sa pou pwodiksyon!
 
 # ═══════════════════════════════════════
+# WORKFLOW CONFIGURATION
+# ═══════════════════════════════════════
+publish_mode: editorial_workflow
+
+editorial_workflow:
+  status_path: _workflow_state
+  collections:
+    - name: products
+    - name: announcements
+    - name: specials
+
+# ═══════════════════════════════════════
 # AUTHENTICATION & IDENTITY
 # ═══════════════════════════════════════
 auth:
@@ -125,7 +137,6 @@ collections:
 # ═══════════════════════════════════════
 # CONFIGURATION NETLIFY
 # ═══════════════════════════════════════
-publish_mode: simple
 
 show_preview_links: true
 
