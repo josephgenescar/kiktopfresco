@@ -1220,10 +1220,136 @@ var T = {
 function tr(k){return (T[L]||T.fr)[k]||"";}
 
 // ==================================================
+//  CMS CONTENT LOADER
+// ==================================================
+async function loadCMSContent(){
+  try{
+    // Load products from CMS
+    var prodsRes = await fetch('content/products/index.json');
+    var prodFiles = await prodsRes.json();
+    var cmsProducts = [];
+    
+    for(var i=0; i<prodFiles.length; i++){
+      try{
+        var fileRes = await fetch('content/products/'+prodFiles[i]);
+        var content = await fileRes.text();
+        var frontMatter = parseFrontMatter(content);
+        if(frontMatter && frontMatter.name){
+          cmsProducts.push({
+            id: i+1,
+            fr: frontMatter.name,
+            kr: frontMatter.name,
+            tab: getCategoryTab(frontMatter.category),
+            cat: getCategoryName(frontMatter.category),
+            price: frontMatter.price || 0,
+            em: getCategoryEmoji(frontMatter.category),
+            df: frontMatter.description || "",
+            dk: frontMatter.description || "",
+            img: frontMatter.image || "",
+            badge: "",
+            alc: isAlcohol(frontMatter.category),
+            status: frontMatter.available !== false ? "active" : "inactive",
+            pointValue: frontMatter.pointValue || 1
+          });
+        }
+      } catch(e){ console.error('Error loading product:', prodFiles[i], e); }
+    }
+    
+    if(cmsProducts.length > 0){
+      products = cmsProducts;
+      lsSet("products", products);
+      console.log('✅ CMS products loaded:', cmsProducts.length);
+    } else {
+      console.log('⚠️ No CMS products found, using defaults');
+      products = DEF_PRODS;
+      lsSet("products", products);
+    }
+  } catch(e){
+    console.error('❌ Error loading CMS content:', e);
+    products = DEF_PRODS;
+    lsSet("products", products);
+  }
+}
+
+function parseFrontMatter(content){
+  var lines = content.split('\n');
+  var frontMatter = {};
+  var inFrontMatter = false;
+  
+  for(var i=0; i<lines.length; i++){
+    var line = lines[i].trim();
+    if(line === '---'){
+      inFrontMatter = !inFrontMatter;
+      continue;
+    }
+    if(inFrontMatter && line.includes(':')){
+      var parts = line.split(':');
+      var key = parts[0].trim();
+      var value = parts.slice(1).join(':').trim();
+      if(value === 'true') value = true;
+      if(value === 'false') value = false;
+      if(!isNaN(value)) value = Number(value);
+      frontMatter[key] = value;
+    }
+  }
+  return frontMatter;
+}
+
+function getCategoryTab(categoryName){
+  if(!categoryName) return 'manger';
+  var cat = categoryName.toLowerCase();
+  if(cat.includes('alcool') || cat.includes('biere') || cat.includes('rhum') || cat.includes('cocktail') || cat.includes('vin')) return 'alcool';
+  if(cat.includes('fresco') || cat.includes('jus') || cat.includes('soda') || cat.includes('ice') || cat.includes('boisson')) return 'boisson';
+  return 'manger';
+}
+
+function getCategoryName(categoryName){
+  if(!categoryName) return 'Pate';
+  var cat = categoryName.toLowerCase();
+  if(cat.includes('pate')) return 'Pate';
+  if(cat.includes('sandwich')) return 'Sandwich';
+  if(cat.includes('popcorn')) return 'Popcorn';
+  if(cat.includes('saucisse') || cat.includes('sossis')) return 'Saucisse';
+  if(cat.includes('fresco')) return 'Fresco';
+  if(cat.includes('jus') || cat.includes('ji')) return 'Jus';
+  if(cat.includes('soda')) return 'Soda';
+  if(cat.includes('ice') || cat.includes('krem')) return 'Ice Cream';
+  if(cat.includes('biere') || cat.includes('bye')) return 'Biere';
+  if(cat.includes('rhum') || cat.includes('wonm') || cat.includes('kleren')) return 'Rhum';
+  if(cat.includes('cocktail') || cat.includes('koktel')) return 'Cocktail';
+  if(cat.includes('vin') || cat.includes('diven')) return 'Vin';
+  return categoryName;
+}
+
+function getCategoryEmoji(categoryName){
+  if(!categoryName) return '&#129361;';
+  var cat = categoryName.toLowerCase();
+  if(cat.includes('pate')) return '&#129361;';
+  if(cat.includes('sandwich')) return '&#129386;';
+  if(cat.includes('popcorn')) return '&#127871;';
+  if(cat.includes('saucisse') || cat.includes('sossis')) return '&#127789;';
+  if(cat.includes('fresco')) return '🥤';
+  if(cat.includes('jus') || cat.includes('ji')) return '&#127818;';
+  if(cat.includes('soda')) return '&#129483;';
+  if(cat.includes('ice') || cat.includes('krem')) return '&#127846;';
+  if(cat.includes('biere') || cat.includes('bye')) return '🍺';
+  if(cat.includes('rhum') || cat.includes('wonm') || cat.includes('kleren')) return '&#129347;';
+  if(cat.includes('cocktail') || cat.includes('koktel')) return '&#127817;';
+  if(cat.includes('vin') || cat.includes('diven')) return '&#127863;';
+  return '&#129361;';
+}
+
+function isAlcohol(categoryName){
+  if(!categoryName) return false;
+  var cat = categoryName.toLowerCase();
+  return cat.includes('alcool') || cat.includes('biere') || cat.includes('rhum') || cat.includes('cocktail') || cat.includes('vin') || cat.includes('bye') || cat.includes('wonm') || cat.includes('kleren') || cat.includes('koktel') || cat.includes('diven');
+}
+
+// ==================================================
 //  INIT
 // ==================================================
-function init(){
-  if(!products.length){products=DEF_PRODS;lsSet("products",products);}
+async function init(){
+  await loadCMSContent();
   var ph=sessionStorage.getItem("kt_curr");
   if(ph){cust=customers.find(function(c){return c.phone===ph;})||null;}
   applyLang();
