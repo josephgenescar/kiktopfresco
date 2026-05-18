@@ -9,149 +9,184 @@
   // ── Mapping kategori → tab ────────────────────────────────────
   var CAT_TAB = {
     'Pate':'manger','Sandwich':'manger','Popcorn':'manger','Saucisse':'manger',
-    'Fresco':'boisson','Jus':'boisson','Soda':'boisson','Ice Cream':'boisson',
+    'Fresco':'boisson','Jus':'boisson','Soda':'boisson','Ice Cream':'boisson','Boissons':'boisson',
     'Biere':'alcool','Rhum':'alcool','Cocktail':'alcool','Vin':'alcool'
   };
   var CAT_EM = {
     'Pate':'🥟','Sandwich':'🥪','Popcorn':'🍿','Saucisse':'🌭',
-    'Fresco':'🥤','Jus':'🍊','Soda':'🥤','Ice Cream':'🍦',
+    'Fresco':'🥤','Jus':'🍊','Soda':'🥤','Ice Cream':'🍦','Boissons':'🥤',
     'Biere':'🍺','Rhum':'🥃','Cocktail':'🍹','Vin':'🍷'
   };
 
-  // ── Fetch helper (cache-bust) ─────────────────────────────────
+  function parseMarkdown(content) {
+    var lines = (content || '').split('\n');
+    var data = {};
+    var body = [];
+    var inFrontmatter = false;
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (line.trim() === '---') {
+        inFrontmatter = !inFrontmatter;
+        continue;
+      }
+      if (inFrontmatter) {
+        var sep = line.indexOf(':');
+        if (sep !== -1) {
+          var key = line.slice(0, sep).trim();
+          var value = line.slice(sep + 1).trim();
+          data[key] = parseValue(value);
+        }
+      } else {
+        body.push(line);
+      }
+    }
+
+    return { data: data, body: body.join('\n').trim() };
+  }
+
+  function parseValue(value) {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    if (!isNaN(parseFloat(value)) && value !== '') return Number(value);
+    return value.replace(/^['\"]|['\"]$/g, '');
+  }
+
   async function fetchJSON(url) {
     var r = await fetch(url + '?_=' + Date.now());
     if (!r.ok) throw new Error(r.status);
     return r.json();
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // 1. CHARJE PWODUI
-  // ─────────────────────────────────────────────────────────────
+  async function fetchText(url) {
+    var r = await fetch(url + '?_=' + Date.now());
+    if (!r.ok) throw new Error(r.status);
+    return r.text();
+  }
+
+  function normalizeCategory(category) {
+    if (!category) return 'manger';
+    var c = category.toString().toLowerCase();
+    if (c.indexOf('alcool') !== -1 || c.indexOf('vin') !== -1 || c.indexOf('rhum') !== -1 || c.indexOf('cocktail') !== -1) return 'alcool';
+    if (c.indexOf('boisson') !== -1 || c.indexOf('boissons') !== -1 || c.indexOf('jus') !== -1 || c.indexOf('fresco') !== -1 || c.indexOf('soda') !== -1 || c.indexOf('ice') !== -1) return 'boisson';
+    return 'manger';
+  }
+
+  function mapProduct(p, i) {
+    var data = p || {};
+    var category = data.category || '';
+    var tab = normalizeCategory(category);
+    return {
+      id        : 2000 + i,
+      fr        : data.name || '',
+      kr        : data.name || '',
+      tab       : tab,
+      cat       : category || '',
+      price     : data.price || 0,
+      salePrice : data.salePrice || null,
+      em        : CAT_EM[category] || '🍔',
+      df        : data.description || '',
+      dk        : data.description || '',
+      badge     : data.badge || '',
+      alc       : tab === 'alcool',
+      status    : data.available === false ? 'inactive' : 'active',
+      img       : data.image || '',
+      position  : data.position || i
+    };
+  }
+
+  async function loadCMSProducts() {
+    var files = await fetchJSON('/content/products/index.json');
+    var products = [];
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+      if (!file || !file.endsWith('.md')) continue;
+      var content = await fetchText('/content/products/' + file);
+      var parsed = parseMarkdown(content);
+      if (parsed.data && parsed.data.name) products.push(parsed.data);
+    }
+    return products;
+  }
+
+  async function loadCMSSettings() {
+    var content = await fetchText('/content/settings/general.yml');
+    var lines = content.split('\n');
+    var data = {};
+    lines.forEach(function(line) {
+      var sep = line.indexOf(':');
+      if (sep !== -1) {
+        var key = line.slice(0, sep).trim();
+        var value = line.slice(sep + 1).trim();
+        data[key] = parseValue(value);
+      }
+    });
+    return data;
+  }
+
+  async function loadCMSAnnouncements() {
+    var files = await fetchJSON('/content/announcements/index.json');
+    var announcements = [];
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+      if (!file || !file.endsWith('.md')) continue;
+      var content = await fetchText('/content/announcements/' + file);
+      var parsed = parseMarkdown(content);
+      if (parsed.data && parsed.data.active !== false) announcements.push(parsed.data);
+    }
+    return announcements.sort(function(a, b) { return (a.position || 0) - (b.position || 0); });
+  }
+
   try {
-    var cmsProds = await fetchJSON('/data/products.json');
+    var cmsProds = await loadCMSProducts();
+    if (!cmsProds.length) throw new Error('No CMS products found');
 
     var mapped = cmsProds
       .filter(function(p){ return p.available !== false && p.name; })
-      .map(function(p, i) {
-        var cat = p.category || 'Pate';
-        var tab = CAT_TAB[cat] || 'manger';
-        return {
-          id       : 2000 + i,
-          fr       : p.name,
-          kr       : p.name,
-          tab      : tab,
-          cat      : cat,
-          price    : p.price    || 100,
-          salePrice: p.salePrice || null,
-          em       : CAT_EM[cat] || '🍔',
-          // ← ICI: imaj la soti nan CMS exactement
-          img      : p.image    || '',
-          df       : p.description || '',
-          dk       : p.description || '',
-          badge    : p.salePrice ? 'Promo' : '',
-          alc      : (tab === 'alcool'),
-          status   : 'active',
-          pointValue: p.pointValue || 1,
-          position  : p.position  || 0
-        };
-      });
+      .map(function(p, i) { return mapProduct(p, i); });
 
     if (mapped.length) {
-      // Merge: garde produits defaut (id<2000) + ajoute CMS
       var defaults = (window.products || []).filter(function(p){ return p.id < 2000; });
       window.products = defaults.concat(mapped);
-      // Sauvegarde localStorage
-      try { localStorage.setItem('kt_products', JSON.stringify(window.products)); } catch(e){}
-      // Re-affiche
+      try { localStorage.setItem('kt_products', JSON.stringify(window.products)); } catch(e) {}
       if (typeof renderProds === 'function') renderProds();
-      console.log('[CMS] ' + mapped.length + ' pwodui chaje.');
+      console.log('[CMS] ' + mapped.length + ' pwodui CMS chaje.');
     }
   } catch(e) {
-    console.warn('[CMS] products.json pa disponib - sèvi defaut.', e.message);
+    console.warn('[CMS] content/products pa disponib, eseye /data/products.json.', e.message);
+    try {
+      var cmsProds = await fetchJSON('/data/products.json');
+      var mapped = cmsProds
+        .filter(function(p){ return p.available !== false && p.name; })
+        .map(function(p, i) { return mapProduct(p, i); });
+
+      if (mapped.length) {
+        var defaults = (window.products || []).filter(function(p){ return p.id < 2000; });
+        window.products = defaults.concat(mapped);
+        try { localStorage.setItem('kt_products', JSON.stringify(window.products)); } catch(e) {}
+        if (typeof renderProds === 'function') renderProds();
+        console.log('[CMS] ' + mapped.length + ' pwodui /data CMS chaje.');
+      }
+    } catch(err) {
+      console.warn('[CMS] products.json pa disponib.', err.message);
+    }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // 2. CHARJE ESPESYAL DIMANCH
-  // ─────────────────────────────────────────────────────────────
   try {
-    var specials = await fetchJSON('/data/specials.json');
-    var today = new Date().getDay(); // 0=Dimanch
-
-    var todaySpecial = specials.find(function(s){
-      return s.active !== false && (s.day === undefined || s.day === today);
-    });
-
-    if (todaySpecial) {
-      // Jwenn pwodui ki koresponn nan
-      var matchProd = (window.products || []).find(function(p){
-        return p.fr === todaySpecial.name || p.img === todaySpecial.image;
-      });
-
-      var sunData = {
-        productId : matchProd ? matchProd.id : null,
-        price     : todaySpecial.salePrice,
-        origPrice : todaySpecial.originalPrice,
-        message   : todaySpecial.description || '',
-        img       : todaySpecial.image || (matchProd ? matchProd.img : '')
-      };
-
-      try { localStorage.setItem('kt_sunday', JSON.stringify(sunData)); } catch(e){}
-
-      // Mete ajou UI espesyal dimanch
-      var sunImg = document.getElementById('sun-img');
-      if (sunImg && sunData.img) sunImg.src = sunData.img;
-
-      var sunName = document.getElementById('sun-name');
-      if (sunName) sunName.textContent = todaySpecial.name || '';
-
-      var sunDesc = document.getElementById('sun-desc');
-      if (sunDesc) sunDesc.textContent = todaySpecial.description || '';
-
-      var sunNew = document.getElementById('sun-new');
-      if (sunNew) sunNew.textContent = (todaySpecial.salePrice || '-') + ' HTG';
-
-      var sunOld = document.getElementById('sun-old');
-      if (sunOld) sunOld.textContent = (todaySpecial.originalPrice || '') + ' HTG';
-
-      console.log('[CMS] Espesyal dimanch chaje:', todaySpecial.name);
+    var generalSettings = await loadCMSSettings();
+    if (Object.keys(generalSettings).length) {
+      try { localStorage.setItem('kt_settings', JSON.stringify(generalSettings)); } catch(e) {}
+      console.log('[CMS] Settings chaje.');
     }
   } catch(e) {
-    console.warn('[CMS] specials.json pa disponib.', e.message);
+    console.warn('[CMS] content/settings/general.yml pa disponib.', e.message);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // 3. CHARJE ANNONS (banners)
-  // ─────────────────────────────────────────────────────────────
   try {
-    var announces = await fetchJSON('/data/announces.json');
-    var now = Date.now();
-
-    var active = announces.filter(function(a) {
-      if (a.active === false) return false;
-      if (a.startDate && new Date(a.startDate) > now) return false;
-      if (a.endDate   && new Date(a.endDate)   < now) return false;
-      return true;
-    }).sort(function(a,b){ return (a.position||0)-(b.position||0); });
-
-    if (active.length) {
-      var banners = active.map(function(a){
-        return {
-          type  : a.type  || 'texte',
-          title : a.title || '',
-          body  : a.body  || '',
-          img   : a.image || '',
-          bg    : a.bgColor   || '#0D2B5E',
-          color : a.textColor || '#ffffff',
-          active: true,
-          position: a.position || 0
-        };
-      });
-
-      try { localStorage.setItem('kt_banners', JSON.stringify(banners)); } catch(e){}
-      // Re-load banners
+    var announces = await loadCMSAnnouncements();
+    if (announces.length) {
+      try { localStorage.setItem('kt_banners', JSON.stringify(announces)); } catch(e) {}
       if (typeof loadBanner === 'function') loadBanner();
-      console.log('[CMS] ' + banners.length + ' annons chaje.');
+      console.log('[CMS] ' + announces.length + ' annons CMS chaje.');
     }
   } catch(e) {
     console.warn('[CMS] announces.json pa disponib.', e.message);
