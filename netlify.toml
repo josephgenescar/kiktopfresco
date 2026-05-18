@@ -4,9 +4,9 @@
 
 
 
-  [build]
-  command = "node scripts/generate-data.js"
-  publish = "."
+[build]
+command = "echo 'No build required'"
+publish = "."
 
 [build.environment]
   NODE_VERSION = "18"

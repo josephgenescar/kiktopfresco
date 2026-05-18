@@ -1049,7 +1049,7 @@ var curTab = "manger";
 var curSub = "all";
 var cart = [];
 var cust = null;
-var settings = lsGet("settings",{maxPoints:100,pointsRate:100});
+var settings = lsGet("settings",{maxPoints:100,pointsRate:150});
 var products = lsGet("products",[]);
 var customers = lsGet("customers",[]);
 var orders = lsGet("orders",[]);
@@ -1399,7 +1399,6 @@ function renderProds(){
     html+='<div class="pcard" onclick="addToCart('+p.id+')">';
     html+='<div class="pcard-top">';
     if(img)html+='<img src="'+img+'" alt="'+name+'" loading="lazy" onerror="this.style.display=\'none\'">';
-    html+='<span class="pcard-em">'+p.em+"</span>";
     if(p.badge)html+='<span class="pbadge '+bc+'">'+p.badge+"</span>";
     if(p.alc)html+='<span class="alc-tag">18+</span>';
     html+="</div>";
