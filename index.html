@@ -979,8 +979,19 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
       <span class="total-lbl" id="total-lbl">Total</span>
       <span class="total-amt" id="cart-total">0 HTG</span>
     </div>
+    <div class="payment-options" style="margin-bottom:12px;">
+      <p style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;">Mode de paiement:</p>
+      <label style="display:block;padding:8px;border:1px solid var(--lgray);border-radius:8px;margin-bottom:6px;cursor:pointer;">
+        <input type="radio" name="payment" value="moncash" checked> MonCash - Idgie Genescar (31786463)
+      </label>
+      <label style="display:block;padding:8px;border:1px solid var(--lgray);border-radius:8px;margin-bottom:6px;cursor:pointer;">
+        <input type="radio" name="payment" value="delivery"> Après livraison
+      </label>
+      <label style="display:block;padding:8px;border:1px solid var(--lgray);border-radius:8px;cursor:pointer;">
+        <input type="radio" name="payment" value="pickup"> Lors de la récupération
+      </label>
+    </div>
     <div class="cart-btns">
-      <button class="btn-chk" onclick="checkout()">&#9989; <span id="chk-txt">Confirmer la Commande</span></button>
       <button class="btn-chk-wa" onclick="goWA()">&#128241; <span id="chk-wa-txt">Commander sur WhatsApp</span></button>
     </div>
   </div>
@@ -1853,15 +1864,37 @@ function goWA(){
     document.getElementById("menu").scrollIntoView({behavior:"smooth"});
     return;
   }
+  
+  // Get selected payment method
+  var paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+  var paymentText = "";
+  if(paymentMethod === 'moncash'){
+    paymentText = "MonCash - Idgie Genescar (31786463)";
+  } else if(paymentMethod === 'delivery'){
+    paymentText = "Après livraison";
+  } else if(paymentMethod === 'pickup'){
+    paymentText = "Lors de la récupération";
+  }
+  
+  // Format as form/fiche with site name at top
   var lines=cart.map(function(i){
     return "- "+((L==="fr")?i.fr:i.kr)+" x"+i.qty+" = "+(i.price*i.qty)+" HTG";
   }).join("\n");
   var total=cart.reduce(function(s,i){return s+i.price*i.qty;},0);
-  var custLine=cust?("\n\nClient: "+cust.name+" | "+cust.phone):"";
-  var msg=tr("wa-prefix")+lines+"\n\n💰 Total: "+total+" HTG"+tr("wa-suffix")+custLine;
+  var custLine=cust?("\n\n👤 Client: "+cust.name+" | "+cust.phone):"";
+  
+  var msg="📋 KIKTOP FRESCO - COMMANDE\n\n";
+  msg+="━━━━━━━━━━━━━━━━━━━━\n";
+  msg+=lines;
+  msg+="\n\n━━━━━━━━━━━━━━━━━━━━\n";
+  msg+="💰 Total: "+total+" HTG\n";
+  msg+="💳 Mode de paiement: "+paymentText;
+  msg+=custLine;
+  msg+="\n\nMerci pour votre commande!";
+  
   window.open("https://wa.me/"+WA_NUMBER+"?text="+encodeURIComponent(msg),"_blank");
   var num=orders.length+1;
-  orders.push({id:num,customer:cust?cust.name:"WhatsApp",phone:cust?cust.phone:"",items:cart.map(function(i){return i.fr+" x"+i.qty;}).join(", "),total:total,ptsEarned:0,ptsUsed:0,usedPoints:false,via:"whatsapp",date:new Date().toLocaleDateString()});
+  orders.push({id:num,customer:cust?cust.name:"WhatsApp",phone:cust?cust.phone:"",items:cart.map(function(i){return i.fr+" x"+i.qty;}).join(", "),total:total,ptsEarned:0,ptsUsed:0,usedPoints:false,via:"whatsapp",payment:paymentMethod,date:new Date().toLocaleDateString()});
   lsSet("orders",orders);
   cart=[];updCartUI();closeCart();
   document.getElementById("o-num").textContent=num;
