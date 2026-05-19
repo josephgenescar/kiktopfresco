@@ -603,6 +603,17 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
   display:flex;align-items:center;justify-content:center;gap:7px;
 }
 .btn-chk-wa:hover{transform:scale(1.02);}
+.btn-ghost{
+  width:100%;background:#f0f0f0;color:var(--navy);border:2px solid #e0e0e0;border-radius:12px;padding:12px;
+  font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;cursor:pointer;transition:.2s;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.btn-ghost:hover{background:#e8e8e8;transform:scale(1.01);}
+.payment-method{
+  padding:16px;border:2px solid var(--lgray);border-radius:12px;background:#fff;cursor:pointer;
+  transition:.2s;font-weight:700;color:var(--navy);font-family:'Nunito',sans-serif;font-size:14px;
+}
+.payment-method:hover{background:rgba(26,68,148,.03);}
 
 /* ============ MODALS ============ */
 .moverlay{
@@ -688,7 +699,8 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
 @media(max-width:768px){
   .nav-links{display:none;}
   .hbg{display:block;}
-  .cart-drawer{width:100vw;}
+  .cart-drawer{width:100vw;right:-100vw!important;}
+  .cart-drawer.show{right:0!important;}
   .pgrid{grid-template-columns:1fr 1fr;}
 }
 @media(max-width:480px){
@@ -1029,6 +1041,45 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
   </div>
 </div>
 
+<!-- Payment Modal -->
+<div class="moverlay" id="m-payment" onclick="if(event.target===this)closeM('m-payment')">
+  <div class="mbox" style="max-width:500px;">
+    <div class="mhd">
+      <h3 id="payment-h">Mode de Paiement</h3>
+      <button class="mhd-x" onclick="closeM('m-payment')">&times;</button>
+    </div>
+    <div class="mbody" style="padding:20px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <button class="payment-method" onclick="selectPayment('moncash')" style="padding:16px;border:2px solid var(--lgray);border-radius:12px;background:#fff;cursor:pointer;transition:.2s;font-weight:700;color:var(--navy);">
+          <div style="font-size:24px;margin-bottom:6px;">&#128176;</div>
+          MonCash
+        </button>
+        <button class="payment-method" onclick="selectPayment('bank')" style="padding:16px;border:2px solid var(--lgray);border-radius:12px;background:#fff;cursor:pointer;transition:.2s;font-weight:700;color:var(--navy);">
+          <div style="font-size:24px;margin-bottom:6px;">&#127760;</div>
+          Bank Transfer
+        </button>
+        <button class="payment-method" onclick="selectPayment('natcash')" style="padding:16px;border:2px solid var(--lgray);border-radius:12px;background:#fff;cursor:pointer;transition:.2s;font-weight:700;color:var(--navy);">
+          <div style="font-size:24px;margin-bottom:6px;">&#128179;</div>
+          Natcash
+        </button>
+        <button class="payment-method" onclick="selectPayment('zelle')" style="padding:16px;border:2px solid var(--lgray);border-radius:12px;background:#fff;cursor:pointer;transition:.2s;font-weight:700;color:var(--navy);">
+          <div style="font-size:24px;margin-bottom:6px;">&#126977;</div>
+          Zelle
+        </button>
+      </div>
+      
+      <div id="payment-details" style="background:rgba(13,43,94,.08);border-radius:12px;padding:16px;margin-bottom:16px;display:none;">
+        <div id="payment-content"></div>
+      </div>
+      
+      <div style="text-align:center;margin-bottom:14px;font-size:13px;color:var(--gray);" id="total-payment"></div>
+      
+      <button class="btn-y" style="width:100%;justify-content:center;margin-bottom:10px;display:none;" onclick="confirmPayment()" id="confirm-payment-btn">&#9989; Confirmer le Paiement</button>
+      <button class="btn-ghost" style="width:100%;justify-content:center;" onclick="closeM('m-payment')">Annuler</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toasts -->
 <div class="tc" id="tc"></div>
 
@@ -1264,6 +1315,44 @@ async function loadCMSContent(){
       products = DEF_PRODS;
       lsSet("products", products);
     }
+    
+    // Load announcements from CMS
+    try{
+      var announceRes = await fetch('content/announcements/index.json');
+      var announceFiles = await announceRes.json();
+      var cmsBanners = [];
+      
+      for(var j=0; j<announceFiles.length; j++){
+        try{
+          var annRes = await fetch('content/announcements/'+announceFiles[j]);
+          var annContent = await annRes.text();
+          var annMatter = parseFrontMatter(annContent);
+          if(annMatter && annMatter.active !== false){
+            cmsBanners.push({
+              title: annMatter.title || "",
+              body: annContent.split('---').pop().trim(),
+              bg: annMatter.bgColor || "#D63031",
+              color: annMatter.textColor || "#ffffff",
+              type: annMatter.type || "texte",
+              img: annMatter.image || "",
+              link: annMatter.link || "",
+              active: annMatter.active !== false,
+              position: annMatter.position || j
+            });
+          }
+        } catch(e){ console.error('Error loading announcement:', announceFiles[j], e); }
+      }
+      
+      if(cmsBanners.length > 0){
+        // Sort by position
+        cmsBanners.sort(function(a,b){return (a.position||0)-(b.position||0);});
+        lsSet("banners", cmsBanners);
+        bnList = cmsBanners;
+        console.log('✅ CMS announcements loaded:', cmsBanners.length);
+      }
+    } catch(e){
+      console.error('⚠️ Error loading announcements:', e);
+    }
   } catch(e){
     console.error('❌ Error loading CMS content:', e);
     products = DEF_PRODS;
@@ -1411,8 +1500,20 @@ function applyLang(){
 var bnList=[], bnIdx=0, bnTmr=null;
 
 function loadBanner(){
-  try{bnList=(JSON.parse(localStorage.getItem("kt_banners"))||[]).filter(function(b){return b.active!==false;});}
-  catch(e){bnList=[];}
+  try{
+    // First try to load from localStorage (CMS announcements)
+    var stored = JSON.parse(localStorage.getItem("kt_banners"));
+    if(stored && Array.isArray(stored) && stored.length > 0){
+      bnList = stored.filter(function(b){return b.active!==false;});
+      console.log('✅ Banners loaded from CMS');
+    } else {
+      bnList = [];
+    }
+  } catch(e){
+    bnList = [];
+    console.log('⚠️ No CMS banners found');
+  }
+  
   var zone=document.getElementById("banner-zone");
   if(!bnList.length){zone.style.display="none";return;}
   bnIdx=0;
@@ -1650,33 +1751,94 @@ function closeCart(){
 // ==================================================
 function checkout(){
   if(!cart.length){toast(tr("t-empty"),"e");return;}
+  closeCart();
   var sub=cart.reduce(function(s,i){return s+i.price*i.qty;},0);
-  var useP=document.getElementById("use-pts-chk").checked&&cust;
-  var pE=0,pU=0;
-  if(useP&&cust.points>=settings.maxPoints){pU=settings.maxPoints;cust.points-=pU;}
-  else{pE=Math.floor(sub/settings.pointsRate);if(cust)cust.points=Math.min(settings.maxPoints,(cust.points||0)+pE);}
-  var num=orders.length+1;
-  var items=cart.map(function(i){return((L==="fr")?i.fr:i.kr)+" x"+i.qty;}).join(", ");
-  orders.push({id:num,customer:cust?cust.name:"Anonyme",phone:cust?cust.phone:"",items:items,total:sub,ptsEarned:pE,ptsUsed:pU,usedPoints:!!useP,date:new Date().toLocaleDateString()});
+  document.getElementById("total-payment").textContent="Total: "+sub+" HTG";
+  openM("m-payment");
+}
+
+// ==================================================
+//  PAYMENT METHODS
+// ==================================================
+var selectedPaymentMethod = null;
+
+function selectPayment(method){
+  selectedPaymentMethod = method;
+  var buttons = document.querySelectorAll(".payment-method");
+  buttons.forEach(function(b) { b.style.borderColor = "var(--lgray)"; b.style.background = "#fff"; });
+  
+  var detailsDiv = document.getElementById("payment-details");
+  var contentDiv = document.getElementById("payment-content");
+  var confirmBtn = document.getElementById("confirm-payment-btn");
+  
+  if(method === "moncash"){
+    event.target.closest("button").style.borderColor = "#E74C3C";
+    event.target.closest("button").style.borderWidth = "3px";
+    contentDiv.innerHTML = '<strong style="color:var(--navy);">MonCash</strong><p style="font-size:13px;margin:10px 0 0 0;color:var(--gray);">Envoyer le paiement a:</p><div style="font-weight:700;color:var(--navy);margin:8px 0;font-size:14px;">Patricia Eugene</div><div style="font-size:14px;color:var(--navy);font-weight:700;">+509 36 73 20 50</div>';
+  } else if(method === "bank"){
+    event.target.closest("button").style.borderColor = "#3498DB";
+    event.target.closest("button").style.borderWidth = "3px";
+    contentDiv.innerHTML = '<strong style="color:var(--navy);">Bank Transfer</strong><p style="font-size:13px;margin:10px 0 0 0;color:var(--gray);">Transfert vers:</p><div style="font-weight:700;color:var(--navy);margin:8px 0;font-size:14px;">BNC Bank of Nova Scotie</div><div style="font-size:13px;color:var(--gray);">Compte: 123456789</div>';
+  } else if(method === "natcash"){
+    event.target.closest("button").style.borderColor = "#F39C12";
+    event.target.closest("button").style.borderWidth = "3px";
+    contentDiv.innerHTML = '<strong style="color:var(--navy);">Natcash</strong><p style="font-size:13px;margin:10px 0 0 0;color:var(--gray);">Numero Natcash:</p><div style="font-weight:700;color:var(--navy);margin:8px 0;font-size:14px;">+509 XXXX XXXX</div>';
+  } else if(method === "zelle"){
+    event.target.closest("button").style.borderColor = "#27AE60";
+    event.target.closest("button").style.borderWidth = "3px";
+    contentDiv.innerHTML = '<strong style="color:var(--navy);">Zelle</strong><p style="font-size:13px;margin:10px 0 0 0;color:var(--gray);">Envoyer a:</p><div style="font-weight:700;color:var(--navy);margin:8px 0;font-size:14px;">patricia@email.com</div>';
+  }
+  
+  detailsDiv.style.display = "block";
+  confirmBtn.style.display = "block";
+}
+
+function confirmPayment(){
+  if(!selectedPaymentMethod){
+    toast("Selectionnez un mode de paiement","e");
+    return;
+  }
+  
+  var sub = cart.reduce(function(s,i){return s+i.price*i.qty;},0);
+  var useP = document.getElementById("use-pts-chk").checked && cust;
+  var pE = 0, pU = 0;
+  
+  if(useP && cust.points >= settings.maxPoints){
+    pU = settings.maxPoints;
+    cust.points -= pU;
+  } else {
+    pE = Math.floor(sub / settings.pointsRate);
+    if(cust) cust.points = Math.min(settings.maxPoints, (cust.points || 0) + pE);
+  }
+  
+  var num = orders.length + 1;
+  var items = cart.map(function(i){return((L==="fr")?i.fr:i.kr)+" x"+i.qty;}).join(", ");
+  orders.push({id:num,customer:cust?cust.name:"Anonyme",phone:cust?cust.phone:"",items:items,total:sub,ptsEarned:pE,ptsUsed:pU,usedPoints:!!useP,paymentMethod:selectedPaymentMethod,date:new Date().toLocaleDateString()});
   lsSet("orders",orders);
+  
   if(cust){
-    cust.totalOrders=(cust.totalOrders||0)+1;
-    cust.history=cust.history||[];
+    cust.totalOrders = (cust.totalOrders || 0) + 1;
+    cust.history = cust.history || [];
     cust.history.unshift({desc:((L==="fr")?"Commande":"Komand")+" #"+num,pts:useP?-pU:pE,date:new Date().toLocaleDateString()});
-    var idx=customers.findIndex(function(c){return c.phone===cust.phone;});
-    if(idx>=0)customers[idx]=cust;
+    var idx = customers.findIndex(function(c){return c.phone === cust.phone;});
+    if(idx >= 0) customers[idx] = cust;
     lsSet("customers",customers);
     updNavPts();
   }
-  var msg="";
-  if(useP)msg=tr("p-free")+" "+pU+" pts.";
-  else if(pE>0&&cust)msg="+"+pE+" "+tr("p-earned")+" "+cust.points+" pts";
-  else msg=tr("p-register");
-  cart=[];document.getElementById("use-pts-chk").checked=false;
-  updCartUI();closeCart();
-  document.getElementById("o-num").textContent=num;
-  document.getElementById("o-pts-msg").textContent=msg;
-  document.getElementById("wa-confirm").style.display="none";
+  
+  var msg = "";
+  if(useP) msg = tr("p-free") + " " + pU + " pts.";
+  else if(pE > 0 && cust) msg = "+" + pE + " " + tr("p-earned") + " " + cust.points + " pts";
+  else msg = tr("p-register");
+  
+  cart = [];
+  document.getElementById("use-pts-chk").checked = false;
+  updCartUI();
+  closeM("m-payment");
+  
+  document.getElementById("o-num").textContent = num;
+  document.getElementById("o-pts-msg").textContent = msg;
+  document.getElementById("wa-confirm").style.display = "none";
   openM("m-order");
   toast(tr("t-order"),"s");
 }
