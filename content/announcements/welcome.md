@@ -1,5 +1,5 @@
 ---
-title: "🎉 Grand ouverture KikTop Fresco!"
+title: "🎉 Grande ouverture KikTop Fresco!"
 type: "texte"
 bgColor: "#D63031"
 textColor: "#ffffff"
