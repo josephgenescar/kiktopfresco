@@ -981,15 +981,21 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
     </div>
     <div class="payment-options" style="margin-bottom:12px;">
       <p style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;">Mode de paiement:</p>
-      <label style="display:block;padding:8px;border:1px solid var(--lgray);border-radius:8px;margin-bottom:6px;cursor:pointer;">
+      <label style="display:block;padding:8px;border:1px solid var(--lgray);border-radius:8px;margin-bottom:6px;cursor:pointer;" onchange="updateProofVisibility()">
         <input type="radio" name="payment" value="moncash" checked> MonCash - Idgie Genescar (31786463)
       </label>
-      <label style="display:block;padding:8px;border:1px solid var(--lgray);border-radius:8px;margin-bottom:6px;cursor:pointer;">
+      <label style="display:block;padding:8px;border:1px solid var(--lgray);border-radius:8px;margin-bottom:6px;cursor:pointer;" onchange="updateProofVisibility()">
         <input type="radio" name="payment" value="delivery"> Après livraison
       </label>
-      <label style="display:block;padding:8px;border:1px solid var(--lgray);border-radius:8px;cursor:pointer;">
+      <label style="display:block;padding:8px;border:1px solid var(--lgray);border-radius:8px;cursor:pointer;" onchange="updateProofVisibility()">
         <input type="radio" name="payment" value="pickup"> Lors de la récupération
       </label>
+    </div>
+    <div class="proof-upload" id="proof-row" style="margin-bottom:12px;padding:10px;background:#EEF2FF;border-radius:8px;">
+      <p style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px;">📎 Preuve de paiement MonCash:</p>
+      <input type="file" id="proof-file" accept="image/*" onchange="handleProofUpload(event)" style="display:none;">
+      <button onclick="document.getElementById('proof-file').click()" style="padding:8px 12px;background:var(--yellow);border:none;border-radius:6px;font-weight:700;color:var(--navy);cursor:pointer;font-size:12px;">📷 Choisir une preuve</button>
+      <div id="proof-preview" style="margin-top:8px;font-size:11px;color:var(--gray);">Aucune preuve choisie.</div>
     </div>
     <div class="cart-btns">
       <button class="btn-chk-wa" onclick="goWA()">&#128241; <span id="chk-wa-txt">Commander sur WhatsApp</span></button>
@@ -1347,8 +1353,8 @@ async function loadCMSContent(){
               type: annMatter.type || "texte",
               img: annMatter.image || "",
               link: annMatter.link || "",
-              active: annMatter.active !== false,
-              position: annMatter.position || j
+              position: annMatter.position || 0,
+              active: annMatter.active !== false
             });
           }
         } catch(e){ console.error('Error loading announcement:', announceFiles[j], e); }
@@ -1751,6 +1757,7 @@ function updTotal(){
 function openCart(){
   document.getElementById("cart-dr").classList.add("show");
   document.getElementById("cart-ov").classList.add("show");
+  updateProofVisibility();
 }
 function closeCart(){
   document.getElementById("cart-dr").classList.remove("show");
@@ -1772,6 +1779,42 @@ function checkout(){
 //  PAYMENT METHODS
 // ==================================================
 var selectedPaymentMethod = null;
+var proofFileName = "";
+var proofFileType = "";
+var proofPreviewUrl = "";
+
+function updateProofVisibility(){
+  var paymentMethod = document.querySelector('input[name="payment"]:checked');
+  var proofRow = document.getElementById("proof-row");
+  if(paymentMethod && paymentMethod.value === "moncash"){
+    proofRow.style.display = "block";
+  } else {
+    proofRow.style.display = "none";
+  }
+}
+
+function handleProofUpload(event){
+  var file = event.target.files[0];
+  proofPreviewUrl = "";
+  proofFileName = "";
+  proofFileType = "";
+  var preview = document.getElementById("proof-preview");
+  if(!file){
+    preview.textContent = "Aucune preuve choisie.";
+    return;
+  }
+  proofFileName = file.name;
+  proofFileType = file.type;
+  preview.textContent = "Preuve sélectionnée: " + proofFileName + " (" + Math.round(file.size/1024) + " KB)";
+  if(file.type.startsWith("image/")){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      proofPreviewUrl = e.target.result;
+      preview.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><img src="'+proofPreviewUrl+'" alt="preuve" style="max-width:80px;max-height:80px;border-radius:12px;object-fit:cover;border:1px solid rgba(0,0,0,.08);"><span>Preuve sélectionnée: '+proofFileName+'</span></div>';
+    };
+    reader.readAsDataURL(file);
+  }
+}
 
 function selectPayment(method){
   selectedPaymentMethod = method;
@@ -1889,6 +1932,14 @@ function goWA(){
   msg+="\n\n━━━━━━━━━━━━━━━━━━━━\n";
   msg+="💰 Total: "+total+" HTG\n";
   msg+="💳 Mode de paiement: "+paymentText;
+  if(paymentMethod === 'moncash'){
+    if(proofFileName){
+      msg+="\n📎 Preuve: "+proofFileName;
+      msg+="\nVeuillez joindre la preuve au message WhatsApp si elle n'est pas automatiquement ajoutée.";
+    } else {
+      msg+="\n📎 Preuve: Aucune preuve chargee. Merci de joindre votre reçu ou capture d'écran sur WhatsApp.";
+    }
+  }
   msg+=custLine;
   msg+="\n\nMerci pour votre commande!";
   
