@@ -66,16 +66,19 @@ body{font-family:'Nunito',sans-serif;background:#F0F5FF;color:#1a1a2e;overflow-x
   flex:1;
   overflow:hidden;
   text-align:center;
-<<<<<<< HEAD
+}
+.bn-body span{
   display:inline-block;
   animation:marquee 20s linear infinite;
 }
 @keyframes marquee{
-=======
+  0%{transform:translateX(0);}
+  100%{transform:translateX(-100%);}
+}
+.bn-body span:nth-child(2){
   animation:scrollText 15s linear infinite;
 }
 @keyframes scrollText{
->>>>>>> 5cfd613147663f6f02850a470c236b4ebd5488e0
   0%{transform:translateX(100%);}
   100%{transform:translateX(-100%);}
 }
