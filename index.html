@@ -55,10 +55,24 @@ body{font-family:'Nunito',sans-serif;background:#F0F5FF;color:#1a1a2e;overflow-x
   display:flex;align-items:center;gap:12px;
   padding:11px 50px 11px 20px;min-height:46px;
   cursor:pointer;
+  text-align:center;
+  justify-content:center;
 }
 .bn-icon{font-size:20px;flex-shrink:0;}
-.bn-title{font-weight:900;font-size:14px;}
-.bn-body{font-size:12px;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+.bn-title{font-weight:900;font-size:14px;text-align:center;}
+.bn-body{
+  font-size:12px;opacity:.85;
+  white-space:nowrap;
+  flex:1;
+  overflow:hidden;
+  text-align:center;
+  display:inline-block;
+  animation:marquee 20s linear infinite;
+}
+@keyframes marquee{
+  0%{transform:translateX(100%);}
+  100%{transform:translateX(-100%);}
+}
 
 /* Image banner */
 .bn-img-wrap{position:relative;}
