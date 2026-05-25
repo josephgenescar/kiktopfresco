@@ -1,5 +1,5 @@
 ---
-title: 🎉 Grande Ouverture KikTop Fresco!
+title: Skip the line and order online!!!
 type: texte
 bgColor: "#D63031"
 textColor: "#ffffff"
