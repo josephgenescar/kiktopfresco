@@ -1,7 +1,7 @@
 ---
 name: Dessert 🍪
 description: Degustez avec amour
-icon: 🍴
+icon: 🍪 🍴
 position: 0
 visible: true
 ---
