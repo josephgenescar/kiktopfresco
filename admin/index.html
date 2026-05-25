@@ -44,9 +44,7 @@
         branch: 'main',
         auth_endpoint: '/auth'
       },
-
-      // ✅ FIX #1: local_backend RETIRE — pa itilize nan pwodiksyon
-      // local_backend: true,
+      local_backend: ['localhost', '127.0.0.1', ''].includes(window.location.hostname),
 
       // ✅ WORKFLOW ENABLED - Draft → In Review → Ready
       publish_mode: 'editorial_workflow',
@@ -195,11 +193,12 @@
       if (window.netlifyIdentity) {
         window.netlifyIdentity.on('init', user => {
           console.log('✅ Netlify Identity initialized');
-          if (!user) {
+          if (!user && !cmsConfig.local_backend) {
             console.log('ℹ️ No user logged in - showing login');
             window.netlifyIdentity.open();
           } else {
-            console.log('✅ User authenticated, initializing CMS...');
+            if (user) console.log('✅ User authenticated, initializing CMS...');
+            if (!user && cmsConfig.local_backend) console.log('ℹ️ Local backend enabled, initializing CMS without login');
             initCMS();
           }
         });
@@ -214,7 +213,12 @@
           window.location.reload();
         });
       } else {
-        console.error('❌ Netlify Identity not loaded');
+        if (cmsConfig.local_backend) {
+          console.log('ℹ️ Netlify Identity not loaded, but local backend enabled');
+          initCMS();
+        } else {
+          console.error('❌ Netlify Identity not loaded');
+        }
       }
     });
 

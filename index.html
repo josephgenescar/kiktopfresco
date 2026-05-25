@@ -65,6 +65,7 @@ body{font-family:'Nunito',sans-serif;background:#F0F5FF;color:#1a1a2e;overflow-x
 .bn-title{font-weight:900;font-size:14px;text-align:center;}
 .bn-body{
   display:inline-block;
+  min-width:max-content;
   font-size:12px;opacity:.85;
   white-space:nowrap;
   text-align:left;
@@ -75,7 +76,7 @@ body{font-family:'Nunito',sans-serif;background:#F0F5FF;color:#1a1a2e;overflow-x
 .bn-txt{overflow:hidden;}
 
 @keyframes marquee{
-  0%{transform:translateX(0);}
+  0%{transform:translateX(100%);}
   100%{transform:translateX(-100%);}
 }
 
@@ -1733,8 +1734,7 @@ function showBanner(){
     if(b.icon)html+='<span class="bn-icon">'+b.icon+"</span>";
     html+='<div style="flex:1;overflow:hidden;">';
     if(b.title)html+='<div class="bn-title" style="color:'+cl+'">'+b.title+"</div>";
-    if(b.type !== "texte" && b.body) html+='<div class="bn-body" style="color:'+cl+'">'+b.body+"</div>";
-    else if(!b.title && b.body) html+='<div class="bn-body" style="color:'+cl+'">'+b.body+"</div>";
+    if(b.body) html+='<div class="bn-body" style="color:'+cl+'">'+b.body+"</div>";
     html+="</div></div>";
     html+=dots+closeBtn+"</div>";
   }
