@@ -1,8 +1,8 @@
 ---
-name: Fresco Grenadine
-description: Fresco grenadyen, saveur frwi
+name: Fresco 30
+description: Savè natirel lot nivo
 category: Boissons
-price: 90
+price: 150
 image: /images/uploads/fresco (2).jpeg
 inStock: true
 pointValue: 1
