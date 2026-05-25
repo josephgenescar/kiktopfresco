@@ -1,8 +1,8 @@
 ---
 title: Skip the line and order online!!!
 type: texte
-bgColor: "#D63031"
-textColor: "#ffffff"
+bgColor: "#ffffff"
+textColor: "#ca1f1f"
 active: true
 startDate: 2026-05-18T16:55:25.222Z
 endDate: 2026-05-18T16:55:25.304Z
