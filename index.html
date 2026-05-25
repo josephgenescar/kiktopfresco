@@ -64,14 +64,19 @@ body{font-family:'Nunito',sans-serif;background:#F0F5FF;color:#1a1a2e;overflow-x
 .bn-icon{font-size:20px;flex-shrink:0;}
 .bn-title{font-weight:900;font-size:14px;text-align:center;}
 .bn-body{
+  display:inline-block;
   font-size:12px;opacity:.85;
   white-space:nowrap;
-  text-align:center;
-  animation:marquee 20s linear infinite;
+  text-align:left;
+  padding-left:100%;
+  animation:marquee 18s linear infinite;
 }
+
+.bn-txt{overflow:hidden;}
+
 @keyframes marquee{
-  0%{transform:translateX(50vw);}
-  100%{transform:translateX(-50vw);}
+  0%{transform:translateX(0%);}
+  100%{transform:translateX(-100%);}
 }
 
 /* Image banner */
@@ -248,11 +253,15 @@ nav{
 }
 .btn-ghost:hover{background:rgba(255,255,255,.14);}
 
-.h-cats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.h-cats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
 .h-cat{
+  width:110px;height:110px;
+  display:flex;align-items:center;justify-content:center;
+  text-align:center;
   background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
-  color:rgba(255,255,255,.85);padding:8px 16px;border-radius:26px;
-  font-size:13px;font-weight:700;cursor:pointer;transition:.25s;
+  color:rgba(255,255,255,.85);font-size:14px;font-weight:700;
+  border-radius:50%;cursor:pointer;transition:.25s;
+  padding:0 12px;
 }
 .h-cat:hover{background:rgba(245,197,24,.18);border-color:rgba(245,197,24,.5);color:var(--yellow);}
 
@@ -313,26 +322,33 @@ nav{
 .sec-sub{color:var(--gray);font-size:14px;}
 
 /* 3 Big tabs */
-.main-tabs{display:flex;gap:10px;justify-content:center;margin-bottom:28px;flex-wrap:wrap;}
+.main-tabs{display:flex;gap:20px;justify-content:center;margin-bottom:28px;flex-wrap:wrap;}
 .mtab{
-  display:flex;align-items:center;gap:9px;padding:12px 22px;
-  border-radius:16px;border:2px solid var(--lgray);background:#fff;
-  cursor:pointer;transition:.25s;box-shadow:var(--sh);
+  position:relative;display:flex;align-items:flex-end;justify-content:center;
+  width:230px;height:230px;padding:20px;
+  border-radius:50%;border:2px solid var(--lgray);background:#fff;
+  background-size:cover;background-position:center;
+  overflow:hidden;cursor:pointer;transition:.25s;box-shadow:var(--sh);
 }
-.mtab:hover{border-color:var(--yellow);transform:translateY(-2px);}
-.mtab.on{border-color:var(--navy);background:var(--navy);}
-.mtab .mi{font-size:24px;}
-.mtab .mn{font-weight:800;color:var(--navy);font-size:14px;display:block;}
-.mtab.on .mn{color:#fff;}
-.mtab .ms{font-size:10px;color:var(--gray);display:block;}
-.mtab.on .ms{color:rgba(255,255,255,.6);}
+.mtab::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(0,0,0,0.12) 0%,rgba(0,0,0,0.55) 100%);
+}
+.mtab:hover{border-color:var(--yellow);transform:translateY(-3px);}
+.mtab.on{border-color:var(--navy);}
+.mtab > div{position:relative;z-index:1;display:flex;align-items:flex-end;gap:12px;flex-direction:column;}
+.mtab .mn{font-weight:800;color:#fff;font-size:18px;display:block;}
+.mtab .ms{font-size:12px;color:rgba(255,255,255,.85);display:block;}
 
 /* Sub-categories */
 .subcats{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px;}
 .scbtn{
   background:#fff;border:1.5px solid var(--lgray);color:var(--navy);
   font-family:'Nunito',sans-serif;font-weight:700;font-size:12px;
-  padding:7px 14px;border-radius:30px;cursor:pointer;transition:.2s;
+  width:95px;height:95px;
+  display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:0 10px;border-radius:50%;cursor:pointer;transition:.2s;
+  line-height:1.1;white-space:normal;
 }
 .scbtn:hover{border-color:var(--yellow);}
 .scbtn.on{background:var(--navy);color:#fff;border-color:var(--navy);}
@@ -787,9 +803,9 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
       <a class="btn-ghost" href="#points" id="hb-3">&#11088; Gagner des Points</a>
     </div>
     <div class="h-cats">
-      <span class="h-cat" onclick="goTab('manger')" id="hc-1">&#127869; Manger</span>
-      <span class="h-cat" onclick="goTab('boisson')" id="hc-2">&#129380; Boissons</span>
-      <span class="h-cat" onclick="goTab('alcool')" id="hc-3">&#127866; Alcool 18+</span>
+      <span class="h-cat" onclick="goTab('manger')" id="hc-1">Manger</span>
+      <span class="h-cat" onclick="goTab('boisson')" id="hc-2">Boissons</span>
+      <span class="h-cat" onclick="goTab('alcool')" id="hc-3">Alcool 18+</span>
     </div>
   </div>
 </section>
@@ -831,8 +847,7 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
 
   <div class="main-tabs">
     <div class="mtab on" id="tab-manger" onclick="switchTab('manger')" style="background-image: url('images/uploads/pate.jpeg'); background-size: cover; background-position: center;">
-      <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px;">
-        <span class="mi">&#127869;</span>
+      <div style="padding: 15px; border-radius: 12px;">
         <div>
           <span class="mn" id="tm-1">Manger</span>
           <span class="ms" id="ts-1">Pate, Sandwich, Popcorn...</span>
@@ -840,8 +855,7 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
       </div>
     </div>
     <div class="mtab" id="tab-boisson" onclick="switchTab('boisson')" style="background-image: url('images/uploads/fresco.jpeg'); background-size: cover; background-position: center;">
-      <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px;">
-        <span class="mi">&#129380;</span>
+      <div style="padding: 15px; border-radius: 12px;">
         <div>
           <span class="mn" id="tm-2">Boissons</span>
           <span class="ms" id="ts-2">Fresco, Jus, Soda, Ice Cream...</span>
@@ -849,8 +863,7 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
       </div>
     </div>
     <div class="mtab" id="tab-alcool" onclick="switchTab('alcool')" style="background-image: url('images/uploads/beer.jpeg'); background-size: cover; background-position: center;">
-      <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px;">
-        <span class="mi">&#127866;</span>
+      <div style="padding: 15px; border-radius: 12px;">
         <div>
           <span class="mn" id="tm-3">Alcool 18+</span>
           <span class="ms" id="ts-3">Biere, Rhum, Cocktails, Vin...</span>
@@ -1067,7 +1080,9 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
       <div class="ostep"><div class="ostep-i">&#10003;</div><p id="os1">Votre commande est confirmee</p></div>
       <div class="ostep"><div class="ostep-i">&#10003;</div><p id="os2">Nous preparons votre commande</p></div>
       <div class="ostep"><div class="ostep-i">&#10003;</div><p id="os3">Recevez et savourez!</p></div>
+      <div class="opts-box" id="o-cust-info"></div>
       <div class="opts-box" id="o-pts-msg"></div>
+      <div class="opts-box" id="o-proof-info"></div>
       <div class="wa-confirm" id="wa-confirm" style="display:none;">
         <p id="wa-c-txt">Votre commande a ete envoyee sur WhatsApp! Nous vous confirmons rapidement.</p>
       </div>
@@ -1711,14 +1726,15 @@ function showBanner(){
     }
     html+=dots+closeBtn+"</div></div>";
   } else {
-    var bg=b.bg||"#0D2B5E";
-    var cl=b.color||"#fff";
+    var bg=b.bg||b.bgColor||"#0D2B5E";
+    var cl=b.color||b.textColor||"#fff";
     html='<div class="bnslide active" style="background:'+bg+';cursor:'+(b.link?"pointer":"default")+'" onclick="'+(b.link?"window.open('"+b.link+"','_blank')":"")+'">';
     html+='<div class="bn-txt">';
     if(b.icon)html+='<span class="bn-icon">'+b.icon+"</span>";
     html+='<div style="flex:1;overflow:hidden;">';
     if(b.title)html+='<div class="bn-title" style="color:'+cl+'">'+b.title+"</div>";
-    if(b.body)html+='<div class="bn-body" style="color:'+cl+'">'+b.body+"</div>";
+    if(b.type !== "texte" && b.body) html+='<div class="bn-body" style="color:'+cl+'">'+b.body+"</div>";
+    else if(!b.title && b.body) html+='<div class="bn-body" style="color:'+cl+'">'+b.body+"</div>";
     html+="</div></div>";
     html+=dots+closeBtn+"</div>";
   }
@@ -2031,6 +2047,7 @@ async function confirmPayment(){
   if(useP) msg = tr("p-free") + " " + pU + " pts.";
   else if(pE > 0 && cust) msg = "+" + pE + " " + tr("p-earned") + " " + cust.points + " pts";
   else msg = tr("p-register");
+  var custInfo = cust ? "Client: " + cust.name + " | " + cust.phone : "";
   
   cart = [];
   document.getElementById("use-pts-chk").checked = false;
@@ -2038,6 +2055,7 @@ async function confirmPayment(){
   closeM("m-payment");
   
   document.getElementById("o-num").textContent = num;
+  document.getElementById("o-cust-info").textContent = custInfo;
   document.getElementById("o-pts-msg").textContent = msg;
   document.getElementById("wa-confirm").style.display = "none";
   openM("m-order");
@@ -2047,7 +2065,7 @@ async function confirmPayment(){
 // ==================================================
 //  WHATSAPP
 // ==================================================
-function goWA(){
+async function goWA(){
   if(!cart.length){
     toast(tr("t-wa-empty"),"e");
     closeCart();
@@ -2055,8 +2073,9 @@ function goWA(){
     return;
   }
   
-  // Get selected payment method
-  var paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+  var selectedPayment = document.querySelector('input[name="payment"]:checked');
+  if(!selectedPayment){toast("Choisissez un mode de paiement","e");return;}
+  var paymentMethod = selectedPayment.value;
   var paymentText = "";
   if(paymentMethod === 'moncash'){
     paymentText = "MonCash - Idgie Genescar (31786463)";
@@ -2066,39 +2085,91 @@ function goWA(){
     paymentText = "Lors de la récupération";
   }
   
-  // Format as form/fiche with site name at top
-  var lines=cart.map(function(i){
+  var sub = cart.reduce(function(s,i){return s+i.price*i.qty;},0);
+  var useP = document.getElementById("use-pts-chk").checked && cust && cust.points >= settings.maxPoints;
+  var pE = 0, pU = 0;
+  if(useP && cust){
+    pU = settings.maxPoints;
+    cust.points -= pU;
+  } else if(cust){
+    pE = Math.floor(sub / settings.pointsRate);
+    cust.points = Math.min(settings.maxPoints, (cust.points || 0) + pE);
+  }
+  
+  var lines = cart.map(function(i){
     return "- "+((L==="fr")?i.fr:i.kr)+" x"+i.qty+" = "+(i.price*i.qty)+" HTG";
   }).join("\n");
-  var total=cart.reduce(function(s,i){return s+i.price*i.qty;},0);
-  var custLine=cust?("\n\n👤 Client: "+cust.name+" | "+cust.phone):"";
-  
-  var msg="📋 KIKTOP FRESCO - COMMANDE\n\n";
-  msg+="━━━━━━━━━━━━━━━━━━━━\n";
-  msg+=lines;
-  msg+="\n\n━━━━━━━━━━━━━━━━━━━━\n";
-  msg+="💰 Total: "+total+" HTG\n";
-  msg+="💳 Mode de paiement: "+paymentText;
+  var custLine = cust ? ("\n\nClient: "+cust.name+" | "+cust.phone) : "";
+  var proofLine = "";
   if(paymentMethod === 'moncash'){
     if(proofFileName){
-      msg+="\n📎 Preuve: "+proofFileName;
-      msg+="\nVeuillez joindre la preuve au message WhatsApp si elle n'est pas automatiquement ajoutée.";
+      proofLine = "\n📎 Preuve: "+proofFileName + "\nVeuillez joindre la preuve au message WhatsApp si elle n'est pas automatiquement attachée.";
     } else {
-      msg+="\n📎 Preuve: Aucune preuve chargee. Merci de joindre votre reçu ou capture d'écran sur WhatsApp.";
+      proofLine = "\n📎 Preuve: Aucune preuve chargee. Merci de joindre votre reçu ou capture d'écran sur WhatsApp.";
     }
   }
-  msg+=custLine;
-  msg+="\n\nMerci pour votre commande!";
+  
+  var msg = "📋 KIKTOP FRESCO - COMMANDE\n\n";
+  msg += "━━━━━━━━━━━━━━━━━━━━\n";
+  msg += lines;
+  msg += "\n\n━━━━━━━━━━━━━━━━━━━━\n";
+  msg += "💰 Total: "+sub+" HTG\n";
+  msg += "💳 Mode de paiement: "+paymentText;
+  msg += proofLine;
+  msg += custLine;
+  if(cust){
+    msg += "\n\nPoints actuels: "+cust.points+" pts";
+    if(pU) msg += "\nPoints utilises: "+pU+" pts";
+    else if(pE) msg += "\nPoints gagnes: "+pE+" pts";
+  }
+  msg += "\n\nMerci pour votre commande!";
   
   window.open("https://wa.me/"+WA_NUMBER+"?text="+encodeURIComponent(msg),"_blank");
-  var ordersList = sbGetOrders();
-  var num=ordersList.length+1;
-  var order = {id:num,customer:cust?cust.name:"WhatsApp",phone:cust?cust.phone:"",items:cart.map(function(i){return i.fr+" x"+i.qty;}).join(", "),total:total,ptsEarned:0,ptsUsed:0,usedPoints:false,via:"whatsapp",payment:paymentMethod,date:new Date().toLocaleDateString()};
-   sbSaveOrder(order);
-  cart=[];updCartUI();closeCart();
-  document.getElementById("o-num").textContent=num;
-  document.getElementById("o-pts-msg").textContent=tr("p-register");
-  document.getElementById("wa-confirm").style.display="block";
+  var ordersList = await sbGetOrders();
+  var num = ordersList.length + 1;
+  var order = {
+    id: num,
+    customer: cust ? cust.name : "WhatsApp",
+    phone: cust ? cust.phone : "",
+    items: cart.map(function(i){return i.fr+" x"+i.qty;}).join(", "),
+    total: sub,
+    ptsEarned: pE,
+    ptsUsed: pU,
+    usedPoints: !!useP,
+    pointsBalance: cust ? cust.points : 0,
+    via: "whatsapp",
+    payment: paymentMethod,
+    proofName: proofFileName || "",
+    proofType: proofFileType || "",
+    proofPreview: proofPreviewUrl || "",
+    date: new Date().toLocaleDateString()
+  };
+  await sbSaveOrder(order);
+  if(cust){
+    cust.totalOrders = (cust.totalOrders || 0) + 1;
+    cust.history = cust.history || [];
+    cust.history.unshift({desc:((L==="fr")?"Commande":"Komand")+" #"+num,pts: useP ? -pU : pE,date:new Date().toLocaleDateString()});
+    await sbSaveCustomer(cust);
+    updNavPts();
+  }
+  
+  cart = [];
+  document.getElementById("use-pts-chk").checked = false;
+  updCartUI();
+  closeCart();
+  
+  document.getElementById("o-num").textContent = num;
+  document.getElementById("o-cust-info").textContent = cust?"Client: "+cust.name+" | "+cust.phone:"";
+  var ptsMsg = "";
+  if(cust){
+    if(pU) ptsMsg = "Points utilises: "+pU+" pts. Saldo: "+cust.points+" pts.";
+    else ptsMsg = "Points gagnes: "+pE+" pts. Saldo: "+cust.points+" pts.";
+  } else {
+    ptsMsg = tr("p-register");
+  }
+  document.getElementById("o-pts-msg").textContent = ptsMsg;
+  document.getElementById("o-proof-info").textContent = proofFileName ? "Preuve jointe: "+proofFileName : "Aucune preuve de paiement enregistrée.";
+  document.getElementById("wa-confirm").style.display = "block";
   openM("m-order");
 }
 

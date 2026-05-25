@@ -131,7 +131,12 @@
       if (!file || !file.endsWith('.md')) continue;
       var content = await fetchText('/content/announcements/' + file);
       var parsed = parseMarkdown(content);
-      if (parsed.data && parsed.data.active !== false) announcements.push(parsed.data);
+      if (parsed.data && parsed.data.active !== false) {
+        parsed.data.body = parsed.data.body || parsed.body || "";
+        parsed.data.bg = parsed.data.bgColor || parsed.data.bg || "#0D2B5E";
+        parsed.data.color = parsed.data.textColor || parsed.data.color || "#ffffff";
+        announcements.push(parsed.data);
+      }
     }
     return announcements.sort(function(a, b) { return (a.position || 0) - (b.position || 0); });
   }
