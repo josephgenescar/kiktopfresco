@@ -5,7 +5,7 @@
 
 
 [build]
-command = "echo 'No build required'"
+command = "node ./build-supabase-config.js && echo 'No build required'"
 publish = "."
 
 [build.environment]
@@ -46,7 +46,7 @@ publish = "."
 # ── REDIRECTS ───────────────────────────────────────────────
 [[redirects]]
   from   = "/admin"
-  to     = "/admin/index.html"
+  to     = "/admin.html"
   status = 200
 
 [[redirects]]

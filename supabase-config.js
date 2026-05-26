@@ -1,0 +1,5 @@
+window.SUPABASE_ENV = {
+  "SUPABASE_URL": "",
+  "SUPABASE_KEY": "",
+  "SUPABASE_SERVICE_KEY": ""
+};
