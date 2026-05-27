@@ -203,6 +203,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
   background:linear-gradient(135deg,#7b0000,#C0392B);
   border-radius:14px;padding:20px;text-align:center;
 }
+.sun-prev .sp-img{margin-bottom:12px;}
 .sun-prev .sp-em{font-size:44px;margin-bottom:8px;}
 .sun-prev .sp-nm{font-size:18px;font-weight:800;margin-bottom:4px;}
 .sun-prev .sp-ms{color:rgba(255,255,255,0.65);font-size:12px;margin-bottom:10px;}
@@ -471,12 +472,14 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
             <div class="card-title">⚙️ Konfigirasyon</div>
             <div class="fg"><label>Chwazi Pwodui *</label><select id="sp-prod"><option value="">-- Chwazi yon pwodui --</option></select></div>
             <div class="fg"><label>Pri Espesyal (HTG) *</label><input type="number" id="sp-price" placeholder="ex: 100"></div>
+            <div class="fg"><label>Foto Pwodui (opsyonèl)</label><input type="file" id="sp-img" accept="image/*" onchange="handleSpecialImg(this)"></div>
             <div class="fg"><label>Mesaj Espesyal (opsyonèl)</label><textarea id="sp-msg" placeholder="ex: Pate special avec sauce maison!"></textarea></div>
             <button class="btn-save" onclick="saveSpecial()">💾 Sove Spécial</button>
           </div>
           <div class="card">
             <div class="card-title">👁️ Aperçu</div>
             <div class="sun-prev" id="sp-preview">
+              <div class="sp-img" id="sp-pv-img"></div>
               <div class="sp-em" id="sp-pv-em">🌟</div>
               <div class="sp-nm" id="sp-pv-nm">Pwodui Espesyal</div>
               <div class="sp-ms" id="sp-pv-ms">Mesaj espesyal...</div>
@@ -1261,6 +1264,7 @@ function renderSpecialPage(){
   if(sp.productId) document.getElementById("sp-prod").value = sp.productId;
   if(sp.price)     document.getElementById("sp-price").value = sp.price;
   if(sp.message)   document.getElementById("sp-msg").value = sp.message;
+  if(sp.image)     spImgData = sp.image;
   updateSpPreview();
   document.getElementById("sp-prod").onchange  = updateSpPreview;
   document.getElementById("sp-price").oninput  = updateSpPreview;
@@ -1278,15 +1282,35 @@ function updateSpPreview(){
   document.getElementById("sp-pv-ms").textContent  = msg||"Mesaj espesyal...";
   document.getElementById("sp-pv-old").textContent = p?p.price+" HTG":"--";
   document.getElementById("sp-pv-new").textContent = price?price+" HTG":"-- HTG";
+  if(spImgData){
+    document.getElementById("sp-pv-img").innerHTML = '<img src="'+spImgData+'" style="width:100%;height:auto;border-radius:12px;">';
+  } else if(p && p.img){
+    document.getElementById("sp-pv-img").innerHTML = '<img src="'+p.img+'" style="width:100%;height:auto;border-radius:12px;">';
+  } else {
+    document.getElementById("sp-pv-img").innerHTML = '';
+  }
 }
 
 function saveSpecial(){
   var pid   = parseInt(document.getElementById("sp-prod").value);
   var price = parseInt(document.getElementById("sp-price").value);
   var msg   = document.getElementById("sp-msg").value.trim();
+  var img   = spImgData || "";
   if(!pid||!price){toast("Chwazi pwodui ak pri!","e");return;}
-  lsSet("sunday",{productId:pid,price:price,message:msg});
+  lsSet("sunday",{productId:pid,price:price,message:msg,image:img});
   toast("✅ Spécial Dimanche sove!","s");
+}
+
+var spImgData = "";
+function handleSpecialImg(input){
+  if(input.files && input.files[0]){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      spImgData = e.target.result;
+      document.getElementById("sp-pv-img").innerHTML = '<img src="'+spImgData+'" style="width:100%;height:auto;border-radius:12px;">';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
 }
 
 // ============================================================
