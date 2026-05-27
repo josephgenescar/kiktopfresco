@@ -1343,29 +1343,39 @@ async function sbGetCustomers(){
 }
 
 function isEmail(value){return value && value.indexOf('@') > -1;}
+function normalizeEmail(value){return value?value.toString().trim().toLowerCase():"";}
+function normalizePhone(value){return value?value.toString().trim().replace(/\D/g,""):"";}
 
 function normalizeCustomer(c){
   if(!c) return c;
+  c.email = normalizeEmail(c.email);
+  c.phone = normalizePhone(c.phone);
   c.points = Number(c.points) || 0;
   c.totalOrders = Number(c.totalOrders) || 0;
   c.history = Array.isArray(c.history) ? c.history : [];
   c.name = c.name || c.email || "Client";
-  c.phone = c.phone || "";
   return c;
 }
 
 async function sbGetCustomerByPhone(identifier){
-  if(!supabaseClient) return normalizeCustomer(lsGet("customers",[]).find(function(c){return c.phone===identifier||c.email===identifier;}));
+  var id = isEmail(identifier) ? normalizeEmail(identifier) : normalizePhone(identifier);
+  if(!supabaseClient) return normalizeCustomer(lsGet("customers",[]).find(function(c){
+    var cust = normalizeCustomer(c);
+    return cust.email===id || cust.phone===id;
+  }));
   try{
     var query = isEmail(identifier)
-      ? supabaseClient.from('customers').select('*').eq('email',identifier).single()
-      : supabaseClient.from('customers').select('*').eq('phone',identifier).single();
+      ? supabaseClient.from('customers').select('*').eq('email',id).single()
+      : supabaseClient.from('customers').select('*').eq('phone',id).single();
     var {data,error} = await query;
     if(error && error.code !== 'PGRST116') throw error;
     return normalizeCustomer(data);
   }catch(e){
     console.log('Supabase error:', e);
-    return normalizeCustomer(lsGet("customers",[]).find(function(c){return c.phone===identifier||c.email===identifier;}));
+    return normalizeCustomer(lsGet("customers",[]).find(function(c){
+      var cust = normalizeCustomer(c);
+      return cust.email===id || cust.phone===id;
+    }));
   }
 }
 
@@ -1373,7 +1383,10 @@ async function sbSaveCustomer(customer){
   customer = normalizeCustomer(customer);
   if(!supabaseClient){
     var customers = lsGet("customers",[]);
-    var idx = customers.findIndex(function(c){return c.phone===customer.phone||c.email===customer.email;});
+    var idx = customers.findIndex(function(c){
+      var cust = normalizeCustomer(c);
+      return cust.phone===customer.phone || cust.email===customer.email;
+    });
     if(idx >= 0) customers[idx] = customer;
     else customers.push(customer);
     lsSet("customers",customers);
@@ -2308,6 +2321,8 @@ async function enroll(){
   var email=document.getElementById("eEmail").value.trim().toLowerCase();
   var password=document.getElementById("ePassword").value;
   var phone=document.getElementById("ePhone").value.trim();
+  email = normalizeEmail(email);
+  phone = normalizePhone(phone);
   if(!name||!email||!password||!phone){toast(tr("t-err-fields"),"e");return;}
   if(!isEmail(email)){toast(tr("t-err-fields"),"e");return;}
 
@@ -2328,7 +2343,8 @@ async function enroll(){
   }
 
   await sbSaveCustomer(c);
-  cust=c;localStorage.setItem("kt_curr",email);
+  cust=normalizeCustomer(c);
+  localStorage.setItem("kt_curr",cust.email||cust.phone);
   updNavPts();
   updCartUI();
   toast(tr("t-welcome")+" "+name,"s");
@@ -2344,27 +2360,35 @@ async function doLogin(){
   var password=document.getElementById("login-password").value;
   if(!identifier||!password){toast(tr("t-err-fields"),"e");return;}
 
-  var c=null;
-  if(supabaseClient && isEmail(identifier)){
+  var loginId = isEmail(identifier) ? normalizeEmail(identifier) : normalizePhone(identifier);
+  var authOk = false;
+  var c = await sbGetCustomerByPhone(loginId);
+
+  if(supabaseClient && isEmail(loginId)){
     try{
-      var {data,error} = await supabaseClient.auth.signInWithPassword({email:identifier,password:password});
-      if(error){toast(error.message||tr("t-not-found"),"e");return;}
-      c = await sbGetCustomerByPhone(identifier);
-      if(!c){
-        c={id:data.user?.id||Date.now().toString(),name:identifier,email:identifier,phone:"",password:password,role:"customer",points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString()};
-        await sbSaveCustomer(c);
+      var {data,error} = await supabaseClient.auth.signInWithPassword({email:loginId,password:password});
+      if(!error){
+        authOk = true;
+        if(data && data.user){
+          if(!c){
+            c={id:data.user.id||Date.now().toString(),name:loginId,email:loginId,phone:"",password:password,role:"customer",points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString()};
+            await sbSaveCustomer(c);
+          }
+        }
+      } else {
+        console.log('Supabase auth signIn error:', error);
       }
     }catch(e){
       console.log('Supabase auth signIn error:', e);
-      toast(e.message||tr("t-not-found"),"e");
-      return;
     }
-  } else {
-    c = await sbGetCustomerByPhone(identifier);
+  }
+
+  if(!authOk){
     if(!c || c.password !== password){toast(tr("t-not-found"),"e");return;}
   }
 
-  cust=normalizeCustomer(c);localStorage.setItem("kt_curr",identifier);
+  cust=normalizeCustomer(c);
+  localStorage.setItem("kt_curr",cust.email||cust.phone);
   updNavPts();
   updCartUI();
   closeM("m-login");
