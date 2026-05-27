@@ -991,6 +991,12 @@ var cmsProducts = [];
 
 async function loadCMSProducts(){
   try{
+    var existing = lsGet("products",[]);
+    if(existing && existing.length > 0){
+      cmsProducts = existing;
+      return existing;
+    }
+
     var prodsRes = await fetch('content/products/index.json');
     var prodFiles = await prodsRes.json();
     var loadedProducts = [];

@@ -1609,82 +1609,94 @@ function tr(k){return (T[L]||T.fr)[k]||"";}
 // ==================================================
 async function loadCMSContent(){
   try{
-    // Load products from CMS
-    var prodsRes = await fetch('content/products/index.json');
-    var prodFiles = await prodsRes.json();
-    var cmsProducts = [];
-
-    for(var i=0; i<prodFiles.length; i++){
-      try{
-        var fileRes = await fetch('content/products/'+prodFiles[i]);
-        var content = await fileRes.text();
-        var frontMatter = parseFrontMatter(content);
-        if(frontMatter && frontMatter.name){
-          var tab = getCategoryTab(frontMatter.category);
-          var cat = inferSubcategory(frontMatter.name, frontMatter.category);
-          cmsProducts.push({
-            id: i+1,
-            fr: frontMatter.name,
-            kr: frontMatter.name,
-            tab: tab,
-            cat: cat,
-            price: frontMatter.price || 0,
-            em: getCategoryEmoji(cat),
-            df: frontMatter.description || "",
-            dk: frontMatter.description || "",
-            img: frontMatter.image || "",
-            badge: "",
-            alc: isAlcohol(frontMatter.category),
-            status: frontMatter.available !== false ? "active" : "inactive",
-            pointValue: frontMatter.pointValue || 1
-          });
-        }
-      } catch(e){ console.error('Error loading product:', prodFiles[i], e); }
-    }
-    
-    if(cmsProducts.length > 0){
-      products = cmsProducts;
-      lsSet("products", products);
-      console.log('✅ CMS products loaded:', cmsProducts.length);
+    // Use local admin data first, if present
+    var storedProducts = lsGet("products",[]);
+    if(storedProducts && storedProducts.length > 0){
+      products = storedProducts;
+      console.log('✅ Using local products from admin storage:', products.length);
     } else {
-      console.log('⚠️ No CMS products found, using defaults');
-      products = DEF_PRODS;
-      lsSet("products", products);
-    }
-    
-    // Load announcements from CMS
-    try{
-      var announceRes = await fetch('content/announcements/index.json');
-      var announceFiles = await announceRes.json();
-      var cmsBanners = [];
-      
-      for(var j=0; j<announceFiles.length; j++){
+      // Load products from CMS
+      var prodsRes = await fetch('content/products/index.json');
+      var prodFiles = await prodsRes.json();
+      var cmsProducts = [];
+
+      for(var i=0; i<prodFiles.length; i++){
         try{
-          var annRes = await fetch('content/announcements/'+announceFiles[j]);
-          var annContent = await annRes.text();
-          var annMatter = parseFrontMatter(annContent);
-          if(annMatter && annMatter.active !== false){
-            cmsBanners.push({
-              title: annMatter.title || "",
-              body: annContent.split('---').pop().trim(),
-              bg: annMatter.bgColor || "#D63031",
-              color: annMatter.textColor || "#ffffff",
-              type: annMatter.type || "texte",
-              img: annMatter.image || "",
-              link: annMatter.link || "",
-              position: annMatter.position || 0,
-              active: annMatter.active !== false
+          var fileRes = await fetch('content/products/'+prodFiles[i]);
+          var content = await fileRes.text();
+          var frontMatter = parseFrontMatter(content);
+          if(frontMatter && frontMatter.name){
+            var tab = getCategoryTab(frontMatter.category);
+            var cat = inferSubcategory(frontMatter.name, frontMatter.category);
+            cmsProducts.push({
+              id: i+1,
+              fr: frontMatter.name,
+              kr: frontMatter.name,
+              tab: tab,
+              cat: cat,
+              price: frontMatter.price || 0,
+              em: getCategoryEmoji(cat),
+              df: frontMatter.description || "",
+              dk: frontMatter.description || "",
+              img: frontMatter.image || "",
+              badge: "",
+              alc: isAlcohol(frontMatter.category),
+              status: frontMatter.available !== false ? "active" : "inactive",
+              pointValue: frontMatter.pointValue || 1
             });
           }
-        } catch(e){ console.error('Error loading announcement:', announceFiles[j], e); }
+        } catch(e){ console.error('Error loading product:', prodFiles[i], e); }
       }
       
-      if(cmsBanners.length > 0){
-        // Sort by position
-        cmsBanners.sort(function(a,b){return (a.position||0)-(b.position||0);});
-        lsSet("banners", cmsBanners);
-        bnList = cmsBanners;
-        console.log('✅ CMS announcements loaded:', cmsBanners.length);
+      if(cmsProducts.length > 0){
+        products = cmsProducts;
+        lsSet("products", products);
+        console.log('✅ CMS products loaded:', cmsProducts.length);
+      } else {
+        console.log('⚠️ No CMS products found, using defaults');
+        products = DEF_PRODS;
+        lsSet("products", products);
+      }
+    }
+    
+    // Use local admin banners first, if present
+    try{
+      var storedBanners = lsGet("banners",[]);
+      if(storedBanners && storedBanners.length > 0){
+        bnList = storedBanners.filter(function(b){return b.active!==false;});
+        console.log('✅ Using local banners from admin storage:', bnList.length);
+      } else {
+        var announceRes = await fetch('content/announcements/index.json');
+        var announceFiles = await announceRes.json();
+        var cmsBanners = [];
+        
+        for(var j=0; j<announceFiles.length; j++){
+          try{
+            var annRes = await fetch('content/announcements/'+announceFiles[j]);
+            var annContent = await annRes.text();
+            var annMatter = parseFrontMatter(annContent);
+            if(annMatter && annMatter.active !== false){
+              cmsBanners.push({
+                title: annMatter.title || "",
+                body: annContent.split('---').pop().trim(),
+                bg: annMatter.bgColor || "#D63031",
+                color: annMatter.textColor || "#ffffff",
+                type: annMatter.type || "texte",
+                img: annMatter.image || "",
+                link: annMatter.link || "",
+                position: annMatter.position || 0,
+                active: annMatter.active !== false
+              });
+            }
+          } catch(e){ console.error('Error loading announcement:', announceFiles[j], e); }
+        }
+        
+        if(cmsBanners.length > 0){
+          cmsBanners.sort(function(a,b){return (a.position||0)-(b.position||0);});
+          lsSet("banners", cmsBanners);
+          bnList = cmsBanners;
+          console.log('✅ CMS announcements loaded:', cmsBanners.length);
+        }
       }
     } catch(e){
       console.error('⚠️ Error loading announcements:', e);
@@ -1799,7 +1811,7 @@ function inferSubcategory(name, category){
 // ==================================================
 async function init(){
   await loadCMSContent();
-  var ph=sessionStorage.getItem("kt_curr");
+  var ph=sessionStorage.getItem("kt_curr") || localStorage.getItem("kt_curr");
   if(ph){cust=await sbGetCustomerByPhone(ph)||null;}
   applyLang();
   loadBanner();
@@ -2480,8 +2492,11 @@ async function enroll(){
   }
 
   await sbSaveCustomer(c);
-  cust=c;sessionStorage.setItem("kt_curr",email);
+  cust=c;
+  sessionStorage.setItem("kt_curr",email);
+  localStorage.setItem("kt_curr",email);
   updNavPts();
+  updCartUI();
   toast(tr("t-welcome")+" "+name,"s");
   document.getElementById("eName").value="";
   document.getElementById("eEmail").value="";
@@ -2515,8 +2530,12 @@ async function doLogin(){
     if(!c || c.password !== password){toast(tr("t-not-found"),"e");return;}
   }
 
-  cust=c;sessionStorage.setItem("kt_curr",identifier);
-  updNavPts();closeM("m-login");
+  cust=c;
+  sessionStorage.setItem("kt_curr",identifier);
+  localStorage.setItem("kt_curr",identifier);
+  updNavPts();
+  updCartUI();
+  closeM("m-login");
   toast(tr("t-hello")+" "+c.name,"s");
   openCust();
 }
@@ -2558,7 +2577,14 @@ function openCust(){
   openM("m-cust");
 }
 
-function logout(){cust=null;sessionStorage.removeItem("kt_curr");updNavPts();closeM("m-cust");updCartUI();}
+function logout(){
+  cust=null;
+  sessionStorage.removeItem("kt_curr");
+  localStorage.removeItem("kt_curr");
+  updNavPts();
+  closeM("m-cust");
+  updCartUI();
+}
 function updNavPts(){document.getElementById("nav-pts").textContent=cust?cust.points:"0";}
 function openLogin(){openM("m-login");}
 
