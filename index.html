@@ -1605,212 +1605,24 @@ var T = {
 function tr(k){return (T[L]||T.fr)[k]||"";}
 
 // ==================================================
-//  CMS CONTENT LOADER
-// ==================================================
-async function loadCMSContent(){
-  try{
-    // Use local admin data first, if present
-    var storedProducts = lsGet("products",[]);
-    if(storedProducts && storedProducts.length > 0){
-      products = storedProducts;
-      console.log('✅ Using local products from admin storage:', products.length);
-    } else {
-      // Load products from CMS
-      var prodsRes = await fetch('content/products/index.json');
-      var prodFiles = await prodsRes.json();
-      var cmsProducts = [];
-
-      for(var i=0; i<prodFiles.length; i++){
-        try{
-          var fileRes = await fetch('content/products/'+prodFiles[i]);
-          var content = await fileRes.text();
-          var frontMatter = parseFrontMatter(content);
-          if(frontMatter && frontMatter.name){
-            var tab = getCategoryTab(frontMatter.category);
-            var cat = inferSubcategory(frontMatter.name, frontMatter.category);
-            cmsProducts.push({
-              id: i+1,
-              fr: frontMatter.name,
-              kr: frontMatter.name,
-              tab: tab,
-              cat: cat,
-              price: frontMatter.price || 0,
-              em: getCategoryEmoji(cat),
-              df: frontMatter.description || "",
-              dk: frontMatter.description || "",
-              img: frontMatter.image || "",
-              badge: "",
-              alc: isAlcohol(frontMatter.category),
-              status: frontMatter.available !== false ? "active" : "inactive",
-              pointValue: frontMatter.pointValue || 1
-            });
-          }
-        } catch(e){ console.error('Error loading product:', prodFiles[i], e); }
-      }
-      
-      if(cmsProducts.length > 0){
-        products = cmsProducts;
-        lsSet("products", products);
-        console.log('✅ CMS products loaded:', cmsProducts.length);
-      } else {
-        console.log('⚠️ No CMS products found, using defaults');
-        products = DEF_PRODS;
-        lsSet("products", products);
-      }
-    }
-    
-    // Use local admin banners first, if present
-    try{
-      var storedBanners = lsGet("banners",[]);
-      if(storedBanners && storedBanners.length > 0){
-        bnList = storedBanners.filter(function(b){return b.active!==false;});
-        console.log('✅ Using local banners from admin storage:', bnList.length);
-      } else {
-        var announceRes = await fetch('content/announcements/index.json');
-        var announceFiles = await announceRes.json();
-        var cmsBanners = [];
-        
-        for(var j=0; j<announceFiles.length; j++){
-          try{
-            var annRes = await fetch('content/announcements/'+announceFiles[j]);
-            var annContent = await annRes.text();
-            var annMatter = parseFrontMatter(annContent);
-            if(annMatter && annMatter.active !== false){
-              cmsBanners.push({
-                title: annMatter.title || "",
-                body: annContent.split('---').pop().trim(),
-                bg: annMatter.bgColor || "#D63031",
-                color: annMatter.textColor || "#ffffff",
-                type: annMatter.type || "texte",
-                img: annMatter.image || "",
-                link: annMatter.link || "",
-                position: annMatter.position || 0,
-                active: annMatter.active !== false
-              });
-            }
-          } catch(e){ console.error('Error loading announcement:', announceFiles[j], e); }
-        }
-        
-        if(cmsBanners.length > 0){
-          cmsBanners.sort(function(a,b){return (a.position||0)-(b.position||0);});
-          lsSet("banners", cmsBanners);
-          bnList = cmsBanners;
-          console.log('✅ CMS announcements loaded:', cmsBanners.length);
-        }
-      }
-    } catch(e){
-      console.error('⚠️ Error loading announcements:', e);
-    }
-  } catch(e){
-    console.error('❌ Error loading CMS content:', e);
-    products = DEF_PRODS;
-    lsSet("products", products);
-  }
-}
-
-function parseFrontMatter(content){
-  var lines = content.split('\n');
-  var frontMatter = {};
-  var inFrontMatter = false;
-  
-  for(var i=0; i<lines.length; i++){
-    var line = lines[i].trim();
-    if(line === '---'){
-      inFrontMatter = !inFrontMatter;
-      continue;
-    }
-    if(inFrontMatter && line.includes(':')){
-      var parts = line.split(':');
-      var key = parts[0].trim();
-      var value = parts.slice(1).join(':').trim();
-      if(value === 'true') value = true;
-      if(value === 'false') value = false;
-      if(!isNaN(value)) value = Number(value);
-      frontMatter[key] = value;
-    }
-  }
-  return frontMatter;
-}
-
-function getCategoryTab(categoryName){
-  if(!categoryName) return 'manger';
-  var cat = categoryName.toLowerCase();
-  if(cat.includes('alcool') || cat.includes('biere') || cat.includes('rhum') || cat.includes('cocktail') || cat.includes('vin')) return 'alcool';
-  if(cat.includes('fresco') || cat.includes('jus') || cat.includes('soda') || cat.includes('ice') || cat.includes('boisson')) return 'boisson';
-  return 'manger';
-}
-
-function getCategoryName(categoryName){
-  if(!categoryName) return 'Pate';
-  var cat = categoryName.toLowerCase();
-  if(cat.includes('pate')) return 'Pate';
-  if(cat.includes('sandwich')) return 'Sandwich';
-  if(cat.includes('popcorn')) return 'Popcorn';
-  if(cat.includes('saucisse') || cat.includes('sossis')) return 'Saucisse';
-  if(cat.includes('fresco')) return 'Fresco';
-  if(cat.includes('jus') || cat.includes('ji')) return 'Jus';
-  if(cat.includes('soda')) return 'Soda';
-  if(cat.includes('ice') || cat.includes('krem')) return 'Ice Cream';
-  if(cat.includes('biere') || cat.includes('bye')) return 'Biere';
-  if(cat.includes('rhum') || cat.includes('wonm') || cat.includes('kleren')) return 'Rhum';
-  if(cat.includes('cocktail') || cat.includes('koktel')) return 'Cocktail';
-  if(cat.includes('vin') || cat.includes('diven')) return 'Vin';
-  return categoryName;
-}
-
-function getCategoryEmoji(categoryName){
-  if(!categoryName) return '&#129361;';
-  var cat = categoryName.toLowerCase();
-  if(cat.includes('pate')) return '&#129361;';
-  if(cat.includes('sandwich')) return '&#129386;';
-  if(cat.includes('popcorn')) return '&#127871;';
-  if(cat.includes('saucisse') || cat.includes('sossis')) return '&#127789;';
-  if(cat.includes('fresco')) return '🥤';
-  if(cat.includes('jus') || cat.includes('ji')) return '&#127818;';
-  if(cat.includes('soda')) return '&#129483;';
-  if(cat.includes('ice') || cat.includes('krem')) return '&#127846;';
-  if(cat.includes('biere') || cat.includes('bye')) return '🍺';
-  if(cat.includes('rhum') || cat.includes('wonm') || cat.includes('kleren')) return '&#129347;';
-  if(cat.includes('cocktail') || cat.includes('koktel')) return '&#127817;';
-  if(cat.includes('vin') || cat.includes('diven')) return '&#127863;';
-  return '&#129361;';
-}
-
-function isAlcohol(categoryName){
-  if(!categoryName) return false;
-  var cat = categoryName.toLowerCase();
-  return cat.includes('alcool') || cat.includes('biere') || cat.includes('rhum') || cat.includes('cocktail') || cat.includes('vin') || cat.includes('bye') || cat.includes('wonm') || cat.includes('kleren') || cat.includes('koktel') || cat.includes('diven');
-}
-
-function inferSubcategory(name, category){
-  var lowerName = name.toLowerCase();
-  var lowerCategory = category.toLowerCase();
-
-  if(lowerName.includes('pate')) return 'Pate';
-  if(lowerName.includes('sandwich')) return 'Sandwich';
-  if(lowerName.includes('popcorn')) return 'Popcorn';
-  if(lowerName.includes('saucisse')) return 'Saucisse';
-  if(lowerName.includes('fresco')) return 'Fresco';
-  if(lowerName.includes('jus')) return 'Jus';
-  if(lowerName.includes('soda')) return 'Soda';
-  if(lowerName.includes('ice') || lowerName.includes('glace')) return 'Ice Cream';
-  if(lowerName.includes('biere') || lowerName.includes('beer')) return 'Biere';
-  if(lowerName.includes('rhum')) return 'Rhum';
-  if(lowerName.includes('cocktail')) return 'Cocktail';
-  if(lowerName.includes('vin')) return 'Vin';
-
-  if(lowerCategory.includes('manger')) return 'Pate';
-  if(lowerCategory.includes('boisson')) return 'Fresco';
-  if(lowerCategory.includes('alcool')) return 'Biere';
-
-  return 'Pate';
-}
-
-// ==================================================
 //  INIT
 // ==================================================
 async function init(){
-  await loadCMSContent();
+  var storedProducts = lsGet("products",[]);
+  if(storedProducts && storedProducts.length > 0){
+    products = storedProducts;
+  } else {
+    products = DEF_PRODS;
+    lsSet("products", products);
+  }
+
+  var storedBanners = lsGet("kt_banners",[]);
+  if(storedBanners && storedBanners.length > 0){
+    bnList = storedBanners.filter(function(b){return b.active!==false;});
+  }
+
+  var ph=localStorage.getItem("kt_curr");
+  if(ph){cust=await sbGetCustomerByPhone(ph)||null;}
   var ph=localStorage.getItem("kt_curr");
   if(ph){cust=await sbGetCustomerByPhone(ph)||null;}
   applyLang();
@@ -1824,7 +1636,7 @@ async function init(){
 }
 
 function updHeroStats(){
-  var prods = products.filter(function(p){return p.status==="active";}).length;
+  var prods = products.length;
   var custs = customers.length;
   var ords = orders.length;
   document.getElementById("hs-products").textContent = prods;
@@ -2014,7 +1826,7 @@ function filterSub(s){curSub=s;buildSubs();renderProds();}
 
 function renderProds(){
   var grid=document.getElementById("pgrid");
-  var list=products.filter(function(p){return p.tab===curTab&&p.status==="active";});
+  var list=products.filter(function(p){return p.tab===curTab;});
   if(curSub!=="all")list=list.filter(function(p){return p.cat===curSub;});
   if(!list.length){
     grid.innerHTML='<div class="empty-g">'+(L==="fr"?"Aucun produit dans cette categorie.":"Pa gen pwodui nan kategori sa.")+"</div>";
@@ -2123,7 +1935,7 @@ function updCartUI(){
   if(!cart.length){
     body.innerHTML='<div class="cart-empty"><div class="ce">🛒</div><p style="font-weight:800;color:var(--navy)">'+(L==="fr"?"Votre panier est vide":"Panye ou vid")+'</p><small>'+(L==="fr"?"Ajoutez des produits depuis le menu!":"Ajoute pwodui nan meni a!")+"</small></div>";
   } else {
-    var ups=products.filter(function(p){return p.status==="active"&&!cart.find(function(c){return c.id===p.id;});}).slice(0,4);
+    var ups=products.filter(function(p){return !cart.find(function(c){return c.id===p.id;});}).slice(0,4);
     var html="";
     for(var i=0;i<cart.length;i++){
       var it=cart[i];
@@ -2601,6 +2413,5 @@ document.querySelectorAll(".lbtn").forEach(function(b){b.classList.toggle("on",b
 document.querySelectorAll(".mlbtn").forEach(function(b){b.classList.toggle("on",b.textContent.trim()===L.toUpperCase());});
 init();
 </script>
-  <script src="js/cms-loader.js"></script>
 </body>
 </html>

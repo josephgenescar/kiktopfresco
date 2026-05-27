@@ -251,7 +251,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
     <div class="hint">Sèvi ak imèl ak modpas admin ou pou kontwole sit la.</div>
     <input class="lf" type="email" id="email" autocomplete="username" placeholder="Imèl admin" onkeydown="if(event.key==='Enter')login()">
     <input class="lf" type="password" id="pwd" autocomplete="current-password" placeholder="Modpas admin" onkeydown="if(event.key==='Enter')login()">
-    <button class="btn-login" onclick="login()">🔓 Antre</button>
+    <button type="button" class="btn-login" onclick="login()">🔓 Antre</button>
     <div class="login-err" id="lerr">❌ Imèl oswa modpas pa valab. Eseye ankò.</div>
   </div>
 </div>
@@ -266,7 +266,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
     </div>
     <div class="tb-right">
       <a class="btn-site" href="index.html" target="_blank">👁️ Wè Site</a>
-      <button class="btn-logout" onclick="logout()">🚪 Dekonekte</button>
+      <button type="button" class="btn-logout" onclick="logout()">🚪 Dekonekte</button>
     </div>
   </div>
 
@@ -320,8 +320,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
           <input type="hidden" id="bn-edit-id">
 
           <div class="type-row">
-            <button class="type-btn on" id="bnt-text" onclick="setBnType('text')">📝 Tèks + Koulè</button>
-            <button class="type-btn" id="bnt-image" onclick="setBnType('image')">🖼️ Imaj</button>
+            <button type="button" class="type-btn on" id="bnt-text" onclick="setBnType('text')">📝 Tèks + Koulè</button>
+            <button type="button" class="type-btn" id="bnt-image" onclick="setBnType('image')">🖼️ Imaj</button>
           </div>
 
           <!-- TEXT fields -->
@@ -372,8 +372,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
           </div>
 
           <div class="btns-row">
-            <button class="btn-save" onclick="saveBanner()">💾 Sove & Publiye</button>
-            <button class="btn-cancel" onclick="resetBnForm()">🔄 Anile</button>
+            <button type="button" class="btn-save" onclick="saveBanner()">💾 Sove & Publiye</button>
+            <button type="button" class="btn-cancel" onclick="resetBnForm()">🔄 Anile</button>
           </div>
         </div>
 
@@ -449,8 +449,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
             </div>
           </div>
           <div class="btns-row">
-            <button class="btn-save" onclick="saveProd()">💾 Sove Pwodui</button>
-            <button class="btn-cancel" onclick="resetProdForm()">🔄 Anile</button>
+            <button type="button" class="btn-save" onclick="saveProd()">💾 Sove Pwodui</button>
+            <button type="button" class="btn-cancel" onclick="resetProdForm()">🔄 Anile</button>
           </div>
         </div>
 
@@ -474,7 +474,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
             <div class="fg"><label>Pri Espesyal (HTG) *</label><input type="number" id="sp-price" placeholder="ex: 100"></div>
             <div class="fg"><label>Foto Pwodui (opsyonèl)</label><input type="file" id="sp-img" accept="image/*" onchange="handleSpecialImg(this)"></div>
             <div class="fg"><label>Mesaj Espesyal (opsyonèl)</label><textarea id="sp-msg" placeholder="ex: Pate special avec sauce maison!"></textarea></div>
-            <button class="btn-save" onclick="saveSpecial()">💾 Sove Spécial</button>
+            <button type="button" class="btn-save" onclick="saveSpecial()">💾 Sove Spécial</button>
           </div>
           <div class="card">
             <div class="card-title">👁️ Aperçu</div>
@@ -531,7 +531,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
             <div class="fg"><label>Pwen Maks pou Gratis</label><input type="number" id="s-maxpts" placeholder="100"></div>
             <div class="fg"><label>Goud pou 1 Pwen</label><input type="number" id="s-rate" placeholder="100"></div>
           </div>
-          <button class="btn-save" onclick="saveSettings()">💾 Sove Paramèt</button>
+          <button type="button" class="btn-save" onclick="saveSettings()">💾 Sove Paramèt</button>
         </div>
         <div class="card">
           <div class="card-title">🔑 Chanje Modpas Admin</div>
@@ -539,14 +539,14 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
             <div class="fg"><label>Nouvo Modpas</label><input type="password" id="s-newpwd"></div>
             <div class="fg"><label>Konfime Modpas</label><input type="password" id="s-confpwd"></div>
           </div>
-          <button class="btn-save" onclick="changePwd()">🔒 Chanje Modpas</button>
+          <button type="button" class="btn-save" onclick="changePwd()">🔒 Chanje Modpas</button>
         </div>
         <div class="card" style="border-color:rgba(231,76,60,0.25);">
           <div class="card-title" style="color:var(--red);">⚠️ Zone Danjere</div>
           <p style="color:var(--gray);font-size:13px;margin-bottom:14px;">Aksyon sa yo pa ka defèt!</p>
           <div class="btns-row">
-            <button class="btn-save btn-del" onclick="clearOrders()">🗑️ Efase Tout Kòmand</button>
-            <button class="btn-save btn-del" onclick="clearAll()">💥 Efase Tout Done</button>
+            <button type="button" class="btn-save btn-del" onclick="clearOrders()">🗑️ Efase Tout Kòmand</button>
+            <button type="button" class="btn-save btn-del" onclick="clearAll()">💥 Efase Tout Done</button>
           </div>
         </div>
       </div>
@@ -752,8 +752,8 @@ function showPage(name){
 
 async function refreshAll(){
   settings = await getAdminSettings();
-  await loadCMSProducts();
   renderDashboard();
+  renderProducts();
 }
 
 // ============================================================
@@ -906,9 +906,9 @@ function renderBanners(){
     html += '<div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:5px">'+(b.type==="image"?"🖼️ Imaj":"📝 Tèks")+" · "+(b.created||"-")+"</div>";
     html += "</div>";
     html += '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">';
-    html += '<button class="'+(isOn?"btn-toggle-on":"btn-toggle-off")+'" data-id="'+b.id+'" onclick="toggleBanner(this.dataset.id)">'+(isOn?"✅ Aktif":"👁️ Kache")+"</button>";
-    html += '<button class="btn-save btn-sm btn-edit" data-id="'+b.id+'" onclick="editBanner(this.dataset.id)">✏️ Edit</button>';
-    html += '<button class="btn-save btn-sm btn-del" data-id="'+b.id+'" onclick="deleteBanner(this.dataset.id)">🗑</button>';
+    html += '<button type="button" class="'+(isOn?"btn-toggle-on":"btn-toggle-off")+'" data-id="'+b.id+'" onclick="toggleBanner(this.dataset.id)">'+(isOn?"✅ Aktif":"👁️ Kache")+"</button>";
+    html += '<button type="button" class="btn-save btn-sm btn-edit" data-id="'+b.id+'" onclick="editBanner(this.dataset.id)">✏️ Edit</button>';
+    html += '<button type="button" class="btn-save btn-sm btn-del" data-id="'+b.id+'" onclick="deleteBanner(this.dataset.id)">🗑</button>';
     html += "</div></div>";
   });
   list.innerHTML = html;
@@ -987,112 +987,6 @@ function resetBnForm(){
 //  PRODUCTS
 // ============================================================
 var pImgData = null;
-var cmsProducts = [];
-
-async function loadCMSProducts(){
-  try{
-    var existing = lsGet("products",[]);
-    if(existing && existing.length > 0){
-      cmsProducts = existing;
-      return existing;
-    }
-
-    var prodsRes = await fetch('content/products/index.json');
-    var prodFiles = await prodsRes.json();
-    var loadedProducts = [];
-
-    for(var i=0; i<prodFiles.length; i++){
-      try{
-        var fileRes = await fetch('content/products/'+prodFiles[i]);
-        var content = await fileRes.text();
-        var frontMatter = parseFrontMatter(content);
-        if(frontMatter && frontMatter.name){
-          loadedProducts.push({
-            id: i+1,
-            fr: frontMatter.name,
-            kr: frontMatter.name,
-            tab: getCategoryTab(frontMatter.category),
-            cat: getCategoryName(frontMatter.category),
-            price: frontMatter.price || 0,
-            em: getCategoryEmoji(frontMatter.category),
-            df: frontMatter.description || "",
-            dk: frontMatter.description || "",
-            img: frontMatter.image || "",
-            badge: "",
-            alc: isAlcohol(frontMatter.category),
-            status: frontMatter.available !== false ? "active" : "inactive",
-            pointValue: frontMatter.pointValue || 1
-          });
-        }
-      } catch(e){ console.error('Error loading product:', prodFiles[i], e); }
-    }
-
-    if(loadedProducts.length > 0){
-      cmsProducts = loadedProducts;
-      localStorage.setItem("products", JSON.stringify(loadedProducts));
-      return loadedProducts;
-    }
-  } catch(e){
-    console.error('Error loading CMS products:', e);
-  }
-  return lsGet("products",[]);
-}
-
-function parseFrontMatter(content){
-  var lines = content.split('\n');
-  var frontMatter = {};
-  var inFrontMatter = false;
-  for(var i=0; i<lines.length; i++){
-    if(lines[i].trim() === '---'){
-      if(inFrontMatter) break;
-      inFrontMatter = true;
-      continue;
-    }
-    if(inFrontMatter){
-      var match = lines[i].match(/^(\w+):\s*(.+)$/);
-      if(match){
-        var key = match[1].trim();
-        var value = match[2].trim();
-        if(value === 'true') value = true;
-        if(value === 'false') value = false;
-        if(!isNaN(value)) value = Number(value);
-        frontMatter[key] = value;
-      }
-    }
-  }
-  return frontMatter;
-}
-
-function getCategoryTab(category){
-  if(category.includes('Pate') || category.includes('Sandwich') || category.includes('Popcorn') || category.includes('Saucisse') || category.includes('Manger')) return 'manger';
-  if(category.includes('Fresco') || category.includes('Jus') || category.includes('Soda') || category.includes('Ice Cream') || category.includes('Boissons') || category.includes('Boisson')) return 'boisson';
-  if(category.includes('Biere') || category.includes('Rhum') || category.includes('Cocktail') || category.includes('Vin') || category.includes('Alcool')) return 'alcool';
-  return 'manger';
-}
-
-function getCategoryName(category){
-  return category || 'Pate';
-}
-
-function getCategoryEmoji(category){
-  if(category.includes('Pate')) return '🥟';
-  if(category.includes('Sandwich')) return '🥪';
-  if(category.includes('Popcorn')) return '🍿';
-  if(category.includes('Saucisse')) return '🌭';
-  if(category.includes('Fresco')) return '🥤';
-  if(category.includes('Jus')) return '🍊';
-  if(category.includes('Soda')) return '🥫';
-  if(category.includes('Ice Cream')) return '🍦';
-  if(category.includes('Biere')) return '🍺';
-  if(category.includes('Rhum')) return '🥃';
-  if(category.includes('Cocktail')) return '🍹';
-  if(category.includes('Vin')) return '🍷';
-  return '🍽️';
-}
-
-function isAlcohol(category){
-  return category.includes('Biere') || category.includes('Rhum') || category.includes('Cocktail') || category.includes('Vin') || category.includes('Alcool');
-}
 
 function handleProdImg(input){
   var file = input.files[0];
@@ -1108,7 +1002,7 @@ function handleProdImg(input){
 }
 
 async function renderProducts(){
-  var prods = await loadCMSProducts();
+  var prods = lsGet("products",[]);
   document.getElementById("prod-count").textContent = prods.length;
   var tbody = document.getElementById("prod-tbody");
   if(!prods.length){
@@ -1128,8 +1022,8 @@ async function renderProducts(){
       +"<td style='color:var(--yellow);font-weight:800'>"+p.price+" HTG</td>"
       +"<td><span class='"+(p.status==="active"?"badge-on":"badge-off")+"'>"+(p.status==="active"?"Aktif":"Inaktif")+"</span></td>"
       +"<td style='display:flex;gap:6px'>"
-        +"<button class='btn-save btn-sm btn-edit' onclick='editProd("+p.id+")'>✏️</button>"
-        +"<button class='btn-save btn-sm btn-del' onclick='deleteProd("+p.id+")'>🗑</button>"
+        +"<button type='button' class='btn-save btn-sm btn-edit' onclick='editProd("+p.id+")'>✏️</button>"
+        +"<button type='button' class='btn-save btn-sm btn-del' onclick='deleteProd("+p.id+")'>🗑</button>"
       +"</td></tr>";
   }).join("");
 
@@ -1346,7 +1240,7 @@ function renderClients(){
       +"</div></td>"
       +"<td>"+(c.totalOrders||0)+"</td>"
       +"<td style='color:var(--gray);font-size:11px'>"+(c.joined||"-")+"</td>"
-      +"<td><button class='btn-save btn-sm btn-del' data-phone='"+phoneB64+"' onclick='resetPtsByEl(this)'>Reset</button></td>"
+      +"<td><button type='button' class='btn-save btn-sm btn-del' data-phone='"+phoneB64+"' onclick='resetPtsByEl(this)'>Reset</button></td>"
       +"</tr>";
   }).join("") : "<tr><td colspan='7' style='text-align:center;color:var(--gray);padding:20px'>Pa gen kliyan</td></tr>";
 }
