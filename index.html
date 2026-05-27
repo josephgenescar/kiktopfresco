@@ -1824,7 +1824,7 @@ async function init(){
 }
 
 function updHeroStats(){
-  var prods = products.filter(function(p){return p.status==="active";}).length;
+  var prods = products.length;
   var custs = customers.length;
   var ords = orders.length;
   document.getElementById("hs-products").textContent = prods;
@@ -2014,7 +2014,7 @@ function filterSub(s){curSub=s;buildSubs();renderProds();}
 
 function renderProds(){
   var grid=document.getElementById("pgrid");
-  var list=products.filter(function(p){return p.tab===curTab&&p.status==="active";});
+  var list=products.filter(function(p){return p.tab===curTab;});
   if(curSub!=="all")list=list.filter(function(p){return p.cat===curSub;});
   if(!list.length){
     grid.innerHTML='<div class="empty-g">'+(L==="fr"?"Aucun produit dans cette categorie.":"Pa gen pwodui nan kategori sa.")+"</div>";
@@ -2123,7 +2123,7 @@ function updCartUI(){
   if(!cart.length){
     body.innerHTML='<div class="cart-empty"><div class="ce">🛒</div><p style="font-weight:800;color:var(--navy)">'+(L==="fr"?"Votre panier est vide":"Panye ou vid")+'</p><small>'+(L==="fr"?"Ajoutez des produits depuis le menu!":"Ajoute pwodui nan meni a!")+"</small></div>";
   } else {
-    var ups=products.filter(function(p){return p.status==="active"&&!cart.find(function(c){return c.id===p.id;});}).slice(0,4);
+    var ups=products.filter(function(p){return !cart.find(function(c){return c.id===p.id;});}).slice(0,4);
     var html="";
     for(var i=0;i<cart.length;i++){
       var it=cart[i];
@@ -2295,13 +2295,16 @@ async function confirmPayment(){
     cust.history = cust.history || [];
     cust.history.unshift({desc:((L==="fr")?"Commande":"Komand")+" #"+num,pts:useP?-pU:pE,date:new Date().toLocaleDateString()});
     await sbSaveCustomer(cust);
+    sessionStorage.setItem("kt_curr",cust.email||cust.phone);
+    localStorage.setItem("kt_curr",cust.email||cust.phone);
     updNavPts();
   }
   
   var msg = "";
   if(useP) msg = tr("p-free") + " " + pU + " pts.";
   else if(pE > 0 && cust) msg = "+" + pE + " " + tr("p-earned") + " " + cust.points + " pts";
-  else msg = tr("p-register");
+  else if(!cust) msg = tr("p-register");
+  else msg = "Commande confirmée!";
   var custInfo = cust ? "Client: " + cust.name + " | " + cust.phone : "";
   
   cart = [];
@@ -2405,6 +2408,8 @@ async function goWA(){
     cust.history = cust.history || [];
     cust.history.unshift({desc:((L==="fr")?"Commande":"Komand")+" #"+num,pts: useP ? -pU : pE,date:new Date().toLocaleDateString()});
     await sbSaveCustomer(cust);
+    sessionStorage.setItem("kt_curr",cust.email||cust.phone);
+    localStorage.setItem("kt_curr",cust.email||cust.phone);
     updNavPts();
   }
   
@@ -2482,12 +2487,13 @@ async function enroll(){
   if(supabaseClient){
     try{
       var {data,error} = await supabaseClient.auth.signUp({email:email,password:password,options:{data:{name:name,phone:phone,role:"customer"}}});
-      if(error){toast(error.message||tr("t-err-exists"),"e");return;}
-      if(data && data.user && data.user.id){c.id=data.user.id;}
+      if(error){
+        console.log('Supabase auth signUp error, using localStorage:', error);
+      } else {
+        if(data && data.user && data.user.id){c.id=data.user.id;}
+      }
     }catch(e){
-      console.log('Supabase auth signUp error:', e);
-      toast(e.message||tr("t-err-exists"),"e");
-      return;
+      console.log('Supabase auth signUp error, using localStorage:', e);
     }
   }
 
@@ -2514,16 +2520,21 @@ async function doLogin(){
   if(supabaseClient && isEmail(identifier)){
     try{
       var {data,error} = await supabaseClient.auth.signInWithPassword({email:identifier,password:password});
-      if(error){toast(error.message||tr("t-not-found"),"e");return;}
-      c = await sbGetCustomerByPhone(identifier);
-      if(!c){
-        c={id:data.user?.id||Date.now().toString(),name:identifier,email:identifier,phone:"",password:password,role:"customer",points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString()};
-        await sbSaveCustomer(c);
+      if(error){
+        console.log('Supabase auth error, trying localStorage:', error);
+        c = await sbGetCustomerByPhone(identifier);
+        if(!c || c.password !== password){toast(tr("t-not-found"),"e");return;}
+      } else {
+        c = await sbGetCustomerByPhone(identifier);
+        if(!c){
+          c={id:data.user?.id||Date.now().toString(),name:identifier,email:identifier,phone:"",password:password,role:"customer",points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString()};
+          await sbSaveCustomer(c);
+        }
       }
     }catch(e){
-      console.log('Supabase auth signIn error:', e);
-      toast(e.message||tr("t-not-found"),"e");
-      return;
+      console.log('Supabase auth signIn error, trying localStorage:', e);
+      c = await sbGetCustomerByPhone(identifier);
+      if(!c || c.password !== password){toast(tr("t-not-found"),"e");return;}
     }
   } else {
     c = await sbGetCustomerByPhone(identifier);
