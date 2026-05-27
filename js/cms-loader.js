@@ -152,7 +152,11 @@
     if (mapped.length) {
       var defaults = (window.products || []).filter(function(p){ return p.id < 2000; });
       window.products = defaults.concat(mapped);
-      try { localStorage.setItem('kt_products', JSON.stringify(window.products)); } catch(e) {}
+      try {
+        if(!localStorage.getItem('kt_products')){
+          localStorage.setItem('kt_products', JSON.stringify(window.products));
+        }
+      } catch(e) {}
       if (typeof renderProds === 'function') renderProds();
       console.log('[CMS] ' + mapped.length + ' pwodui CMS chaje.');
     }
@@ -167,7 +171,11 @@
       if (mapped.length) {
         var defaults = (window.products || []).filter(function(p){ return p.id < 2000; });
         window.products = defaults.concat(mapped);
-        try { localStorage.setItem('kt_products', JSON.stringify(window.products)); } catch(e) {}
+        try {
+          if(!localStorage.getItem('kt_products')){
+            localStorage.setItem('kt_products', JSON.stringify(window.products));
+          }
+        } catch(e) {}
         if (typeof renderProds === 'function') renderProds();
         console.log('[CMS] ' + mapped.length + ' pwodui /data CMS chaje.');
       }
@@ -179,7 +187,11 @@
   try {
     var generalSettings = await loadCMSSettings();
     if (Object.keys(generalSettings).length) {
-      try { localStorage.setItem('kt_settings', JSON.stringify(generalSettings)); } catch(e) {}
+      try {
+        if(!localStorage.getItem('kt_settings')){
+          localStorage.setItem('kt_settings', JSON.stringify(generalSettings));
+        }
+      } catch(e) {}
       console.log('[CMS] Settings chaje.');
     }
   } catch(e) {
@@ -189,7 +201,11 @@
   try {
     var announces = await loadCMSAnnouncements();
     if (announces.length) {
-      try { localStorage.setItem('kt_banners', JSON.stringify(announces)); } catch(e) {}
+      try {
+        if(!localStorage.getItem('kt_banners')){
+          localStorage.setItem('kt_banners', JSON.stringify(announces));
+        }
+      } catch(e) {}
       if (typeof loadBanner === 'function') loadBanner();
       console.log('[CMS] ' + announces.length + ' annons CMS chaje.');
     }
