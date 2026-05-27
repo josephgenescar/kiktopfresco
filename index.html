@@ -1452,6 +1452,84 @@ async function sbGetSettings(){
   }
 }
 
+function normalizeProductRow(row){
+  return {
+    id: row.id,
+    fr: row.name_fr || row.name || "",
+    name_fr: row.name_fr || row.name || "",
+    kr: row.name_kr || row.name_fr || row.name || "",
+    name_kr: row.name_kr || row.name_fr || row.name || "",
+    name: row.name_fr || row.name || "",
+    tab: row.tab || "manger",
+    cat: row.category || "",
+    category: row.category || "",
+    price: Number(row.price) || 0,
+    em: row.emoji || "",
+    emoji: row.emoji || "",
+    df: row.description_fr || "",
+    desc_fr: row.description_fr || "",
+    dk: row.description_kr || "",
+    desc_kr: row.description_kr || "",
+    img: row.image || "",
+    image: row.image || "",
+    badge: row.badge || "",
+    status: row.status || "active",
+    alc: row.alcohol === true || row.alcohol === 'true',
+    alcohol: row.alcohol === true || row.alcohol === 'true',
+    point_value: Number(row.point_value) || 1,
+    position: Number(row.position) || 0,
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  };
+}
+
+function normalizeBannerRow(row){
+  return {
+    id: row.id,
+    title: row.title || "",
+    body: row.body || "",
+    icon: row.icon || "",
+    bg: row.bg || "#0D2B5E",
+    color: row.color || "#ffffff",
+    img: row.img || "",
+    link: row.link || "",
+    type: row.type || (row.img ? "image" : "text"),
+    active: row.active !== false,
+    position: Number(row.position) || 0,
+    created: row.created_at || "",
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  };
+}
+
+async function sbGetProducts(){
+  if(!supabaseClient) return lsGet("products",[]);
+  try{
+    var {data,error} = await supabaseClient.from('products').select('*').order('position',{ascending:true});
+    if(error) throw error;
+    var mapped = (data||[]).map(normalizeProductRow);
+    lsSet("products", mapped);
+    return mapped;
+  }catch(e){
+    console.log('Supabase product error, using localStorage:', e);
+    return lsGet("products",[]);
+  }
+}
+
+async function sbGetBanners(){
+  if(!supabaseClient) return lsGet("kt_banners",[]);
+  try{
+    var {data,error} = await supabaseClient.from('banners').select('*').order('position',{ascending:true});
+    if(error) throw error;
+    var mapped = (data||[]).map(normalizeBannerRow);
+    lsSet("banners", mapped);
+    return mapped;
+  }catch(e){
+    console.log('Supabase banner error, using localStorage:', e);
+    return lsGet("kt_banners",[]);
+  }
+}
+
 // ---- STATE ----
 var L = "fr";
 var curTab = "manger";
@@ -1636,17 +1714,21 @@ function tr(k){return (T[L]||T.fr)[k]||"";}
 //  INIT
 // ==================================================
 async function init(){
-  var storedProducts = lsGet("products",[]);
+  var remoteProducts = await sbGetProducts();
+  var storedProducts = remoteProducts && remoteProducts.length > 0 ? remoteProducts : lsGet("products",[]);
   if(storedProducts && storedProducts.length > 0){
     products = storedProducts;
+    lsSet("products", products);
   } else {
     products = DEF_PRODS;
     lsSet("products", products);
   }
 
-  var storedBanners = lsGet("kt_banners",[]);
+  var remoteBanners = await sbGetBanners();
+  var storedBanners = remoteBanners && remoteBanners.length > 0 ? remoteBanners : lsGet("banners",[]);
   if(storedBanners && storedBanners.length > 0){
     bnList = storedBanners.filter(function(b){return b.active!==false;});
+    lsSet("banners", storedBanners);
   }
 
   var ph=localStorage.getItem("kt_curr");

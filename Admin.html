@@ -630,12 +630,16 @@ const ADB = {
     return data||[];
   },
   async saveBanner(b){
-    if(!isSupabaseConfigured){ /* handled below */ return; }
+    if(!isSupabaseConfigured){ return null; }
     if(b.id && !b.id.toString().startsWith('b_')){
-      await sb.from('banners').update({title:b.title,body:b.body,icon:b.icon,bg:b.bg,color:b.color,img:b.img,link:b.link,active:b.active}).eq('id',b.id);
+      const {data,error} = await sb.from('banners').update({title:b.title,body:b.body,icon:b.icon,bg:b.bg,color:b.color,img:b.img,link:b.link,active:b.active}).eq('id',b.id).select().single();
+      if(error) throw error;
+      return data;
     } else {
       const {id,...rest} = b;
-      await sb.from('banners').insert(rest);
+      const {data,error} = await sb.from('banners').insert(rest).select().single();
+      if(error) throw error;
+      return data;
     }
   },
   async deleteBanner(id){
@@ -683,6 +687,105 @@ const DB={
   obj:(k,d={})=>{try{return JSON.parse(localStorage.getItem("kt_"+k))??d;}catch{return d;}}
 };
 
+function toRemoteProduct(p){
+  return {
+    name_fr: p.fr || p.name_fr || p.name || "",
+    name_kr: p.kr || p.name_kr || p.name || p.fr || "",
+    tab: p.tab || "manger",
+    category: p.cat || p.category || "",
+    price: Number(p.price) || 0,
+    emoji: p.em || p.emoji || "",
+    description_fr: p.df || p.description_fr || "",
+    description_kr: p.dk || p.description_kr || "",
+    image: p.img || "",
+    badge: p.badge || "",
+    alcohol: p.alc === true || p.alcohol === true,
+    status: p.status || "active",
+    position: Number(p.position) || 0
+  };
+}
+
+function normalizeProduct(p){
+  if(!p) return p;
+  return {
+    id: p.id,
+    fr: p.fr || p.name_fr || p.name || "",
+    name_fr: p.name_fr || p.fr || p.name || "",
+    kr: p.kr || p.name_kr || p.name_fr || p.fr || "",
+    name_kr: p.name_kr || p.kr || p.name_fr || p.fr || "",
+    name: p.name || p.fr || p.name_fr || "",
+    tab: p.tab || "manger",
+    cat: p.cat || p.category || "",
+    category: p.category || p.cat || "",
+    price: Number(p.price) || 0,
+    em: p.em || p.emoji || "",
+    emoji: p.emoji || p.em || "",
+    df: p.df || p.description_fr || "",
+    desc_fr: p.description_fr || p.df || "",
+    dk: p.dk || p.description_kr || "",
+    desc_kr: p.description_kr || p.dk || "",
+    img: p.img || p.image || "",
+    image: p.image || p.img || "",
+    badge: p.badge || "",
+    status: p.status || "active",
+    alc: p.alc === true || p.alcohol === true,
+    alcohol: p.alcohol === true || p.alc === true,
+    position: Number(p.position) || 0,
+    created_at: p.created_at,
+    updated_at: p.updated_at
+  };
+}
+
+function normalizeBanner(b){
+  if(!b) return b;
+  return {
+    id: b.id,
+    title: b.title || "",
+    body: b.body || "",
+    icon: b.icon || "",
+    bg: b.bg || "#0D2B5E",
+    color: b.color || "#ffffff",
+    img: b.img || "",
+    link: b.link || "",
+    type: b.type || (b.img ? "image" : "text"),
+    active: b.active !== false,
+    position: Number(b.position) || 0,
+    created: b.created || b.created_at || "",
+    created_at: b.created_at,
+    updated_at: b.updated_at
+  };
+}
+
+async function loadProductsFromSource(){
+  var local = lsGet("products",[]);
+  if(isSupabaseConfigured){
+    try{
+      var remote = await ADB.getProducts();
+      if(Array.isArray(remote) && remote.length){
+        var normalized = remote.map(normalizeProduct);
+        lsSet("products", normalized);
+        return normalized;
+      }
+    }catch(e){console.warn('Failed to load remote products', e);}
+  }
+  return local;
+}
+
+async function loadBannersFromSource(){
+  var local = lsGet("banners",[]);
+  if(isSupabaseConfigured){
+    try{
+      var remote = await ADB.getBanners();
+      if(Array.isArray(remote) && remote.length){
+        var normalized = remote.map(normalizeBanner);
+        lsSet("banners", normalized);
+        return normalized;
+      }
+    }catch(e){console.warn('Failed to load remote banners', e);}
+  }
+  return local;
+}
+
 // ============================================================
 //  STORAGE
 // ============================================================
@@ -699,14 +802,25 @@ function normalizeCustomer(c){
   return c;
 }
 
-var settings = lsGet("settings",DEFAULT_SETTINGS);
+var settings = normalizeAdminSettings(lsGet("settings", DEFAULT_SETTINGS));
+
+function normalizeAdminSettings(raw){
+  var merged = Object.assign({}, DEFAULT_SETTINGS, raw || {});
+  if(typeof merged.adminEmail !== 'string' || !merged.adminEmail.trim()) merged.adminEmail = DEFAULT_SETTINGS.adminEmail;
+  if(typeof merged.adminPwd !== 'string' || !merged.adminPwd.trim()) merged.adminPwd = DEFAULT_SETTINGS.adminPwd;
+  merged.adminEmail = merged.adminEmail.trim();
+  merged.adminPwd = merged.adminPwd.trim();
+  return merged;
+}
 
 async function getAdminSettings(){
   var remote = await ADB.getSettings();
-  if(remote && remote.adminPwd){
-    return Object.assign({}, DEFAULT_SETTINGS, remote);
+  var localSettings = normalizeAdminSettings(lsGet("settings", {}));
+  if(remote && typeof remote === 'object'){
+    var remoteSettings = normalizeAdminSettings(remote);
+    return Object.assign({}, localSettings, remoteSettings);
   }
-  return lsGet("settings",DEFAULT_SETTINGS);
+  return localSettings;
 }
 
 // ============================================================
@@ -852,7 +966,7 @@ function bnPreview(){
   }
 }
 
-function saveBanner(){
+async function saveBanner(){
   var eid   = document.getElementById("bn-edit-id").value;
   var title = bnType==="text" ? document.getElementById("bn-title").value.trim()
                                : document.getElementById("bn-img-title").value.trim();
@@ -862,10 +976,8 @@ function saveBanner(){
   if(bnType==="text" && !title){toast("Tit obligatwa!","e");return;}
   if(bnType==="image" && !bnImgData && !eid){toast("Chwazi yon imaj!","e");return;}
 
-  var banners = [];
-  try{banners = JSON.parse(localStorage.getItem("kt_banners"))||[];}catch(e){}
-
-  var existImg = eid ? ((banners.find(function(x){return x.id===eid;})||{}).img||"") : "";
+  var banners = lsGet("banners",[]);
+  var existImg = eid ? ((banners.find(function(x){return String(x.id)===String(eid);})||{}).img||"") : "";
 
   var b = {
     id      : eid || ("b"+Date.now()),
@@ -878,24 +990,36 @@ function saveBanner(){
     img     : bnType==="image" ? (bnImgData || existImg) : "",
     link    : document.getElementById("bn-link").value.trim(),
     active  : document.getElementById("bn-status").value === "true",
-    created : eid ? ((banners.find(function(x){return x.id===eid;})||{}).created||new Date().toLocaleDateString()) : new Date().toLocaleDateString()
+    created : eid ? ((banners.find(function(x){return String(x.id)===String(eid);})||{}).created||new Date().toLocaleDateString()) : new Date().toLocaleDateString()
   };
 
-  if(eid){
-    var idx = banners.findIndex(function(x){return x.id===eid;});
-    if(idx>=0) banners[idx]=b; else banners.unshift(b);
-  } else {
-    banners.unshift(b);
+  try{
+    if(isSupabaseConfigured){
+      var saved = await ADB.saveBanner(b);
+      if(saved){
+        b = normalizeBanner(saved);
+      }
+    }
+    banners = lsGet("banners",[]);
+    if(eid){
+      var idx = banners.findIndex(function(x){return String(x.id)===String(eid);});
+      if(idx>=0) banners[idx]=b; else banners.unshift(b);
+    } else {
+      banners.unshift(b);
+    }
+    lsSet("banners", banners);
+    await renderBanners();
+    resetBnForm();
+    toast("✅ Annonce sove! Afiche sou sit la.","s");
+  }catch(e){
+    console.warn('Banner save failed', e);
+    toast("⚠️ Erè sove annonce","e");
   }
-  localStorage.setItem("kt_banners", JSON.stringify(banners));
-  renderBanners();
-  resetBnForm();
-  toast("✅ Annonce sove! Afiche sou sit la.","s");
 }
 
-function renderBanners(){
-  var banners = [];
-  try{banners = JSON.parse(localStorage.getItem("kt_banners"))||[];}catch(e){}
+async function renderBanners(){
+  var banners = await loadBannersFromSource();
+  banners = banners.map(normalizeBanner);
   document.getElementById("bn-count").textContent = banners.length;
   var list = document.getElementById("bn-list");
   if(!banners.length){
@@ -940,11 +1064,10 @@ function handleBnClick(e){
 }
 
 function editBanner(id){
-  var banners = [];
-  try{banners = JSON.parse(localStorage.getItem("kt_banners"))||[];}catch(e){}
-  var b = banners.find(function(x){return x.id===id;});
+  var banners = lsGet("banners",[]);
+  var b = banners.find(function(x){return String(x.id)===String(id);});
   if(!b) return;
-  document.getElementById("bn-edit-id").value = id;
+  document.getElementById("bn-edit-id").value = b.id;
   document.getElementById("bn-form-title").textContent = "✏️ Modifye Annonce";
   setBnType(b.type||"text");
   if(b.type==="text"){
@@ -968,24 +1091,38 @@ function editBanner(id){
   document.getElementById("page-annonces").scrollTop = 0;
 }
 
-function toggleBanner(id){
-  var banners = [];
-  try{banners = JSON.parse(localStorage.getItem("kt_banners"))||[];}catch(e){}
-  var b = banners.find(function(x){return x.id===id;});
+async function toggleBanner(id){
+  var banners = lsGet("banners",[]);
+  var b = banners.find(function(x){return String(x.id)===String(id);});
   if(!b) return;
   b.active = !b.active;
-  localStorage.setItem("kt_banners", JSON.stringify(banners));
-  renderBanners();
-  toast(b.active?"✅ Annonce aktive!":"Annonce kache","s");
+  try{
+    if(isSupabaseConfigured){
+      await ADB.toggleBanner(id, b.active);
+    }
+    lsSet("banners", banners);
+    await renderBanners();
+    toast(b.active?"✅ Annonce aktive!":"Annonce kache","s");
+  }catch(e){
+    console.warn('Banner toggle failed', e);
+    toast("⚠️ Erè chanje eta annonce","e");
+  }
 }
 
-function deleteBanner(id){
+async function deleteBanner(id){
   if(!confirm("Efase annonce sa?")) return;
-  var banners = [];
-  try{banners = JSON.parse(localStorage.getItem("kt_banners"))||[];}catch(e){}
-  localStorage.setItem("kt_banners", JSON.stringify(banners.filter(function(x){return x.id!==id;})));
-  renderBanners();
-  toast("Annonce efase","e");
+  try{
+    if(isSupabaseConfigured){
+      await ADB.deleteBanner(id);
+    }
+    var banners = lsGet("banners",[]);
+    lsSet("banners", banners.filter(function(x){return String(x.id)!==String(id);}));
+    await renderBanners();
+    toast("Annonce efase","e");
+  }catch(e){
+    console.warn('Banner delete failed', e);
+    toast("⚠️ Erè efase annonce","e");
+  }
 }
 
 function resetBnForm(){
@@ -1028,7 +1165,8 @@ function handleProdImg(input){
 }
 
 async function renderProducts(){
-  var prods = lsGet("products",[]);
+  var prods = await loadProductsFromSource();
+  prods = prods.map(normalizeProduct);
   document.getElementById("prod-count").textContent = prods.length;
   var tbody = document.getElementById("prod-tbody");
   if(!prods.length){
@@ -1038,7 +1176,7 @@ async function renderProducts(){
   tbody.innerHTML = prods.map(function(p){
     var name = p.fr||p.name_fr||p.name||"?";
     var tab  = p.tab||"-";
-    var cat  = p.cat||"-";
+    var cat  = p.cat||p.category||"-";
     var imgHtml = p.img ? '<img src="'+p.img+'" style="width:40px;height:40px;object-fit:cover;border-radius:6px;margin-right:8px">' : '';
     return "<tr>"
       +"<td style='font-size:24px'>"+(p.em||p.emoji||"🍽️")+"</td>"
@@ -1053,7 +1191,6 @@ async function renderProducts(){
       +"</td></tr>";
   }).join("");
 
-  // Update special select
   var sel = document.getElementById("sp-prod");
   if(sel){
     var cur = sel.value;
@@ -1070,7 +1207,7 @@ async function renderProducts(){
   }
 }
 
-function saveProd(){
+async function saveProd(){
   var prods = lsGet("products",[]);
   var eid   = document.getElementById("p-edit-id").value;
   var nameFr = document.getElementById("p-name-fr").value.trim();
@@ -1104,19 +1241,30 @@ function saveProd(){
     alc     : document.getElementById("p-alc").value === "true"
   };
 
-  if(eid){
-    var idx = prods.findIndex(function(x){return String(x.id)===String(eid);});
-    if(idx>=0) prods[idx] = p;
-    else prods.push(p);
-    toast("✅ Pwodui modifye: "+nameFr,"s");
-  } else {
-    prods.push(p);
-    toast("✅ Pwodui ajoute: "+nameFr,"s");
+  try{
+    if(isSupabaseConfigured){
+      var savedRow = await ADB.saveProduct(p);
+      if(savedRow){
+        p = normalizeProduct(savedRow);
+      }
+    }
+    prods = lsGet("products",[]);
+    if(eid){
+      var idx = prods.findIndex(function(x){return String(x.id)===String(eid);});
+      if(idx>=0) prods[idx] = p;
+      else prods.push(p);
+      toast("✅ Pwodui modifye: "+nameFr,"s");
+    } else {
+      prods.push(p);
+      toast("✅ Pwodui ajoute: "+nameFr,"s");
+    }
+    lsSet("products", prods);
+    resetProdForm();
+    await renderProducts();
+  }catch(e){
+    console.warn('Product save failed', e);
+    toast("⚠️ Erè sove pwodui", "e");
   }
-
-  lsSet("products", prods);
-  resetProdForm();
-  renderProducts();
 }
 
 function editProd(id){
@@ -1154,12 +1302,20 @@ function editProd(id){
   }
 }
 
-function deleteProd(id){
+async function deleteProd(id){
   if(!confirm("Efase pwodui sa?")) return;
-  var prods = lsGet("products",[]);
-  lsSet("products", prods.filter(function(x){return String(x.id)!==String(id);}));
-  renderProducts();
-  toast("Pwodui efase","e");
+  try{
+    if(isSupabaseConfigured){
+      await ADB.deleteProduct(id);
+    }
+    var prods = lsGet("products",[]);
+    lsSet("products", prods.filter(function(x){return String(x.id)!==String(id);}));
+    await renderProducts();
+    toast("Pwodui efase","e");
+  }catch(e){
+    console.warn('Product delete failed', e);
+    toast("⚠️ Erè efase pwodui","e");
+  }
 }
 
 function resetProdForm(){
