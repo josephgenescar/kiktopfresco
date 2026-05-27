@@ -65,10 +65,10 @@ section{
 .section-photo{overflow:hidden;isolation:isolate}
 .section-photo::before{
   content:'';position:absolute;inset:-10% 0;z-index:0;
-  background-image:none;
+  background-image:var(--section-bg,none);
   background-size:cover;background-repeat:no-repeat;
   background-position:var(--photo-pos,center);
-  filter:brightness(.86);opacity:0;transform:scale(1.04);
+  filter:brightness(.86);opacity:1;transform:scale(1.04);
   mix-blend-mode:normal;transition:opacity .4s,transform .6s;
 }
 .section-photo::after{
