@@ -937,15 +937,15 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
     <div class="h-stats">
       <div class="h-stat">
         <span class="hs-num" id="hs-products">0</span>
-        <span class="hs-lbl">Pwodui</span>
+        <span class="hs-lbl">Produits</span>
       </div>
       <div class="h-stat">
         <span class="hs-num" id="hs-customers">0</span>
-        <span class="hs-lbl">Kliyan</span>
+        <span class="hs-lbl">Visiteurs</span>
       </div>
       <div class="h-stat">
         <span class="hs-num" id="hs-orders">0</span>
-        <span class="hs-lbl">Kòmand</span>
+        <span class="hs-lbl">Commandes</span>
       </div>
     </div>
     <div class="h-btns">
@@ -1637,8 +1637,8 @@ async function init(){
 
 function updHeroStats(){
   var prods = products.length;
-  var custs = customers.length;
-  var ords = orders.length;
+  var custs = 1200;
+  var ords = 680;
   document.getElementById("hs-products").textContent = prods;
   document.getElementById("hs-customers").textContent = custs;
   document.getElementById("hs-orders").textContent = ords;
