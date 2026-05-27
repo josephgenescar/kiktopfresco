@@ -916,13 +916,29 @@ function renderBanners(){
     html += '<div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:5px">'+(b.type==="image"?"🖼️ Imaj":"📝 Tèks")+" · "+(b.created||"-")+"</div>";
     html += "</div>";
     html += '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">';
-    html += '<button type="button" class="'+(isOn?"btn-toggle-on":"btn-toggle-off")+'" data-id="'+b.id+'" onclick="toggleBanner(this.dataset.id)">'+(isOn?"✅ Aktif":"👁️ Kache")+"</button>";
-    html += '<button type="button" class="btn-save btn-sm btn-edit" data-id="'+b.id+'" onclick="editBanner(this.dataset.id)">✏️ Edit</button>';
-    html += '<button type="button" class="btn-save btn-sm btn-del" data-id="'+b.id+'" onclick="deleteBanner(this.dataset.id)">🗑</button>';
+    html += '<button type="button" class="'+(isOn?"btn-toggle-on":"btn-toggle-off")+'" data-id="'+b.id+'" data-action="toggle">'+(isOn?"✅ Aktif":"👁️ Kache")+"</button>";
+    html += '<button type="button" class="btn-save btn-sm btn-edit" data-id="'+b.id+'" data-action="edit">✏️ Edit</button>';
+    html += '<button type="button" class="btn-save btn-sm btn-del" data-id="'+b.id+'" data-action="delete">🗑</button>';
     html += "</div></div>";
   });
   list.innerHTML = html;
 }
+
+document.body.addEventListener("click", function(e){
+  if(!e.target.closest("#bn-list button[data-id]")) return;
+  handleBnClick(e);
+});
+
+function handleBnClick(e){
+  var btn = e.target.closest("#bn-list button[data-id]");
+  if(!btn) return;
+  var id = btn.dataset.id;
+  var action = btn.dataset.action;
+  if(action === "edit") return editBanner(id);
+  if(action === "delete") return deleteBanner(id);
+  if(action === "toggle") return toggleBanner(id);
+}
+
 function editBanner(id){
   var banners = [];
   try{banners = JSON.parse(localStorage.getItem("kt_banners"))||[];}catch(e){}
