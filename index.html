@@ -1311,7 +1311,7 @@ const SUPABASE_KEY = window.SUPABASE_ENV?.SUPABASE_KEY || "eyJhbGciOiJIUzI1NiIsI
 var supabaseClient = null;
 
 try {
-  if (typeof supabase !== 'undefined' && SUPABASE_URL !== "https://kcldctdalowqkwhlhcdy.supabase.co") {
+  if (typeof supabase !== 'undefined' && SUPABASE_URL) {
     supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     console.log('✅ Supabase initialized');
   } else {
