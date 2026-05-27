@@ -385,7 +385,56 @@ nav.banner-visible{
   line-height:1.1;white-space:normal;
 }
 .scbtn:hover{border-color:var(--yellow);}
-.scbtn.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+.scbtn.on{color:#fff;border-color:currentColor;}
+
+/* Subcategory colors */
+.scbtn.cat-pate{background:#fff;border-color:#E74C3C;color:#E74C3C;}
+.scbtn.cat-pate:hover{background:#E74C3C;color:#fff;}
+.scbtn.cat-pate.on{background:#E74C3C;color:#fff;border-color:#E74C3C;}
+
+.scbtn.cat-sandwich{background:#fff;border-color:#F39C12;color:#F39C12;}
+.scbtn.cat-sandwich:hover{background:#F39C12;color:#fff;}
+.scbtn.cat-sandwich.on{background:#F39C12;color:#fff;border-color:#F39C12;}
+
+.scbtn.cat-popcorn{background:#fff;border-color:#E67E22;color:#E67E22;}
+.scbtn.cat-popcorn:hover{background:#E67E22;color:#fff;}
+.scbtn.cat-popcorn.on{background:#E67E22;color:#fff;border-color:#E67E22;}
+
+.scbtn.cat-saucisse{background:#fff;border-color:#9B59B6;color:#9B59B6;}
+.scbtn.cat-saucisse:hover{background:#9B59B6;color:#fff;}
+.scbtn.cat-saucisse.on{background:#9B59B6;color:#fff;border-color:#9B59B6;}
+
+.scbtn.cat-fresco{background:#fff;border-color:#3498DB;color:#3498DB;}
+.scbtn.cat-fresco:hover{background:#3498DB;color:#fff;}
+.scbtn.cat-fresco.on{background:#3498DB;color:#fff;border-color:#3498DB;}
+
+.scbtn.cat-jus{background:#fff;border-color:#27AE60;color:#27AE60;}
+.scbtn.cat-jus:hover{background:#27AE60;color:#fff;}
+.scbtn.cat-jus.on{background:#27AE60;color:#fff;border-color:#27AE60;}
+
+.scbtn.cat-soda{background:#fff;border-color:#1ABC9C;color:#1ABC9C;}
+.scbtn.cat-soda:hover{background:#1ABC9C;color:#fff;}
+.scbtn.cat-soda.on{background:#1ABC9C;color:#fff;border-color:#1ABC9C;}
+
+.scbtn.cat-icecream{background:#fff;border-color:#FF6B6B;color:#FF6B6B;}
+.scbtn.cat-icecream:hover{background:#FF6B6B;color:#fff;}
+.scbtn.cat-icecream.on{background:#FF6B6B;color:#fff;border-color:#FF6B6B;}
+
+.scbtn.cat-biere{background:#fff;border-color:#F39C12;color:#F39C12;}
+.scbtn.cat-biere:hover{background:#F39C12;color:#fff;}
+.scbtn.cat-biere.on{background:#F39C12;color:#fff;border-color:#F39C12;}
+
+.scbtn.cat-rhum{background:#fff;border-color:#8E44AD;color:#8E44AD;}
+.scbtn.cat-rhum:hover{background:#8E44AD;color:#fff;}
+.scbtn.cat-rhum.on{background:#8E44AD;color:#fff;border-color:#8E44AD;}
+
+.scbtn.cat-cocktail{background:#fff;border-color:#E91E63;color:#E91E63;}
+.scbtn.cat-cocktail:hover{background:#E91E63;color:#fff;}
+.scbtn.cat-cocktail.on{background:#E91E63;color:#fff;border-color:#E91E63;}
+
+.scbtn.cat-vin{background:#fff;border-color:#722F37;color:#722F37;}
+.scbtn.cat-vin:hover{background:#722F37;color:#fff;}
+.scbtn.cat-vin.on{background:#722F37;color:#fff;border-color:#722F37;}
 
 .alc-notice{
   background:rgba(108,92,231,.08);border:1.5px solid rgba(108,92,231,.2);
@@ -1880,7 +1929,8 @@ function buildSubs(){
   for(var i=0;i<cats.length;i++){
     var c=cats[i];
     var name=(L==="fr")?c.fr:c.kr;
-    var cCls = curSub===c.k ? "scbtn on" : "scbtn";
+    var catClass = "cat-"+c.k.toLowerCase();
+    var cCls = curSub===c.k ? "scbtn on "+catClass : "scbtn "+catClass;
     html+='<button class="'+cCls+'" onclick="filterSub(&quot;'+c.k+'&quot;)">'+name+"</button>";
   }
   document.getElementById("subcats").innerHTML=html;
