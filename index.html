@@ -1512,21 +1512,23 @@ async function loadCMSContent(){
     var prodsRes = await fetch('content/products/index.json');
     var prodFiles = await prodsRes.json();
     var cmsProducts = [];
-    
+
     for(var i=0; i<prodFiles.length; i++){
       try{
         var fileRes = await fetch('content/products/'+prodFiles[i]);
         var content = await fileRes.text();
         var frontMatter = parseFrontMatter(content);
         if(frontMatter && frontMatter.name){
+          var tab = getCategoryTab(frontMatter.category);
+          var cat = inferSubcategory(frontMatter.name, frontMatter.category);
           cmsProducts.push({
             id: i+1,
             fr: frontMatter.name,
             kr: frontMatter.name,
-            tab: getCategoryTab(frontMatter.category),
-            cat: getCategoryName(frontMatter.category),
+            tab: tab,
+            cat: cat,
             price: frontMatter.price || 0,
-            em: getCategoryEmoji(frontMatter.category),
+            em: getCategoryEmoji(cat),
             df: frontMatter.description || "",
             dk: frontMatter.description || "",
             img: frontMatter.image || "",
@@ -1665,6 +1667,30 @@ function isAlcohol(categoryName){
   if(!categoryName) return false;
   var cat = categoryName.toLowerCase();
   return cat.includes('alcool') || cat.includes('biere') || cat.includes('rhum') || cat.includes('cocktail') || cat.includes('vin') || cat.includes('bye') || cat.includes('wonm') || cat.includes('kleren') || cat.includes('koktel') || cat.includes('diven');
+}
+
+function inferSubcategory(name, category){
+  var lowerName = name.toLowerCase();
+  var lowerCategory = category.toLowerCase();
+
+  if(lowerName.includes('pate')) return 'Pate';
+  if(lowerName.includes('sandwich')) return 'Sandwich';
+  if(lowerName.includes('popcorn')) return 'Popcorn';
+  if(lowerName.includes('saucisse')) return 'Saucisse';
+  if(lowerName.includes('fresco')) return 'Fresco';
+  if(lowerName.includes('jus')) return 'Jus';
+  if(lowerName.includes('soda')) return 'Soda';
+  if(lowerName.includes('ice') || lowerName.includes('glace')) return 'Ice Cream';
+  if(lowerName.includes('biere') || lowerName.includes('beer')) return 'Biere';
+  if(lowerName.includes('rhum')) return 'Rhum';
+  if(lowerName.includes('cocktail')) return 'Cocktail';
+  if(lowerName.includes('vin')) return 'Vin';
+
+  if(lowerCategory.includes('manger')) return 'Pate';
+  if(lowerCategory.includes('boisson')) return 'Fresco';
+  if(lowerCategory.includes('alcool')) return 'Biere';
+
+  return 'Pate';
 }
 
 // ==================================================
