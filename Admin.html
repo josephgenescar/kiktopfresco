@@ -749,6 +749,7 @@ function showPage(name){
 
 async function refreshAll(){
   settings = await getAdminSettings();
+  await loadCMSProducts();
   renderDashboard();
 }
 
@@ -983,6 +984,106 @@ function resetBnForm(){
 //  PRODUCTS
 // ============================================================
 var pImgData = null;
+var cmsProducts = [];
+
+async function loadCMSProducts(){
+  try{
+    var prodsRes = await fetch('content/products/index.json');
+    var prodFiles = await prodsRes.json();
+    var loadedProducts = [];
+
+    for(var i=0; i<prodFiles.length; i++){
+      try{
+        var fileRes = await fetch('content/products/'+prodFiles[i]);
+        var content = await fileRes.text();
+        var frontMatter = parseFrontMatter(content);
+        if(frontMatter && frontMatter.name){
+          loadedProducts.push({
+            id: i+1,
+            fr: frontMatter.name,
+            kr: frontMatter.name,
+            tab: getCategoryTab(frontMatter.category),
+            cat: getCategoryName(frontMatter.category),
+            price: frontMatter.price || 0,
+            em: getCategoryEmoji(frontMatter.category),
+            df: frontMatter.description || "",
+            dk: frontMatter.description || "",
+            img: frontMatter.image || "",
+            badge: "",
+            alc: isAlcohol(frontMatter.category),
+            status: frontMatter.available !== false ? "active" : "inactive",
+            pointValue: frontMatter.pointValue || 1
+          });
+        }
+      } catch(e){ console.error('Error loading product:', prodFiles[i], e); }
+    }
+
+    if(loadedProducts.length > 0){
+      cmsProducts = loadedProducts;
+      localStorage.setItem("products", JSON.stringify(loadedProducts));
+      return loadedProducts;
+    }
+  } catch(e){
+    console.error('Error loading CMS products:', e);
+  }
+  return lsGet("products",[]);
+}
+
+function parseFrontMatter(content){
+  var lines = content.split('\n');
+  var frontMatter = {};
+  var inFrontMatter = false;
+  for(var i=0; i<lines.length; i++){
+    if(lines[i].trim() === '---'){
+      if(inFrontMatter) break;
+      inFrontMatter = true;
+      continue;
+    }
+    if(inFrontMatter){
+      var match = lines[i].match(/^(\w+):\s*(.+)$/);
+      if(match){
+        var key = match[1].trim();
+        var value = match[2].trim();
+        if(value === 'true') value = true;
+        if(value === 'false') value = false;
+        if(!isNaN(value)) value = Number(value);
+        frontMatter[key] = value;
+      }
+    }
+  }
+  return frontMatter;
+}
+
+function getCategoryTab(category){
+  if(category.includes('Pate') || category.includes('Sandwich') || category.includes('Popcorn') || category.includes('Saucisse') || category.includes('Manger')) return 'manger';
+  if(category.includes('Fresco') || category.includes('Jus') || category.includes('Soda') || category.includes('Ice Cream') || category.includes('Boissons') || category.includes('Boisson')) return 'boisson';
+  if(category.includes('Biere') || category.includes('Rhum') || category.includes('Cocktail') || category.includes('Vin') || category.includes('Alcool')) return 'alcool';
+  return 'manger';
+}
+
+function getCategoryName(category){
+  return category || 'Pate';
+}
+
+function getCategoryEmoji(category){
+  if(category.includes('Pate')) return '🥟';
+  if(category.includes('Sandwich')) return '🥪';
+  if(category.includes('Popcorn')) return '🍿';
+  if(category.includes('Saucisse')) return '🌭';
+  if(category.includes('Fresco')) return '🥤';
+  if(category.includes('Jus')) return '🍊';
+  if(category.includes('Soda')) return '🥫';
+  if(category.includes('Ice Cream')) return '🍦';
+  if(category.includes('Biere')) return '🍺';
+  if(category.includes('Rhum')) return '🥃';
+  if(category.includes('Cocktail')) return '🍹';
+  if(category.includes('Vin')) return '🍷';
+  return '🍽️';
+}
+
+function isAlcohol(category){
+  return category.includes('Biere') || category.includes('Rhum') || category.includes('Cocktail') || category.includes('Vin') || category.includes('Alcool');
+}
 
 function handleProdImg(input){
   var file = input.files[0];
@@ -997,8 +1098,8 @@ function handleProdImg(input){
   reader.readAsDataURL(file);
 }
 
-function renderProducts(){
-  var prods = lsGet("products",[]);
+async function renderProducts(){
+  var prods = await loadCMSProducts();
   document.getElementById("prod-count").textContent = prods.length;
   var tbody = document.getElementById("prod-tbody");
   if(!prods.length){
@@ -1009,9 +1110,10 @@ function renderProducts(){
     var name = p.fr||p.name_fr||p.name||"?";
     var tab  = p.tab||"-";
     var cat  = p.cat||"-";
+    var imgHtml = p.img ? '<img src="'+p.img+'" style="width:40px;height:40px;object-fit:cover;border-radius:6px;margin-right:8px">' : '';
     return "<tr>"
       +"<td style='font-size:24px'>"+(p.em||p.emoji||"🍽️")+"</td>"
-      +"<td style='font-weight:700'>"+name+"</td>"
+      +"<td style='font-weight:700'>"+imgHtml+name+"</td>"
       +"<td style='color:var(--gray)'>"+tab+"</td>"
       +"<td>"+cat+"</td>"
       +"<td style='color:var(--yellow);font-weight:800'>"+p.price+" HTG</td>"
