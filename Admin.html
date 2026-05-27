@@ -689,6 +689,16 @@ const DB={
 function lsGet(k,d){try{var v=localStorage.getItem("kt_"+k);return v!==null?JSON.parse(v):d;}catch(e){return d;}}
 function lsSet(k,v){try{localStorage.setItem("kt_"+k,JSON.stringify(v));}catch(e){}}
 
+function normalizeCustomer(c){
+  if(!c) return c;
+  c.points = Number(c.points) || 0;
+  c.totalOrders = Number(c.totalOrders) || 0;
+  c.history = Array.isArray(c.history) ? c.history : [];
+  c.name = c.name || c.email || "Client";
+  c.phone = c.phone || "";
+  return c;
+}
+
 var settings = lsGet("settings",DEFAULT_SETTINGS);
 
 async function getAdminSettings(){
@@ -761,7 +771,7 @@ async function refreshAll(){
 // ============================================================
 function renderDashboard(){
   var prods   = lsGet("products",[]).filter(function(p){return p.status==="active";});
-  var custs   = lsGet("customers",[]);
+  var custs   = lsGet("customers",[]).map(normalizeCustomer);
   var ords    = lsGet("orders",[]);
   var banners = [];try{banners=(JSON.parse(localStorage.getItem("kt_banners"))||[]).filter(function(b){return b.active!==false;});}catch(e){}
   var rev     = ords.filter(function(o){return !o.usedPoints;}).reduce(function(s,o){return s+o.total;},0);
@@ -1217,7 +1227,7 @@ function handleSpecialImg(input){
 //  CLIENTS
 // ============================================================
 function renderClients(){
-  var custs = lsGet("customers",[]);
+  var custs = lsGet("customers",[]).map(normalizeCustomer);
   var max   = settings.maxPoints||100;
   var sorted = custs.slice().sort(function(a,b){return b.points-a.points;});
 

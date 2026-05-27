@@ -475,6 +475,9 @@ nav.banner-visible{
   border:1.5px solid rgba(13,43,94,.04);cursor:pointer;
 }
 .pcard:hover{transform:translateY(-5px);box-shadow:var(--shh);}
+.pcard-disabled{opacity:.65;cursor:not-allowed;}
+.pcard-disabled:hover{transform:none;box-shadow:var(--sh);}
+.padd.disabled{background:var(--gray);cursor:not-allowed;transform:none;}
 .pcard-top{
   height:155px;position:relative;overflow:hidden;
   background:#eef2ff;display:flex;align-items:center;justify-content:center;
@@ -493,6 +496,7 @@ nav.banner-visible{
 .pbadge.new{background:var(--green);color:#fff;}
 .pbadge.hot{background:var(--red);color:#fff;}
 .pbadge.prm{background:#6C5CE7;color:#fff;}
+.pbadge.off{background:#ccc;color:#333;}
 .alc-tag{
   position:absolute;bottom:6px;left:6px;z-index:2;
   background:rgba(108,92,231,.85);color:#fff;
@@ -1340,22 +1344,33 @@ async function sbGetCustomers(){
 
 function isEmail(value){return value && value.indexOf('@') > -1;}
 
+function normalizeCustomer(c){
+  if(!c) return c;
+  c.points = Number(c.points) || 0;
+  c.totalOrders = Number(c.totalOrders) || 0;
+  c.history = Array.isArray(c.history) ? c.history : [];
+  c.name = c.name || c.email || "Client";
+  c.phone = c.phone || "";
+  return c;
+}
+
 async function sbGetCustomerByPhone(identifier){
-  if(!supabaseClient) return lsGet("customers",[]).find(function(c){return c.phone===identifier||c.email===identifier;});
+  if(!supabaseClient) return normalizeCustomer(lsGet("customers",[]).find(function(c){return c.phone===identifier||c.email===identifier;}));
   try{
     var query = isEmail(identifier)
       ? supabaseClient.from('customers').select('*').eq('email',identifier).single()
       : supabaseClient.from('customers').select('*').eq('phone',identifier).single();
     var {data,error} = await query;
     if(error && error.code !== 'PGRST116') throw error;
-    return data;
+    return normalizeCustomer(data);
   }catch(e){
     console.log('Supabase error:', e);
-    return lsGet("customers",[]).find(function(c){return c.phone===identifier||c.email===identifier;});
+    return normalizeCustomer(lsGet("customers",[]).find(function(c){return c.phone===identifier||c.email===identifier;}));
   }
 }
 
 async function sbSaveCustomer(customer){
+  customer = normalizeCustomer(customer);
   if(!supabaseClient){
     var customers = lsGet("customers",[]);
     var idx = customers.findIndex(function(c){return c.phone===customer.phone||c.email===customer.email;});
@@ -1622,9 +1637,7 @@ async function init(){
   }
 
   var ph=localStorage.getItem("kt_curr");
-  if(ph){cust=await sbGetCustomerByPhone(ph)||null;}
-  var ph=localStorage.getItem("kt_curr");
-  if(ph){cust=await sbGetCustomerByPhone(ph)||null;}
+  if(ph){cust=normalizeCustomer(await sbGetCustomerByPhone(ph)||null);}
   applyLang();
   loadBanner();
   switchTab("manger");
@@ -1835,14 +1848,17 @@ function renderProds(){
 
   function renderCards(items){
     return items.map(function(p){
+      var isInactive = p.status === "inactive";
       var name=(L==="fr")?p.fr:p.kr;
       var desc=(L==="fr")?p.df:p.dk;
       var img=p.img||IMGS[p.cat]||"";
+      var badgeText = isInactive ? (L==="fr"?"Indisponible":"Pa disponib") : p.badge;
       var bc={"Pop":"pop","Nouveau":"new","Frais":"new","Naturel":"new","Local":"hot","Maison":"hot","Special":"hot","Premium":"prm","Fav":"hot","Ete":"pop"}[p.badge]||"pop";
-      var html='<div class="pcard" onclick="addToCart('+p.id+')">';
+      var badgeClass = isInactive ? "off" : bc;
+      var html='<div class="pcard'+(isInactive?" pcard-disabled":"")+'"'+(isInactive?"":" onclick=\"addToCart("+p.id+")\"")+">";
       html+='<div class="pcard-top">';
       if(img)html+='<img src="'+img+'" alt="'+name+'" loading="lazy" onerror="this.style.display=\'none\'">';
-      if(p.badge)html+='<span class="pbadge '+bc+'">'+p.badge+"</span>";
+      if(badgeText)html+='<span class="pbadge '+badgeClass+'">'+badgeText+"</span>";
       if(p.alc)html+='<span class="alc-tag">18+</span>';
       html+="</div>";
       html+='<div class="pcard-body">';
@@ -1850,7 +1866,11 @@ function renderProds(){
       html+='<div class="pcard-desc">'+desc+"</div>";
       html+='<div class="pcard-foot">';
       html+='<div class="pcard-price">'+p.price+'<small> HTG</small></div>';
-      html+='<button class="padd" onclick="event.stopPropagation();addToCart('+p.id+')">+</button>';
+      if(isInactive){
+        html+='<button class="padd disabled" type="button">X</button>';
+      } else {
+        html+='<button class="padd" type="button" onclick="event.stopPropagation();addToCart('+p.id+')">+</button>';
+      }
       html+="</div></div></div>";
       return html;
     }).join("");
@@ -1894,6 +1914,10 @@ function renderProds(){
 function addToCart(pid){
   var p=products.find(function(x){return x.id===pid;});
   if(!p)return;
+  if(p.status === "inactive"){
+    toast(L==="fr"?"Produit indisponible":"Pwodwi endisponib","e");
+    return;
+  }
   var name=(L==="fr")?p.fr:p.kr;
   var ex=cart.find(function(x){return x.id===pid;});
   if(ex)ex.qty++;
@@ -2340,7 +2364,7 @@ async function doLogin(){
     if(!c || c.password !== password){toast(tr("t-not-found"),"e");return;}
   }
 
-  cust=c;localStorage.setItem("kt_curr",identifier);
+  cust=normalizeCustomer(c);localStorage.setItem("kt_curr",identifier);
   updNavPts();
   updCartUI();
   closeM("m-login");
