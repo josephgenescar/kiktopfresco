@@ -29,7 +29,7 @@
 /* ============ RESET ============ */
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
-body{font-family:'Nunito',sans-serif;background:#F0F5FF;color:#1a1a2e;overflow-x:hidden;}
+body{font-family:'Nunito',sans-serif;background:#fff;color:#1a1a2e;overflow-x:hidden;}
 
 /* ============ VARIABLES ============ */
 :root{
@@ -54,20 +54,19 @@ section{
 .section-photo{overflow:hidden;isolation:isolate}
 .section-photo::before{
   content:'';position:absolute;inset:-10% 0;z-index:0;
-  background-image:var(--section-bg);
+  background-image:none;
   background-size:cover;background-repeat:no-repeat;
   background-position:var(--photo-pos,center);
-  filter:brightness(.86);opacity:.78;transform:scale(1.04);
+  filter:brightness(.86);opacity:0;transform:scale(1.04);
   mix-blend-mode:normal;transition:opacity .4s,transform .6s;
 }
 .section-photo::after{
   /* texture layer + subtle gradient to keep text readable */
   content:'';position:absolute;inset:0;z-index:1;
-  background-image: linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.38)),
-                    var(--section-texture, url('/images/uploads/fresco%20(2).jpeg'));
+  background-image:none;
   background-size: cover, var(--texture-size,cover);
   background-position: center, var(--photo-pos,center);
-  background-repeat: no-repeat;pointer-events:none;opacity:.28;
+  background-repeat: no-repeat;pointer-events:none;opacity:0;
 }
 .section-photo>*{position:relative;z-index:2}
 
@@ -184,13 +183,13 @@ nav{
 /* ============ HERO ============ */
 #hero{
   min-height:100vh;padding-top:66px;
-  background: linear-gradient(135deg, #060e22 0%, #0D2B5E 50%, #0f3270 100%);
+  background: #fff;
   background-attachment: fixed;
   display:flex;align-items:center;justify-content:center;
   position:relative;overflow:hidden;
 }
 #hero::before{
-  content:'';position:absolute;inset:0;background:rgba(6,14,34,.6);z-index:0;
+  content:'';position:absolute;inset:0;background:transparent;z-index:0;
 }
 .hero-content{
   position:relative;z-index:1;text-align:center;padding:40px 20px;
@@ -203,9 +202,9 @@ nav{
 }
 .h-sub{color:rgba(255,255,255,.92);}
 .hblob{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;}
-.hblob1{width:500px;height:500px;background:rgba(245,197,24,.12);top:-150px;right:-150px;animation:hba 15s ease-in-out infinite;}
-.hblob2{width:400px;height:400px;background:rgba(0,184,148,.1);bottom:-120px;left:-120px;animation:hba 12s ease-in-out infinite 3s;}
-.hblob3{width:300px;height:300px;background:rgba(108,92,231,.08);top:50%;left:10%;animation:hba 18s ease-in-out infinite 5s;}
+.hblob1{width:500px;height:500px;background:transparent;top:-150px;right:-150px;animation:hba 15s ease-in-out infinite;}
+.hblob2{width:400px;height:400px;background:transparent;bottom:-120px;left:-120px;animation:hba 12s ease-in-out infinite 3s;}
+.hblob3{width:300px;height:300px;background:transparent;top:50%;left:10%;animation:hba 18s ease-in-out infinite 5s;}
 @keyframes hba{0%,100%{transform:translate(0,0);}25%{transform:translate(30px,-20px);}50%{transform:translate(-10px,25px);}75%{transform:translate(20px,10px);}}
 
 .hero-content{position:relative;z-index:1;text-align:center;padding:40px 20px;}
@@ -282,7 +281,7 @@ nav{
 .h-cat:hover{background:rgba(245,197,24,.18);border-color:rgba(245,197,24,.5);color:var(--yellow);}
 
 /* ============ SUNDAY ============ */
-#sunday{background:linear-gradient(135deg,#1a0000,#8B0000,var(--red));}
+#sunday{background:#fff;}
 .sun-bar{
   background:var(--yellow);color:var(--navy);
   text-align:center;font-size:11px;font-weight:900;
@@ -424,7 +423,7 @@ nav{
 
 /* ============ POINTS ============ */
 #points{
-  background:linear-gradient(135deg,#060e22,#0D2B5E 55%,#0c2560);
+  background:#fff;
   padding:64px 20px;
 }
 .pts-wrap{max-width:860px;margin:0 auto;text-align:center;}
@@ -473,7 +472,7 @@ nav{
 
 /* ============ WHATSAPP SECTION ============ */
 #wa-section{
-  background:linear-gradient(135deg,var(--wa2),#128C7E,var(--wa));
+  background:#fff;
   padding:60px 20px;text-align:center;position:relative;overflow:hidden;
 }
 #wa-section::before{
