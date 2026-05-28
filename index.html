@@ -25,6 +25,7 @@
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/supabase-config.js"></script>
+<script src="/js/cms-loader.js"></script>
 
 <style>
 /* ============ RESET ============ */
@@ -1009,7 +1010,7 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
       </div>
     </div>
     <div class="sun-card">
-      <img id="sun-img" src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80" alt="">
+      <img id="sun-img" src="/images/uploads/cuisine%20photo.jpg" alt="">
       <div class="sun-name" id="sun-name">« profitez du spécial »</div>
       <div class="sun-desc" id="sun-desc"></div>
       <div class="sun-prices">
@@ -1576,18 +1577,18 @@ var orders = lsGet("orders",[]);
 
 // ---- FOOD IMAGES ----
 var IMGS = {
-  "Pate":"https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&q=75",
-  "Sandwich":"https://images.unsplash.com/photo-1539252554453-80ab65ce3586?w=400&q=75",
-  "Popcorn":"https://images.unsplash.com/photo-1586511925558-a4134d4f49ef?w=400&q=75",
-  "Saucisse":"https://images.unsplash.com/photo-1526367790999-0150786686a2?w=400&q=75",
-  "Fresco":"https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=75",
-  "Jus":"https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400&q=75",
-  "Soda":"https://images.unsplash.com/photo-1527960471264-932f39eb5846?w=400&q=75",
-  "Ice Cream":"https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=400&q=75",
-  "Biere":"https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=400&q=75",
-  "Rhum":"https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=400&q=75",
-  "Cocktail":"https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=400&q=75",
-  "Vin":"https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400&q=75"
+  "Pate":"/images/uploads/pate.jpeg",
+  "Sandwich":"/images/uploads/poullet.jpeg",
+  "Popcorn":"/images/uploads/popcorn.jpeg",
+  "Saucisse":"/images/uploads/poullet.jpeg",
+  "Fresco":"/images/uploads/fresco.jpeg",
+  "Jus":"/images/uploads/jus%20petit.jpeg",
+  "Soda":"/images/uploads/Tampico.jpeg",
+  "Ice Cream":"/images/uploads/glace.jpeg",
+  "Biere":"/images/uploads/beer.jpeg",
+  "Rhum":"/images/uploads/robusto.jpeg",
+  "Cocktail":"/images/uploads/shake%20bongu.jpeg",
+  "Vin":"/images/uploads/toro.jpeg"
 };
 
 // ---- SUBCATEGORIES ----
@@ -1806,6 +1807,13 @@ async function initInstallPrompt(){
 // ==================================================
 async function init(){
   initInstallPrompt();
+  if(typeof window.loadKiktopCmsData === 'function'){
+    try {
+      await window.loadKiktopCmsData();
+    } catch(e) {
+      console.log('⚠️ CMS fallback load failed:', e);
+    }
+  }
   var remoteProducts = await sbGetProducts();
   var storedProducts = remoteProducts && remoteProducts.length > 0 ? remoteProducts : lsGet("products",[]);
   if(storedProducts && storedProducts.length > 0){
