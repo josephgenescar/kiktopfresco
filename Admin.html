@@ -291,6 +291,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
       <div class="page on" id="page-dashboard">
         <div class="page-title">📊 Dashboard</div>
         <div class="page-sub">Bienvenu nan pano kontwòl KikTop Fresco</div>
+
         <div class="stats-row">
           <div class="stat"><div class="sn" id="ds-prods">0</div><div class="sl">Pwodui Aktif</div></div>
           <div class="stat"><div class="sn" id="ds-custs">0</div><div class="sl">Kliyan</div></div>
@@ -298,6 +299,56 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
           <div class="stat"><div class="sn" id="ds-rev">0</div><div class="sl">Revni (HTG)</div></div>
           <div class="stat"><div class="sn" id="ds-bann">0</div><div class="sl">Annonces Aktif</div></div>
         </div>
+
+        <div class="btns-row" style="margin-bottom:18px">
+          <button type="button" class="btn-save btn-del" onclick="adminClearAllOrders()">🗑️ Efase tout kòmand</button>
+          <button type="button" class="btn-save btn-del" onclick="adminDeduct100Points()">➖ Retire 100 pwen sou tout kliyan >100</button>
+        </div>
+        // ADMIN ACTIONS
+        async function adminClearAllOrders(){
+          if(!confirm("Efase TOUT kòmand? (Aksyon sa a ap retire tout kòmand ak reset stats kliyan yo.)")) return;
+          if(isSupabaseConfigured){
+            try{
+              await sb.rpc('clear_all_orders');
+              toast("Tout kòmand efase nan baz done!","s");
+            }catch(e){
+              toast("Erè: " + (e.message||e),"e");
+            }
+          }else{
+            lsSet("orders",[]);
+            var custs = lsGet("customers",[]);
+            custs.forEach(function(c){c.totalOrders=0;c.totalSpent=0;});
+            lsSet("customers",custs);
+            toast("Tout kòmand efase lokalman!","s");
+          }
+          renderDashboard();
+          if(document.getElementById("ord-tbody")) renderOrders();
+        }
+
+        async function adminDeduct100Points(){
+          if(!confirm("Retire 100 pwen sou tout kliyan ki gen plis pase 100?")) return;
+          if(isSupabaseConfigured){
+            try{
+              await sb.rpc('deduct_points_from_accounts', { p_points_to_remove: 100 });
+              toast("100 pwen retire sou tout kliyan >100!","s");
+            }catch(e){
+              toast("Erè: " + (e.message||e),"e");
+            }
+          }else{
+            var custs = lsGet("customers",[]);
+            custs.forEach(function(c){
+              if(Number(c.points)>100){
+                c.points = Number(c.points)-100;
+                if(!Array.isArray(c.history)) c.history=[];
+                c.history.push({desc:"Retrait automatique de points",pts:-100,date:new Date().toISOString()});
+              }
+            });
+            lsSet("customers",custs);
+            toast("100 pwen retire lokalman!","s");
+          }
+          renderClients();
+          renderDashboard();
+        }
         <div class="card">
           <div class="card-title">📋 Dènye Kòmand</div>
           <table class="tbl"><thead><tr><th>#</th><th>Kliyan</th><th>Pwodui</th><th>Total</th><th>Pwen</th><th>Dat</th></tr></thead>
