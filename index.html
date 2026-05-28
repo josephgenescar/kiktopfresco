@@ -1442,6 +1442,26 @@ async function sbSaveCustomer(customer){
   }
 }
 
+async function refreshCustomerFromSupabase(identifier){
+  if(!identifier || !supabaseClient) return null;
+  try{
+    var id = isEmail(identifier) ? normalizeEmail(identifier) : normalizePhone(identifier);
+    var query = isEmail(identifier)
+      ? supabaseClient.from('customers').select('*').eq('email',id).single()
+      : supabaseClient.from('customers').select('*').eq('phone',id).single();
+    var {data,error} = await query;
+    if(error && error.code !== 'PGRST116') throw error;
+    if(data){
+      cust = normalizeCustomer(data);
+      localStorage.setItem("kt_curr",cust.email||cust.phone);
+      return cust;
+    }
+  }catch(e){
+    console.log('Error refreshing customer from Supabase:', e);
+  }
+  return null;
+}
+
 async function sbGetOrders(){
   if(!supabaseClient) return lsGet("orders",[]);
   try{
@@ -1859,7 +1879,12 @@ async function init(){
   }
 
   var ph=localStorage.getItem("kt_curr");
-  if(ph){cust=normalizeCustomer(await sbGetCustomerByPhone(ph)||null);}
+  if(ph){
+    cust=normalizeCustomer(await sbGetCustomerByPhone(ph)||null);
+    if(supabaseClient && cust){
+      await refreshCustomerFromSupabase(ph);
+    }
+  }
   applyLang();
   loadBanner();
   switchTab("manger");
@@ -2596,6 +2621,11 @@ async function enroll(){
   await sbSaveCustomer(c);
   cust=normalizeCustomer(c);
   localStorage.setItem("kt_curr",cust.email||cust.phone);
+  
+  if(supabaseClient){
+    await refreshCustomerFromSupabase(email);
+  }
+  
   updNavPts();
   updCartUI();
   toast(tr("t-welcome")+" "+name,"s");
@@ -2640,6 +2670,11 @@ async function doLogin(){
 
   cust=normalizeCustomer(c);
   localStorage.setItem("kt_curr",cust.email||cust.phone);
+  
+  if(supabaseClient){
+    await refreshCustomerFromSupabase(loginId);
+  }
+  
   updNavPts();
   updCartUI();
   closeM("m-login");
