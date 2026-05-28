@@ -2071,13 +2071,14 @@ function renderProds(){
   function renderCards(items){
     return items.map(function(p){
       var isInactive = p.status === "inactive";
+      var pid = String(p.id);
       var name=(L==="fr")?p.fr:p.kr;
       var desc=(L==="fr")?p.df:p.dk;
       var img=(p.img || IMGS[p.cat] || "").trim();
       var badgeText = isInactive ? (L==="fr"?"Indisponible":"Pa disponib") : p.badge;
       var bc={"Pop":"pop","Nouveau":"new","Frais":"new","Naturel":"new","Local":"hot","Maison":"hot","Special":"hot","Premium":"prm","Fav":"hot","Ete":"pop"}[p.badge]||"pop";
       var badgeClass = isInactive ? "off" : bc;
-      var html='<div class="pcard'+(isInactive?" pcard-disabled":"")+'"'+(isInactive?"":" onclick=\"addToCart("+p.id+")\"")+">";
+      var html='<div class="pcard'+(isInactive?" pcard-disabled":"")+'"'+(isInactive?"":" data-pid=\""+pid+"\" onclick=\"addToCart(this.dataset.pid)\"")+">";
       html+='<div class="pcard-top">';
       if(img)html+='<img src="'+img+'" alt="'+name+'" loading="lazy" onerror="this.style.display=\'none\'">';
       if(badgeText)html+='<span class="pbadge '+badgeClass+'">'+badgeText+"</span>";
@@ -2091,7 +2092,7 @@ function renderProds(){
       if(isInactive){
         html+='<button class="padd disabled" type="button">X</button>';
       } else {
-        html+='<button class="padd" type="button" onclick="event.stopPropagation();addToCart('+p.id+')">+</button>';
+        html+='<button class="padd" type="button" data-pid="'+pid+'" onclick="event.stopPropagation();addToCart(this.dataset.pid)">+</button>';
       }
       html+="</div></div></div>";
       return html;
@@ -2230,9 +2231,10 @@ function updCartUI(){
       html+='<div class="ups"><h4>'+tr("upsell")+'</h4><div class="ups-row">';
       for(var j=0;j<ups.length;j++){
         var u=ups[j];
+        var upid = String(u.id);
         var un=((L==="fr")?u.fr:u.kr).substring(0,15);
         var ui=u.img||IMGS[u.cat]||"";
-        html+='<div class="uitem" onclick="addToCart('+u.id+')">';
+        html+='<div class="uitem" data-pid="'+upid+'" onclick="addToCart(this.dataset.pid)">';
         if(ui){html+='<img src="'+ui+'" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\'">';}
         else{html+='<div class="uitem-em">'+u.em+"</div>";}
         html+='<div class="uitem-n">'+un+"</div>";

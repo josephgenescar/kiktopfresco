@@ -617,12 +617,14 @@ const ADB = {
   },
   async saveProduct(p){
     if(!isSupabaseConfigured){ /* handled below */ return null; }
-    if(p.id && typeof p.id === 'number' && p.id < 1e12){
-      const {data} = await sb.from('products').update(p).eq('id',p.id).select().single();
+    if(p.id !== undefined && p.id !== null && p.id !== ""){
+      const {data,error} = await sb.from('products').update(p).eq('id',p.id).select().single();
+      if(error) throw error;
       return data;
     } else {
       const {id,...rest} = p;
-      const {data} = await sb.from('products').insert(rest).select().single();
+      const {data,error} = await sb.from('products').insert(rest).select().single();
+      if(error) throw error;
       return data;
     }
   },
@@ -1207,6 +1209,7 @@ async function renderProducts(){
     return;
   }
   tbody.innerHTML = prods.map(function(p){
+    var pid = String(p.id);
     var name = p.fr||p.name_fr||p.name||"?";
     var tab  = p.tab||"-";
     var cat  = p.cat||p.category||"-";
@@ -1219,8 +1222,8 @@ async function renderProducts(){
       +"<td style='color:var(--yellow);font-weight:800'>"+p.price+" HTG</td>"
       +"<td><span class='"+(p.status==="active"?"badge-on":"badge-off")+"'>"+(p.status==="active"?"Aktif":"Inaktif")+"</span></td>"
       +"<td style='display:flex;gap:6px'>"
-        +"<button type='button' class='btn-save btn-sm btn-edit' onclick='editProd("+p.id+")'>✏️</button>"
-        +"<button type='button' class='btn-save btn-sm btn-del' onclick='deleteProd("+p.id+")'>🗑</button>"
+        +"<button type='button' class='btn-save btn-sm btn-edit' data-id='"+pid+"' onclick='editProd(this.dataset.id)'>✏️</button>"
+        +"<button type='button' class='btn-save btn-sm btn-del' data-id='"+pid+"' onclick='deleteProd(this.dataset.id)'>🗑</button>"
       +"</td></tr>";
   }).join("");
 
@@ -1253,7 +1256,7 @@ async function saveProd(){
   var imgVal = pImgData || document.getElementById("p-img-url").value.trim();
 
   var p = {
-    id      : eid ? parseInt(eid) : Date.now(),
+    id      : eid ? eid : String(Date.now()),
     fr      : nameFr,
     name_fr : nameFr,
     kr      : nameKr||nameFr,
@@ -1387,11 +1390,11 @@ function renderSpecialPage(){
 }
 
 function updateSpPreview(){
-  var pid   = parseInt(document.getElementById("sp-prod").value);
+  var pid   = document.getElementById("sp-prod").value;
   var price = document.getElementById("sp-price").value;
   var msg   = document.getElementById("sp-msg").value;
   var prods = lsGet("products",[]);
-  var p     = prods.find(function(x){return x.id===pid;});
+  var p     = prods.find(function(x){return String(x.id)===String(pid);});
   document.getElementById("sp-pv-em").textContent  = p?(p.em||p.emoji||"🌟"):"🌟";
   document.getElementById("sp-pv-nm").textContent  = p?(p.fr||p.name_fr||p.name||"?"):"Pwodui Espesyal";
   document.getElementById("sp-pv-ms").textContent  = msg||"Mesaj espesyal...";
@@ -1407,7 +1410,7 @@ function updateSpPreview(){
 }
 
 function saveSpecial(){
-  var pid   = parseInt(document.getElementById("sp-prod").value);
+  var pid   = document.getElementById("sp-prod").value;
   var price = parseInt(document.getElementById("sp-price").value);
   var msg   = document.getElementById("sp-msg").value.trim();
   var img   = spImgData || "";
