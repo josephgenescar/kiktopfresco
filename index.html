@@ -25,7 +25,7 @@
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/supabase-config.js"></script>
-<script src="/js/cms-loader.js"></script>
+<script src="js/cms-loader.js"></script>
 
 <style>
 /* ============ RESET ============ */
@@ -1491,6 +1491,9 @@ async function sbGetSettings(){
 }
 
 function normalizeProductRow(row){
+  var resolvedImage = row.image || "";
+  var catImage = IMGS[row.category] || IMGS[row.cat] || "";
+  if(!resolvedImage && catImage){resolvedImage = catImage;}
   return {
     id: row.id,
     fr: row.name_fr || row.name || "",
@@ -1508,8 +1511,8 @@ function normalizeProductRow(row){
     desc_fr: row.description_fr || "",
     dk: row.description_kr || "",
     desc_kr: row.description_kr || "",
-    img: row.image || "",
-    image: row.image || "",
+    img: resolvedImage,
+    image: resolvedImage,
     badge: row.badge || "",
     status: row.status || "active",
     alc: row.alcohol === true || row.alcohol === 'true',
@@ -1822,12 +1825,23 @@ async function init(){
   lsSet("settings", settings);
 
   var remoteProducts = await sbGetProducts();
+  if(!remoteProducts || !remoteProducts.length){
+    remoteProducts = Array.isArray(window.__KT_CMS_PRODUCTS) ? window.__KT_CMS_PRODUCTS : [];
+  }
   var storedProducts = remoteProducts && remoteProducts.length > 0 ? remoteProducts : lsGet("products",[]);
   if(storedProducts && storedProducts.length > 0){
-    products = storedProducts;
+    products = storedProducts.map(function(item){
+      item.img = item.img || IMGS[item.cat] || "";
+      item.image = item.image || item.img || "";
+      return item;
+    });
     lsSet("products", products);
   } else {
-    products = DEF_PRODS;
+    products = DEF_PRODS.map(function(item){
+      item.img = item.img || IMGS[item.cat] || "";
+      item.image = item.image || item.img || "";
+      return item;
+    });
     lsSet("products", products);
   }
 
@@ -2053,7 +2067,7 @@ function renderProds(){
       var isInactive = p.status === "inactive";
       var name=(L==="fr")?p.fr:p.kr;
       var desc=(L==="fr")?p.df:p.dk;
-      var img=(p.img||"").trim();
+      var img=(p.img || IMGS[p.cat] || "").trim();
       var badgeText = isInactive ? (L==="fr"?"Indisponible":"Pa disponib") : p.badge;
       var bc={"Pop":"pop","Nouveau":"new","Frais":"new","Naturel":"new","Local":"hot","Maison":"hot","Special":"hot","Premium":"prm","Fav":"hot","Ete":"pop"}[p.badge]||"pop";
       var badgeClass = isInactive ? "off" : bc;

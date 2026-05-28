@@ -64,25 +64,34 @@
     return category || itemName || 'Pate';
   }
 
+  function normalizeAssetPath(value){
+    if(typeof value !== 'string') return '';
+    var cleaned = value.trim();
+    if(!cleaned) return '';
+    if(/^https?:\/\//i.test(cleaned)) return cleaned;
+    return cleaned.replace(/^\/+/,'');
+  }
+
   async function loadCmsData(){
     if(window.__KT_CMS_LOADED){
       return window.__KT_CMS_LOADED;
     }
 
     window.__KT_CMS_LOADED = (async function(){
-      var productIndex = await fetchJson('/content/products/index.json');
-      var bannerIndex = await fetchJson('/content/announcements/index.json');
+      var productIndex = await fetchJson('content/products/index.json');
+      var bannerIndex = await fetchJson('content/announcements/index.json');
 
       var products = [];
       if(Array.isArray(productIndex)){
         for(var i = 0; i < productIndex.length; i++){
           var file = productIndex[i];
-          var md = await fetch('/content/products/' + file, { cache: 'no-store' }).then(function(res){ return res.ok ? res.text() : ''; }).catch(function(){ return ''; });
+          var md = await fetch('content/products/' + file, { cache: 'no-store' }).then(function(res){ return res.ok ? res.text() : ''; }).catch(function(){ return ''; });
           var parsed = parseFrontmatter(md);
           var front = parsed.frontmatter || {};
           var name = front.name || file.replace(/\.md$/i, '');
           var tab = inferTab(name, front.category, front.tab);
           var category = inferCat(name, front.category);
+          var img = normalizeAssetPath(front.image || '');
           products.push({
             id: String(file.replace(/\.md$/i, '')),
             fr: name,
@@ -93,8 +102,8 @@
             em: front.emoji || '',
             df: front.description || '',
             dk: front.description || '',
-            img: front.image || '',
-            image: front.image || '',
+            img: img,
+            image: img,
             badge: front.badge || '',
             status: front.inStock === false ? 'inactive' : 'active',
             alc: /alcool|rhum|biere|vin|cocktail|beer/i.test(category + ' ' + name),
@@ -111,9 +120,10 @@
       if(Array.isArray(bannerIndex)){
         for(var j = 0; j < bannerIndex.length; j++){
           var bannerFile = bannerIndex[j];
-          var bannerMd = await fetch('/content/announcements/' + bannerFile, { cache: 'no-store' }).then(function(res){ return res.ok ? res.text() : ''; }).catch(function(){ return ''; });
+          var bannerMd = await fetch('content/announcements/' + bannerFile, { cache: 'no-store' }).then(function(res){ return res.ok ? res.text() : ''; }).catch(function(){ return ''; });
           var bannerData = parseFrontmatter(bannerMd);
           var bannerFront = bannerData.frontmatter || {};
+          var bannerImg = normalizeAssetPath(bannerFront.image || '');
           banners.push({
             id: String(bannerFile.replace(/\.md$/i, '')),
             title: bannerFront.title || '',
@@ -121,7 +131,7 @@
             icon: bannerFront.icon || '',
             bg: bannerFront.bgColor || '#0D2B5E',
             color: bannerFront.textColor || '#ffffff',
-            img: bannerFront.image || '',
+            img: bannerImg,
             link: bannerFront.link || '',
             type: bannerFront.type || (bannerFront.image ? 'image' : 'text'),
             active: bannerFront.active !== false,
@@ -135,6 +145,7 @@
 
       if(products.length){
         localStorage.setItem('products', JSON.stringify(products));
+        localStorage.setItem('kt_products', JSON.stringify(products));
       }
       if(banners.length){
         localStorage.setItem('banners', JSON.stringify(banners));
