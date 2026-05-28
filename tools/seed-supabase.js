@@ -33,6 +33,24 @@ function normalizeName(name) {
   return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
 
+function pickBestImageMatch(productName, uploadedUrls) {
+  const productNorm = normalizeName(productName);
+  const scored = Object.keys(uploadedUrls).map((fileName) => {
+    const baseName = fileName.replace(/\.[^.]+$/i, '');
+    const fileNorm = normalizeName(baseName);
+    const exact = productNorm === fileNorm ? 10000 : 0;
+    const contains = productNorm.includes(fileNorm) || fileNorm.includes(productNorm) ? 1200 : 0;
+    const overlap = fileNorm.split(/[^a-z0-9]+/).filter(Boolean).filter((part) => productNorm.includes(part)).length * 250;
+    const suffixPenalty = /(?:\(\d+\)|\d+)$/.test(fileNorm) && !/(?:\(\d+\)|\d+)$/.test(productNorm) ? -300 : 0;
+    const lengthBonus = Math.min(productNorm.length, fileNorm.length);
+    return { fileName, score: exact + contains + overlap + lengthBonus + suffixPenalty };
+  }).sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.fileName.localeCompare(b.fileName);
+  });
+  return scored[0] ? scored[0].fileName : null;
+}
+
 async function fetchJson(url, options = {}) {
   const res = await fetch(url, {
     ...options,
@@ -75,6 +93,20 @@ async function uploadFile(filePath, fileName) {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(fileName)}`;
 }
 
+async function clearTable(tableName) {
+  try {
+    const rows = await fetchJson(`${SUPABASE_URL}/rest/v1/${tableName}?select=id`);
+    if (Array.isArray(rows) && rows.length) {
+      for (const row of rows) {
+        await fetchJson(`${SUPABASE_URL}/rest/v1/${tableName}?id=eq.${row.id}`, { method: 'DELETE' });
+      }
+      console.log(`Cleared ${rows.length} rows from ${tableName}`);
+    }
+  } catch (err) {
+    console.warn(`Could not clear ${tableName}: ${err.message}`);
+  }
+}
+
 async function seed() {
   const uploadDir = path.join(process.cwd(), 'images', 'uploads');
   const fileNames = fs.readdirSync(uploadDir).filter((f) => !fs.statSync(path.join(uploadDir, f)).isDirectory());
@@ -89,6 +121,9 @@ async function seed() {
     }
   }
 
+  await clearTable('products');
+  await clearTable('banners');
+
   const products = [];
   const productFiles = fs.readdirSync(path.join(process.cwd(), 'content', 'products'))
     .filter((f) => f.endsWith('.md'))
@@ -99,20 +134,21 @@ async function seed() {
     const markdown = fs.readFileSync(filePath, 'utf8');
     const { frontmatter } = parseFrontmatter(markdown);
     let image = frontmatter.image || '';
-    const normalizedProductName = normalizeName(String(frontmatter.name || fileName.replace(/\.md$/i, '')));
-    const matchedFile = Object.keys(uploadedUrls).find((uploadedFile) => {
-      const normalizedUploadedName = normalizeName(uploadedFile.replace(/\.[^.]+$/i, ''));
-      return normalizedUploadedName === normalizedProductName
-        || normalizedUploadedName.includes(normalizedProductName)
-        || normalizedProductName.includes(normalizedUploadedName);
-    });
+    const productName = String(frontmatter.name || fileName.replace(/\.md$/i, ''));
+    const matchedFile = pickBestImageMatch(productName, uploadedUrls);
     if (matchedFile) {
       image = uploadedUrls[matchedFile];
     }
+    const categoryValue = String(frontmatter.category || '').toLowerCase();
+    const inferredTab = /biere|beer|rhum|vin|cocktail|alcool|18\+/i.test(categoryValue)
+      ? 'alcool'
+      : /boisson|boissons|fresco|jus|limonade|malta|tampico|glace|soda|ice/i.test(categoryValue)
+        ? 'boisson'
+        : 'manger';
     products.push({
-      name_fr: frontmatter.name || fileName.replace(/\.md$/i, '').replace(/-/g, ' '),
-      name_kr: frontmatter.name || fileName.replace(/\.md$/i, '').replace(/-/g, ' '),
-      tab: frontmatter.category ? ( /biere|beer|rhum|vin|cocktail|alcool/i.test(frontmatter.category) ? 'alcool' : /fresco|jus|limonade|malta|tampico|glace|soda|ice/i.test(frontmatter.category) ? 'boisson' : 'manger') : 'manger',
+      name_fr: productName,
+      name_kr: productName,
+      tab: inferredTab,
       category: frontmatter.category || 'Autre',
       price: Number(frontmatter.price) || 0,
       emoji: frontmatter.emoji || '',
