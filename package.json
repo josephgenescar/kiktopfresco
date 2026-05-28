@@ -1,0 +1,7 @@
+{
+  "name": "kiktopfresco-netlify",
+  "private": true,
+  "dependencies": {
+    "imagekit": "^6.0.0"
+  }
+}

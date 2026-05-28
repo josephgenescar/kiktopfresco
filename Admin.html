@@ -238,9 +238,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
   <meta name="theme-color" content="#0D2B5E">
  <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/imagekit@6.0.0/dist/imagekit.min.js"></script>
   <script src="/supabase-config.js"></script>
-</head>
-<body>
+  <script src="/imagekit-config.js"></script>
 
 <!-- LOGIN -->
 <div id="login-screen">
@@ -572,6 +572,14 @@ const isSupabaseConfigured =
   SUPABASE_SERVICE_KEY !== 'YOUR_SERVICE_ROLE_KEY';
 
 const sb = isSupabaseConfigured ? supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY) : null;
+
+const IMAGEKIT_PUBLIC_KEY = window.IMAGEKIT_ENV?.IMAGEKIT_PUBLIC_KEY || 'YOUR_IMAGEKIT_PUBLIC_KEY';
+const IMAGEKIT_URL_ENDPOINT = window.IMAGEKIT_ENV?.IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/7q1q0vmzk';
+const imagekit = new ImageKit({
+  publicKey: IMAGEKIT_PUBLIC_KEY,
+  urlEndpoint: IMAGEKIT_URL_ENDPOINT,
+  authenticationEndpoint: '/.netlify/functions/imagekit-auth'
+});
 
 // Admin DB wrapper
 const ADB = {
@@ -1151,17 +1159,33 @@ function resetBnForm(){
 // ============================================================
 var pImgData = null;
 
-function handleProdImg(input){
+async function uploadProductImage(file){
+  if(!window.ImageKit){
+    throw new Error('ImageKit SDK not available');
+  }
+  const response = await imagekit.upload({
+    file: file,
+    fileName: file.name,
+    folder: '/kiktopfresco/products'
+  });
+  return response.url;
+}
+
+async function handleProdImg(input){
   var file = input.files[0];
   if(!file) return;
   if(file.size > 3*1024*1024){toast("Imaj twò gwo! Maks 3MB","e");return;}
-  var reader = new FileReader();
-  reader.onload = function(e){
-    pImgData = e.target.result;
+  try{
+    document.getElementById("p-img-info").textContent = "⏳ Upload imaj...";
+    pImgData = await uploadProductImage(file);
     document.getElementById("p-img-url").value = "";
-    document.getElementById("p-img-info").textContent = "✅ "+file.name;
-  };
-  reader.readAsDataURL(file);
+    document.getElementById("p-img-info").textContent = "✅ "+file.name+" (ImageKit)";
+  }catch(err){
+    console.error('ImageKit upload error', err);
+    pImgData = null;
+    document.getElementById("p-img-info").textContent = "❌ Upload echwe";
+    toast("Upload imaj echwe","e");
+  }
 }
 
 async function renderProducts(){

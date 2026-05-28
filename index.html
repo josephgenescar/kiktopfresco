@@ -1384,8 +1384,8 @@ function normalizeCustomer(c){
   if(!c) return c;
   c.email = normalizeEmail(c.email);
   c.phone = normalizePhone(c.phone);
-  c.points = Number(c.points) || 0;
-  c.totalOrders = Number(c.totalOrders) || 0;
+  c.points = safeNumber(c.points);
+  c.totalOrders = safeNumber(c.totalOrders);
   c.history = Array.isArray(c.history) ? c.history : [];
   c.name = c.name || c.email || "Client";
   return c;
@@ -1581,6 +1581,12 @@ var settings = lsGet("settings",{maxPoints:100,pointsRate:150});
 var products = lsGet("products",[]);
 var customers = lsGet("customers",[]);
 var orders = lsGet("orders",[]);
+
+function safeNumber(value, fallback){
+  var n = Number(value);
+  if(Number.isFinite(n)) return n;
+  return arguments.length > 1 ? fallback : 0;
+}
 
 // ---- FOOD IMAGES ----
 var IMGS = {
@@ -2137,7 +2143,7 @@ function addToCart(pid){
   var name=(L==="fr")?p.fr:p.kr;
   var ex=cart.find(function(x){return x.id===pid;});
   if(ex)ex.qty++;
-  else cart.push({id:p.id,fr:p.fr,kr:p.kr,cat:p.cat,em:p.em,img:p.img||"",price:p.price,qty:1,sun:false});
+  else cart.push({id:p.id,fr:p.fr,kr:p.kr,cat:p.cat,em:p.em,img:p.img||"",price:safeNumber(p.price),qty:1,sun:false});
   updCartUI();
   toast("&#10003; "+name+" "+tr("t-added"),"s");
 }
@@ -2148,7 +2154,7 @@ function addSun(){
   var p=products.find(function(x){return x.id===sun.productId;});
   if(!p){toast(tr("t-no-sun"),"e");return;}
   var name=(L==="fr")?p.fr:p.kr;
-  var price=sun.price||p.price;
+  var price=safeNumber(sun.price, p.price);
   var ex=cart.find(function(x){return x.id===p.id&&x.sun;});
   if(ex)ex.qty++;
   else cart.push({id:p.id,fr:p.fr,kr:p.kr,cat:p.cat,em:p.em,img:p.img||"",price:price,qty:1,sun:true});
@@ -2163,13 +2169,13 @@ function rmItem(pid,sun){
 function chgQ(pid,sun,d){
   var it=cart.find(function(x){return x.id===pid&&!!x.sun===!!sun;});
   if(!it)return;
-  it.qty=Math.max(0,it.qty+d);
+  it.qty=Math.max(0, safeNumber(it.qty,1)+d);
   if(!it.qty)rmItem(pid,sun);
   else updCartUI();
 }
 
 function updCartUI(){
-  var cnt=cart.reduce(function(s,i){return s+i.qty;},0);
+  var cnt=cart.reduce(function(s,i){return s+safeNumber(i.qty);},0);
   document.getElementById("cart-n").textContent=cnt;
   var body=document.getElementById("cart-body");
   if(!cart.length){
@@ -2179,6 +2185,8 @@ function updCartUI(){
     var html="";
     for(var i=0;i<cart.length;i++){
       var it=cart[i];
+      var qty=safeNumber(it.qty);
+      var price=safeNumber(it.price);
       var name=(L==="fr")?it.fr:it.kr;
       var img=it.img||IMGS[it.cat]||"";
       html+='<div class="ci">';
@@ -2186,16 +2194,16 @@ function updCartUI(){
       else{html+='<div class="ci-em">'+it.em+"</div>";}
       html+='<div class="ci-info">';
       html+='<div class="ci-name">'+name+(it.sun?" ⭐":"")+"</div>";
-      html+='<div class="ci-unit">'+it.price+" HTG / "+(L==="fr"?"unite":"inite")+"</div>";
+      html+='<div class="ci-unit">'+price+" HTG / "+(L==="fr"?"unite":"inite")+"</div>";
       html+='<div class="ci-ctrl">';
       html+='<div class="qwrap">';
       html+='<button class="qb" onclick="chgQ('+it.id+','+!!it.sun+',-1)">−</button>';
-      html+='<span class="qn">'+String(it.qty).padStart(2,"0")+"</span>";
+      html+='<span class="qn">'+String(qty).padStart(2,"0")+"</span>";
       html+='<button class="qb" onclick="chgQ('+it.id+','+!!it.sun+',1)">+</button>';
       html+="</div>";
       html+='<button class="ci-del" onclick="rmItem('+it.id+","+!!it.sun+')">🗑</button>';
       html+="</div></div>";
-      html+='<div class="ci-sub">'+it.price*it.qty+'<br><small style="font-size:10px;color:var(--gray)">HTG</small></div>';
+      html+='<div class="ci-sub">'+price*qty+'<br><small style="font-size:10px;color:var(--gray)">HTG</small></div>';
       html+="</div>";
     }
     if(ups.length){
@@ -2326,28 +2334,34 @@ async function confirmPayment(){
     return;
   }
   
-  var sub = Number(cart.reduce(function(s,i){return s+Number(i.price || 0)*Number(i.qty || 0);},0)) || 0;
-  var rate = Math.max(1, Number(settings.pointsRate) || 150);
-  var maxPoints = Math.max(1, Number(settings.maxPoints) || 100);
-  var useP = document.getElementById("use-pts-chk").checked && cust;
+  var sub = cart.reduce(function(s,i){return s + safeNumber(i.price) * safeNumber(i.qty);},0);
+  sub = safeNumber(sub);
+  var rate = Math.max(1, safeNumber(settings.pointsRate,150));
+  var maxPoints = Math.max(1, safeNumber(settings.maxPoints,100));
+  var availablePoints = cust ? safeNumber(cust.points) : 0;
+  var useP = document.getElementById("use-pts-chk").checked && cust && availablePoints >= maxPoints;
   var pE = 0, pU = 0;
   
-  if(useP && cust && Number(cust.points || 0) >= maxPoints){
+  if(useP && cust){
     pU = maxPoints;
-    cust.points = Math.max(0, (Number(cust.points) || 0) - pU);
+    cust.points = Math.max(0, availablePoints - pU);
   } else {
     pE = Math.floor(sub / rate);
-    if(cust) cust.points = Math.min(maxPoints, (Number(cust.points) || 0) + pE);
+    if(cust) cust.points = Math.min(maxPoints, availablePoints + pE);
+  }
+  
+  if(cust){
+    cust.points = safeNumber(cust.points, 0);
   }
   
   var ordersList = await sbGetOrders();
   var num = ordersList.length + 1;
-  var items = cart.map(function(i){return((L==="fr")?i.fr:i.kr)+" x"+i.qty;}).join(", ");
+  var items = cart.map(function(i){return((L==="fr")?i.fr:i.kr)+" x"+safeNumber(i.qty);}).join(", ");
   var order = {id:num,customer:cust?cust.name:"Anonyme",phone:cust?cust.phone:"",items:items,total:sub,ptsEarned:pE,ptsUsed:pU,usedPoints:!!useP,paymentMethod:selectedPaymentMethod,date:new Date().toLocaleDateString()};
   await sbSaveOrder(order);
   
   if(cust){
-    cust.totalOrders = (cust.totalOrders || 0) + 1;
+    cust.totalOrders = safeNumber(cust.totalOrders) + 1;
     cust.history = cust.history || [];
     cust.history.unshift({desc:((L==="fr")?"Commande":"Komand")+" #"+num,pts:useP?-pU:pE,date:new Date().toLocaleDateString()});
     await sbSaveCustomer(cust);
@@ -2396,21 +2410,26 @@ async function goWA(){
     paymentText = "Lors de la récupération";
   }
   
-  var sub = Number(cart.reduce(function(s,i){return s+Number(i.price || 0)*Number(i.qty || 0);},0)) || 0;
-  var rate = Math.max(1, Number(settings.pointsRate) || 150);
-  var maxPoints = Math.max(1, Number(settings.maxPoints) || 100);
-  var useP = document.getElementById("use-pts-chk").checked && cust && Number(cust.points || 0) >= maxPoints;
+  var sub = cart.reduce(function(s,i){return s + safeNumber(i.price) * safeNumber(i.qty);},0);
+  sub = safeNumber(sub);
+  var rate = Math.max(1, safeNumber(settings.pointsRate,150));
+  var maxPoints = Math.max(1, safeNumber(settings.maxPoints,100));
+  var availablePoints = cust ? safeNumber(cust.points) : 0;
+  var useP = document.getElementById("use-pts-chk").checked && cust && availablePoints >= maxPoints;
   var pE = 0, pU = 0;
   if(useP && cust){
     pU = maxPoints;
-    cust.points = Math.max(0, (Number(cust.points) || 0) - pU);
+    cust.points = Math.max(0, availablePoints - pU);
   } else if(cust){
     pE = Math.floor(sub / rate);
-    cust.points = Math.min(maxPoints, (Number(cust.points) || 0) + pE);
+    cust.points = Math.min(maxPoints, availablePoints + pE);
+  }
+  if(cust){
+    cust.points = safeNumber(cust.points, 0);
   }
   
   var lines = cart.map(function(i){
-    return "- "+((L==="fr")?i.fr:i.kr)+" x"+i.qty+" = "+(i.price*i.qty)+" HTG";
+    return "- "+((L==="fr")?i.fr:i.kr)+" x"+safeNumber(i.qty)+" = "+(safeNumber(i.price)*safeNumber(i.qty))+" HTG";
   }).join("\n");
   var custLine = cust ? ("\n\nClient: "+cust.name+" | "+cust.phone) : "";
   var proofLine = "";
@@ -2444,7 +2463,7 @@ async function goWA(){
     id: num,
     customer: cust ? cust.name : "WhatsApp",
     phone: cust ? cust.phone : "",
-    items: cart.map(function(i){return i.fr+" x"+i.qty;}).join(", "),
+    items: cart.map(function(i){return i.fr+" x"+safeNumber(i.qty);}).join(", "),
     total: sub,
     ptsEarned: pE,
     ptsUsed: pU,
@@ -2459,7 +2478,7 @@ async function goWA(){
   };
   await sbSaveOrder(order);
   if(cust){
-    cust.totalOrders = (cust.totalOrders || 0) + 1;
+    cust.totalOrders = safeNumber(cust.totalOrders) + 1;
     cust.history = cust.history || [];
     cust.history.unshift({desc:((L==="fr")?"Commande":"Komand")+" #"+num,pts: useP ? -pU : pE,date:new Date().toLocaleDateString()});
     await sbSaveCustomer(cust);
@@ -2645,7 +2664,7 @@ function openCust(){
 }
 
 function logout(){cust=null;localStorage.removeItem("kt_curr");updNavPts();closeM("m-cust");updCartUI();}
-function updNavPts(){document.getElementById("nav-pts").textContent=cust?Math.max(0, Number(cust.points) || 0):"0";}
+function updNavPts(){document.getElementById("nav-pts").textContent=cust?Math.max(0, safeNumber(cust.points)):"0";}
 function openLogin(){openM("m-login");}
 
 // ==================================================
