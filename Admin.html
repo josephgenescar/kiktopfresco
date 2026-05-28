@@ -671,6 +671,16 @@ const ADB = {
     if(!isSupabaseConfigured){ /* handled below */ return; }
     await sb.from('customers').update({points:0}).eq('id',id);
   },
+  async resetCustomer(id){
+    if(!isSupabaseConfigured){ /* handled below */ return; }
+    await sb.from('customers').update({points:0, history:[], orders_count:0, total_spent:0}).eq('id',id);
+    await sb.from('orders').delete().eq('customer_id',id);
+    try{
+      await sb.rpc('sync_customer_points', { p_customer_id: id });
+    }catch(e){
+      console.warn('Failed to resync customer points after reset', e);
+    }
+  },
 
   // ── Orders ──
   async getOrders(){
@@ -1458,7 +1468,10 @@ function renderClients(){
       +"</div></td>"
       +"<td>"+(c.totalOrders||0)+"</td>"
       +"<td style='color:var(--gray);font-size:11px'>"+(c.joined||"-")+"</td>"
-      +"<td><button type='button' class='btn-save btn-sm btn-del' data-phone='"+phoneB64+"' onclick='resetPtsByEl(this)'>Reset</button></td>"
+      +"<td><div style='display:flex;flex-wrap:wrap;gap:6px'>"
+        +"<button type='button' class='btn-save btn-sm' data-phone='"+phoneB64+"' data-customer-id='"+(c.id||"")+"' onclick='resetPtsByEl(this)'>Reset Pwen</button>"
+        +"<button type='button' class='btn-save btn-sm btn-del' data-phone='"+phoneB64+"' data-customer-id='"+(c.id||"")+"' onclick='resetCustomerByEl(this)'>Reset Kont</button>"
+      +"</div></td>"
       +"</tr>";
   }).join("") : "<tr><td colspan='7' style='text-align:center;color:var(--gray);padding:20px'>Pa gen kliyan</td></tr>";
 }
@@ -1468,13 +1481,60 @@ function resetPtsByEl(btn){
   var phone = decodeURIComponent(escape(atob(b64)));
   resetPts(phone);
 }
+
+function resetCustomerByEl(btn){
+  var b64 = btn.getAttribute("data-phone");
+  var phone = decodeURIComponent(escape(atob(b64)));
+  var customerId = btn.getAttribute("data-customer-id");
+  resetCustomer(phone, customerId);
+}
+
 function resetPts(phone){
   if(!confirm("Reset pwen kliyan sa?")) return;
   var custs = lsGet("customers",[]);
   var idx   = custs.findIndex(function(c){return c.phone===phone;});
-  if(idx>=0){custs[idx].points=0;lsSet("customers",custs);}
+  if(idx>=0){
+    custs[idx].points = 0;
+    if(!Array.isArray(custs[idx].history)) custs[idx].history = [];
+    custs[idx].totalOrders = Number(custs[idx].totalOrders)||0;
+    custs[idx].totalSpent = Number(custs[idx].totalSpent)||0;
+    lsSet("customers",custs);
+  }
   renderClients();
   toast("Pwen reset!","s");
+}
+
+async function resetCustomer(phone, customerId){
+  if(!confirm("Rekòmanse kont sa a a zero (pwen, istorik, komand)?")) return;
+  var custs = lsGet("customers",[]);
+  var idx   = custs.findIndex(function(c){return c.phone===phone;});
+  if(idx>=0){
+    custs[idx].points = 0;
+    custs[idx].history = [];
+    custs[idx].totalOrders = 0;
+    custs[idx].totalSpent = 0;
+    lsSet("customers",custs);
+  }
+
+  var filteredOrders = lsGet("orders",[]).filter(function(order){
+    if(customerId && String(order.customer_id||"") === String(customerId)) return false;
+    if(phone && (String(order.phone||"") === String(phone) || String(order.customer_phone||"") === String(phone))) return false;
+    return true;
+  });
+  lsSet("orders", filteredOrders);
+
+  if(isSupabaseConfigured && customerId){
+    try{
+      await ADB.resetCustomer(Number(customerId));
+    }catch(e){
+      console.warn('Failed to reset customer remotely', e);
+    }
+  }
+
+  renderClients();
+  if(document.getElementById("ord-tbody")) renderOrders();
+  renderDashboard();
+  toast("Kont reset e istorik efase!","s");
 }
 
 // ============================================================

@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS customers (
   points INTEGER DEFAULT 0,
   orders_count INTEGER DEFAULT 0,
   total_spent INTEGER DEFAULT 0,
+  history JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

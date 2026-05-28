@@ -5,6 +5,9 @@
 -- Kouri sa nan Supabase SQL Editor
 -- Sa pral asire ke points yo toujou aktyalize nan baz done a
 
+ALTER TABLE IF EXISTS customers
+ADD COLUMN IF NOT EXISTS history JSONB DEFAULT '[]'::jsonb;
+
 -- ==================================================
 --  1. FUNCTION POUR METTRE A JOUR LES POINTS D'UN CLIENT
 -- ==================================================
@@ -242,7 +245,27 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ==================================================
---  8. INDEX POUR AMELIORER LES PERFORMANCES
+--  8. FUNCTION POUR RESETTER UN COMPTE CLIENT
+-- ==================================================
+CREATE OR REPLACE FUNCTION reset_customer_account(p_customer_id BIGINT)
+RETURNS VOID AS $$
+BEGIN
+    DELETE FROM orders
+    WHERE customer_id = p_customer_id;
+
+    UPDATE customers
+    SET 
+        points = 0,
+        orders_count = 0,
+        total_spent = 0,
+        history = '[]'::jsonb,
+        updated_at = NOW()
+    WHERE id = p_customer_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ==================================================
+--  9. INDEX POUR AMELIORER LES PERFORMANCES
 -- ==================================================
 CREATE INDEX IF NOT EXISTS idx_customers_points ON customers(points DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_customer_points ON orders(customer_id, points_earned);

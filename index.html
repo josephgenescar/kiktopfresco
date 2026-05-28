@@ -1382,6 +1382,10 @@ function normalizePhone(value){return value?value.toString().trim().replace(/\D/
 
 function normalizeCustomer(c){
   if(!c) return c;
+  if(c.id !== undefined && c.id !== null){
+    var numericId = Number(c.id);
+    c.id = Number.isFinite(numericId) ? numericId : c.id;
+  }
   c.email = normalizeEmail(c.email);
   c.phone = normalizePhone(c.phone);
   c.points = safeNumber(c.points);
@@ -1427,10 +1431,24 @@ async function sbSaveCustomer(customer){
     return customer;
   }
   try{
-    customer.updated_at = new Date().toISOString();
-    var {data,error} = await supabaseClient.from('customers').upsert(customer);
+    var payload = {
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      password: customer.password,
+      points: safeNumber(customer.points),
+      orders_count: safeNumber(customer.totalOrders),
+      total_spent: safeNumber(customer.totalSpent || 0),
+      history: Array.isArray(customer.history) ? customer.history : [],
+      updated_at: new Date().toISOString()
+    };
+    if(payload.id === undefined || payload.id === null || payload.id === ""){
+      delete payload.id;
+    }
+    var {data,error} = await supabaseClient.from('customers').upsert(payload, { onConflict: 'email' }).select().single();
     if(error) throw error;
-    return data[0];
+    return normalizeCustomer(data);
   }catch(e){
     console.log('Supabase error, using localStorage:', e);
     var customers = lsGet("customers",[]);
@@ -1438,7 +1456,7 @@ async function sbSaveCustomer(customer){
     if(idx >= 0) customers[idx] = customer;
     else customers.push(customer);
     lsSet("customers",customers);
-    return customer;
+    return normalizeCustomer(customer);
   }
 }
 
@@ -1482,9 +1500,21 @@ async function sbSaveOrder(order){
     return order;
   }
   try{
-    var {data,error} = await supabaseClient.from('orders').insert(order);
+    var payload = {
+      customer_id: order.customer_id !== undefined && order.customer_id !== null ? Number(order.customer_id) : null,
+      customer_name: order.customer_name || order.customer || "",
+      customer_phone: order.customer_phone || order.phone || "",
+      items: order.items,
+      total: Number(order.total) || 0,
+      points_earned: Number(order.points_earned) || 0,
+      points_used: Number(order.points_used) || 0,
+      payment_method: order.payment_method || order.paymentMethod || 'whatsapp',
+      status: order.status || 'pending',
+      created_at: order.created_at || new Date().toISOString()
+    };
+    var {data,error} = await supabaseClient.from('orders').insert(payload).select().single();
     if(error) throw error;
-    return data[0];
+    return data;
   }catch(e){
     console.log('Supabase error, using localStorage:', e);
     var orders = lsGet("orders",[]);
@@ -2400,19 +2430,33 @@ async function confirmPayment(){
   
   if(cust){
     cust.points = safeNumber(cust.points, 0);
+    cust = normalizeCustomer(await sbSaveCustomer(cust));
   }
   
   var ordersList = await sbGetOrders();
   var num = ordersList.length + 1;
   var items = cart.map(function(i){return((L==="fr")?i.fr:i.kr)+" x"+safeNumber(i.qty);}).join(", ");
-  var order = {id:num,customer:cust?cust.name:"Anonyme",phone:cust?cust.phone:"",items:items,total:sub,ptsEarned:pE,ptsUsed:pU,usedPoints:!!useP,paymentMethod:selectedPaymentMethod,date:new Date().toLocaleDateString()};
+  var order = {
+    customer_id: cust && cust.id ? Number(cust.id) : null,
+    customer_name: cust ? cust.name : "Anonyme",
+    customer_phone: cust ? cust.phone : "",
+    items: items,
+    total: sub,
+    points_earned: pE,
+    points_used: pU,
+    usedPoints: !!useP,
+    payment_method: selectedPaymentMethod,
+    status: 'pending',
+    created_at: new Date().toISOString(),
+    date: new Date().toLocaleDateString()
+  };
   await sbSaveOrder(order);
   
   if(cust){
     cust.totalOrders = safeNumber(cust.totalOrders) + 1;
     cust.history = cust.history || [];
     cust.history.unshift({desc:((L==="fr")?"Commande":"Komand")+" #"+num,pts:useP?-pU:pE,date:new Date().toLocaleDateString()});
-    await sbSaveCustomer(cust);
+    cust = normalizeCustomer(await sbSaveCustomer(cust));
     updNavPts();
   }
   
@@ -2474,6 +2518,7 @@ async function goWA(){
   }
   if(cust){
     cust.points = safeNumber(cust.points, 0);
+    cust = normalizeCustomer(await sbSaveCustomer(cust));
   }
   
   var lines = cart.map(function(i){
@@ -2508,20 +2553,20 @@ async function goWA(){
   var ordersList = await sbGetOrders();
   var num = ordersList.length + 1;
   var order = {
-    id: num,
-    customer: cust ? cust.name : "WhatsApp",
-    phone: cust ? cust.phone : "",
+    customer_id: cust && cust.id ? Number(cust.id) : null,
+    customer_name: cust ? cust.name : "WhatsApp",
+    customer_phone: cust ? cust.phone : "",
     items: cart.map(function(i){return i.fr+" x"+safeNumber(i.qty);}).join(", "),
     total: sub,
-    ptsEarned: pE,
-    ptsUsed: pU,
+    points_earned: pE,
+    points_used: pU,
     usedPoints: !!useP,
-    pointsBalance: cust ? cust.points : 0,
-    via: "whatsapp",
-    payment: paymentMethod,
+    payment_method: paymentMethod,
+    status: 'pending',
     proofName: proofFileName || "",
     proofType: proofFileType || "",
     proofPreview: proofPreviewUrl || "",
+    created_at: new Date().toISOString(),
     date: new Date().toLocaleDateString()
   };
   await sbSaveOrder(order);
@@ -2529,7 +2574,7 @@ async function goWA(){
     cust.totalOrders = safeNumber(cust.totalOrders) + 1;
     cust.history = cust.history || [];
     cust.history.unshift({desc:((L==="fr")?"Commande":"Komand")+" #"+num,pts: useP ? -pU : pE,date:new Date().toLocaleDateString()});
-    await sbSaveCustomer(cust);
+    cust = normalizeCustomer(await sbSaveCustomer(cust));
     updNavPts();
   }
   
@@ -2605,12 +2650,11 @@ async function enroll(){
   var existing = await sbGetCustomerByPhone(email) || await sbGetCustomerByPhone(phone);
   if(existing){toast(tr("t-err-exists"),"e");return;}
 
-  var c={id:Date.now().toString(),name:name,email:email,phone:phone,password:password,role:"customer",points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString()};
+  var c={name:name,email:email,phone:phone,password:password,points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString()};
   if(supabaseClient){
     try{
       var {data,error} = await supabaseClient.auth.signUp({email:email,password:password,options:{data:{name:name,phone:phone,role:"customer"}}});
       if(error){toast(error.message||tr("t-err-exists"),"e");return;}
-      if(data && data.user && data.user.id){c.id=data.user.id;}
     }catch(e){
       console.log('Supabase auth signUp error:', e);
       toast(e.message||tr("t-err-exists"),"e");
@@ -2618,8 +2662,7 @@ async function enroll(){
     }
   }
 
-  await sbSaveCustomer(c);
-  cust=normalizeCustomer(c);
+  cust = normalizeCustomer(await sbSaveCustomer(c));
   localStorage.setItem("kt_curr",cust.email||cust.phone);
   
   if(supabaseClient){
@@ -2652,7 +2695,7 @@ async function doLogin(){
         authOk = true;
         if(data && data.user){
           if(!c){
-            c={id:data.user.id||Date.now().toString(),name:loginId,email:loginId,phone:"",password:password,role:"customer",points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString()};
+            c={name:loginId,email:loginId,phone:"",password:password,points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString()};
             await sbSaveCustomer(c);
           }
         }
@@ -2668,7 +2711,7 @@ async function doLogin(){
     if(!c || c.password !== password){toast(tr("t-not-found"),"e");return;}
   }
 
-  cust=normalizeCustomer(c);
+  cust=normalizeCustomer(await sbSaveCustomer(c));
   localStorage.setItem("kt_curr",cust.email||cust.phone);
   
   if(supabaseClient){
