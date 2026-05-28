@@ -245,7 +245,50 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ==================================================
---  8. FUNCTION POUR RESETTER UN COMPTE CLIENT
+--  8. FUNCTION POUR EFASE TOUTES LES COMMANDES
+-- ==================================================
+CREATE OR REPLACE FUNCTION clear_all_orders()
+RETURNS VOID AS $$
+BEGIN
+    DELETE FROM orders;
+
+    UPDATE customers
+    SET 
+        orders_count = 0,
+        total_spent = 0,
+        updated_at = NOW();
+END;
+$$ LANGUAGE plpgsql;
+
+-- ==================================================
+--  9. FUNCTION POUR RETIRER DES POINTS DES COMPTES
+-- ==================================================
+CREATE OR REPLACE FUNCTION deduct_points_from_accounts(p_points_to_remove INTEGER DEFAULT 100)
+RETURNS INTEGER AS $$
+DECLARE
+    v_updated_rows INTEGER;
+BEGIN
+    UPDATE customers
+    SET 
+        points = GREATEST(points - p_points_to_remove, 0),
+        history = COALESCE(history, '[]'::jsonb) || 
+            jsonb_build_array(
+                jsonb_build_object(
+                    'desc', 'Retrait automatique de points',
+                    'pts', -p_points_to_remove,
+                    'date', NOW()::text
+                )
+            ),
+        updated_at = NOW()
+    WHERE points > p_points_to_remove;
+
+    GET DIAGNOSTICS v_updated_rows = ROW_COUNT;
+    RETURN v_updated_rows;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ==================================================
+--  10. FUNCTION POUR RESETTER UN COMPTE CLIENT
 -- ==================================================
 CREATE OR REPLACE FUNCTION reset_customer_account(p_customer_id BIGINT)
 RETURNS VOID AS $$
@@ -265,7 +308,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ==================================================
---  9. INDEX POUR AMELIORER LES PERFORMANCES
+--  11. INDEX POUR AMELIORER LES PERFORMANCES
 -- ==================================================
 CREATE INDEX IF NOT EXISTS idx_customers_points ON customers(points DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_customer_points ON orders(customer_id, points_earned);
