@@ -2133,17 +2133,31 @@ function renderProds(){
 // ==================================================
 //  CART
 // ==================================================
+function normalizeCartItem(item){
+  if(!item || typeof item !== 'object') return null;
+  item.id = item.id;
+  item.qty = Math.max(1, safeNumber(item.qty, 1));
+  item.price = safeNumber(item.price, 0);
+  item.sun = !!item.sun;
+  return item;
+}
+
 function addToCart(pid){
-  var p=products.find(function(x){return x.id===pid;});
+  var p=products.find(function(x){return Number(x.id)===Number(pid)||String(x.id)===String(pid);});
   if(!p)return;
   if(p.status === "inactive"){
     toast(L==="fr"?"Produit indisponible":"Pwodwi endisponib","e");
     return;
   }
   var name=(L==="fr")?p.fr:p.kr;
-  var ex=cart.find(function(x){return x.id===pid;});
-  if(ex)ex.qty++;
-  else cart.push({id:p.id,fr:p.fr,kr:p.kr,cat:p.cat,em:p.em,img:p.img||"",price:safeNumber(p.price),qty:1,sun:false});
+  var ex=cart.find(function(x){return String(x.id)===String(pid)&&!x.sun;});
+  if(ex){
+    ex.qty = Math.max(1, safeNumber(ex.qty,1)+1);
+    ex.price = safeNumber(ex.price, safeNumber(p.price,0));
+  } else {
+    cart.push({id:p.id,fr:p.fr,kr:p.kr,cat:p.cat,em:p.em,img:p.img||"",price:safeNumber(p.price),qty:1,sun:false});
+  }
+  cart = cart.map(normalizeCartItem).filter(function(item){return !!item;});
   updCartUI();
   toast("&#10003; "+name+" "+tr("t-added"),"s");
 }
@@ -2151,11 +2165,11 @@ function addToCart(pid){
 function addSun(){
   var sun=lsGet("sunday",{});
   if(!sun.productId){toast(tr("t-no-sun"),"e");return;}
-  var p=products.find(function(x){return x.id===sun.productId;});
+  var p=products.find(function(x){return String(x.id)===String(sun.productId);});
   if(!p){toast(tr("t-no-sun"),"e");return;}
   var name=(L==="fr")?p.fr:p.kr;
   var price=safeNumber(sun.price, p.price);
-  var ex=cart.find(function(x){return x.id===p.id&&x.sun;});
+  var ex=cart.find(function(x){return String(x.id)===String(p.id)&&x.sun;});
   if(ex)ex.qty++;
   else cart.push({id:p.id,fr:p.fr,kr:p.kr,cat:p.cat,em:p.em,img:p.img||"",price:price,qty:1,sun:true});
   updCartUI();
@@ -2163,25 +2177,31 @@ function addSun(){
 }
 
 function rmItem(pid,sun){
-  cart=cart.filter(function(x){return!(x.id===pid&&!!x.sun===!!sun);});
+  cart=cart.filter(function(x){return!(String(x.id)===String(pid)&&!!x.sun===!!sun);});
   updCartUI();
 }
 function chgQ(pid,sun,d){
-  var it=cart.find(function(x){return x.id===pid&&!!x.sun===!!sun;});
+  var it=cart.find(function(x){return String(x.id)===String(pid)&&!!x.sun===!!sun;});
   if(!it)return;
-  it.qty=Math.max(0, safeNumber(it.qty,1)+d);
+  var delta = safeNumber(d, 0);
+  it.qty=Math.max(0, safeNumber(it.qty,1)+delta);
+  it.price=safeNumber(it.price,0);
   if(!it.qty)rmItem(pid,sun);
-  else updCartUI();
+  else {
+    cart = cart.map(normalizeCartItem).filter(function(item){return !!item;});
+    updCartUI();
+  }
 }
 
 function updCartUI(){
+  cart = cart.map(normalizeCartItem).filter(function(item){return !!item;});
   var cnt=cart.reduce(function(s,i){return s+safeNumber(i.qty);},0);
   document.getElementById("cart-n").textContent=cnt;
   var body=document.getElementById("cart-body");
   if(!cart.length){
     body.innerHTML='<div class="cart-empty"><div class="ce">🛒</div><p style="font-weight:800;color:var(--navy)">'+(L==="fr"?"Votre panier est vide":"Panye ou vid")+'</p><small>'+(L==="fr"?"Ajoutez des produits depuis le menu!":"Ajoute pwodui nan meni a!")+"</small></div>";
   } else {
-    var ups=products.filter(function(p){return !cart.find(function(c){return c.id===p.id;});}).slice(0,4);
+    var ups=products.filter(function(p){return !cart.find(function(c){return String(c.id)===String(p.id);});}).slice(0,4);
     var html="";
     for(var i=0;i<cart.length;i++){
       var it=cart[i];
@@ -2230,7 +2250,8 @@ function updCartUI(){
   updTotal();
 }
 function updTotal(){
-  var sub=cart.reduce(function(s,i){return s+i.price*i.qty;},0);
+  var sub=cart.reduce(function(s,i){return s+safeNumber(i.price)*safeNumber(i.qty);},0);
+  sub = safeNumber(sub,0);
   var use=document.getElementById("use-pts-chk").checked;
   document.getElementById("cart-total").textContent=(use?0:sub)+" HTG";
 }

@@ -822,13 +822,18 @@ function normalizeAdminSettings(raw){
 }
 
 async function getAdminSettings(){
-  var remote = await ADB.getSettings();
-  var localSettings = normalizeAdminSettings(lsGet("settings", {}));
-  if(remote && typeof remote === 'object'){
-    var remoteSettings = normalizeAdminSettings(remote);
-    return Object.assign({}, localSettings, remoteSettings);
+  try{
+    var remote = await ADB.getSettings();
+    var localSettings = normalizeAdminSettings(lsGet("settings", {}));
+    if(remote && typeof remote === 'object'){
+      var remoteSettings = normalizeAdminSettings(remote);
+      return Object.assign({}, localSettings, remoteSettings);
+    }
+    return localSettings;
+  }catch(e){
+    console.warn('Failed to load admin settings, using local fallback', e);
+    return normalizeAdminSettings(lsGet("settings", DEFAULT_SETTINGS));
   }
-  return localSettings;
 }
 
 // ============================================================
@@ -843,7 +848,11 @@ async function getAdminSettings(){
 });
 
 async function login(){
-  settings = await getAdminSettings();
+  try{
+    settings = await getAdminSettings();
+  }catch(e){
+    settings = normalizeAdminSettings(lsGet("settings", DEFAULT_SETTINGS));
+  }
   var email = document.getElementById("email").value.trim().toLowerCase();
   var pwd = document.getElementById("pwd").value;
   var expectedEmail = (settings.adminEmail || DEFAULT_SETTINGS.adminEmail).toLowerCase();
