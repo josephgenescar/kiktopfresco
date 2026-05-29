@@ -695,6 +695,39 @@ section>*{position:relative;z-index:1;}
 .review-date{color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.08em;}
 .review-empty{padding:20px;border:1px dashed rgba(13,43,94,.2);border-radius:12px;color:var(--gray);text-align:center;font-size:13px;background:#fff;}
 
+@media (max-width: 900px){
+  .review-layout{
+    grid-template-columns:1fr;
+  }
+  .review-list{
+    max-height:none;
+  }
+}
+
+@media (max-width: 640px){
+  .review-section{
+    padding:20px 14px 24px;
+  }
+  .review-form-card,
+  .review-list-card{
+    padding:15px;
+    border-radius:16px;
+  }
+  .review-top{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+  .review-stars{
+    font-size:13px;
+  }
+  .review-form input,
+  .review-form select,
+  .review-form textarea{
+    font-size:14px;
+    padding:11px 12px;
+  }
+}
+
 /* ============ FOOTER ============ */
 footer{background:var(--navy);padding:36px 20px;text-align:center;}
 .f-logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:12px;}

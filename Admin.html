@@ -304,7 +304,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
         </div>
         <div class="card">
           <div class="card-title">📋 Dènye Kòmand</div>
-          <table class="tbl"><thead><tr><th>#</th><th>Kliyan</th><th>Pwodui</th><th>Total</th><th>Pwen</th><th>Dat</th></tr></thead>
+          <table class="tbl"><thead><tr><th>#</th><th>Kliyan</th><th>Pwodui</th><th>Total</th><th>Pwen</th><th>Dat</th><th>Aksyon</th></tr></thead>
           <tbody id="db-orders-body"></tbody></table>
         </div>
         <div class="card">
@@ -523,7 +523,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
         <div class="page-sub">Tout kòmand ki fèt nan sit la</div>
         <div class="card">
           <table class="tbl">
-            <thead><tr><th>#</th><th>Kliyan</th><th>Pwodui</th><th>Total</th><th>Pwen</th><th>Via</th><th>Dat</th></tr></thead>
+            <thead><tr><th>#</th><th>Kliyan</th><th>Pwodui</th><th>Total</th><th>Pwen</th><th>Via</th><th>Dat</th><th>Aksyon</th></tr></thead>
             <tbody id="ord-tbody"></tbody>
           </table>
         </div>
@@ -666,12 +666,22 @@ const ADB = {
     const {data} = await sb.from('customers').select('*').order('points',{ascending:false});
     return data||[];
   },
+  async updateCustomer(id, payload){
+    if(!isSupabaseConfigured){ return null; }
+    const {data,error} = await sb.from('customers').update(payload).eq('id',id).select().single();
+    if(error) throw error;
+    return data;
+  },
 
   // ── Orders ──
   async getOrders(){
     if(!isSupabaseConfigured){ try{return JSON.parse(localStorage.getItem('kt_orders'))||[];}catch{return[];} }
     const {data} = await sb.from('orders').select('*').order('created_at',{ascending:false});
     return data||[];
+  },
+  async deleteOrder(id){
+    if(!isSupabaseConfigured){ return; }
+    await sb.from('orders').delete().eq('id',id);
   },
 
   // ── Reviews ──
@@ -1119,8 +1129,8 @@ async function renderDashboard(){
   var tbody = document.getElementById("db-orders-body");
   var rec   = ords.slice().reverse().slice(0,8);
   tbody.innerHTML = rec.length ? rec.map(function(o){
-    return "<tr><td><b style='color:var(--yellow)'>#"+o.id+"</b></td><td>"+o.customer+"</td><td style='max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+o.items+"</td><td>"+o.total+" HTG</td><td>"+(o.usedPoints?"<span style='color:var(--red)'>GRATIS</span>":"<span style='color:var(--green)'>+"+o.ptsEarned+" pts</span>")+"</td><td style='color:var(--gray);font-size:11px'>"+o.date+"</td></tr>";
-  }).join("") : "<tr><td colspan='6' style='text-align:center;color:var(--gray);padding:20px'>Pa gen komand</td></tr>";
+    return "<tr><td><b style='color:var(--yellow)'>#"+o.id+"</b></td><td>"+o.customer+"</td><td style='max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+o.items+"</td><td>"+o.total+" HTG</td><td>"+(o.usedPoints?"<span style='color:var(--red)'>GRATIS</span>":"<span style='color:var(--green)'>+"+o.ptsEarned+" pts</span>")+"</td><td style='color:var(--gray);font-size:11px'>"+o.date+"</td><td><button type='button' class='btn-save btn-sm btn-del' data-order-id='"+o.id+"' onclick='deleteOrderById(this.dataset.orderId)'>Efase</button></td></tr>";
+  }).join("") : "<tr><td colspan='7' style='text-align:center;color:var(--gray);padding:20px'>Pa gen komand</td></tr>";
 
   var reviewBody = document.getElementById("db-reviews-body");
   var recentReviews = reviews.slice().sort(function(a,b){return new Date(b.created_at||0)-new Date(a.created_at||0);}).slice(0,8);
@@ -1655,13 +1665,19 @@ function renderClients(){
     var pct  = Math.min(100, c.points/max*100);
     var col  = c.points>=max?"var(--green)":"var(--yellow)";
     var phoneB64 = btoa(unescape(encodeURIComponent(c.phone)));
-    return "<tr>"
+    return "<tr data-customer-id='"+(c.id||"")+"'>"
       +"<td><b style='color:var(--yellow)'>"+(i+1)+"</b></td>"
       +"<td style='font-weight:700'>"+c.name+"</td>"
       +"<td style='color:var(--gray)'>"+c.phone+"</td>"
-      +"<td><div style='display:flex;align-items:center;gap:8px'>"
-        +"<div class='pts-bar'><div class='pts-fill' style='width:"+pct+"%;background:"+col+"'></div></div>"
-        +"<b style='color:"+col+"'>"+c.points+"</b>"
+      +"<td><div style='display:flex;flex-direction:column;gap:6px'>"
+        +"<div style='display:flex;align-items:center;gap:8px'>"
+          +"<div class='pts-bar'><div class='pts-fill' style='width:"+pct+"%;background:"+col+"'></div></div>"
+          +"<b style='color:"+col+"'>"+c.points+"</b>"
+        +"</div>"
+        +"<div style='display:flex;gap:6px;align-items:center'>"
+          +"<input type='number' min='0' value='"+c.points+"' class='point-input' data-customer-id='"+(c.id||"")+"' style='width:72px;background:#09112a;border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px;color:#fff;font-size:12px;'/>"
+          +"<button type='button' class='btn-save btn-sm' onclick='saveCustomerPoints(this)'>Sere</button>"
+        +"</div>"
       +"</div></td>"
       +"<td>"+(c.totalOrders||0)+"</td>"
       +"<td style='color:var(--gray);font-size:11px'>"+(c.joined||"-")+"</td>"
@@ -1671,6 +1687,39 @@ function renderClients(){
       +"</div></td>"
       +"</tr>";
   }).join("") : "<tr><td colspan='7' style='text-align:center;color:var(--gray);padding:20px'>Pa gen kliyan</td></tr>";
+}
+
+async function saveCustomerPoints(btn){
+  var row = btn.closest('tr');
+  var input = row.querySelector('.point-input');
+  var customerId = input.getAttribute('data-customer-id');
+  var newPoints = Number(input.value);
+  if(Number.isNaN(newPoints) || newPoints < 0){
+    toast("Antre kantite pwen valid!","e");
+    return;
+  }
+
+  var custs = lsGet("customers",[]);
+  var idx = custs.findIndex(function(c){return String(c.id||"") === String(customerId);});
+  if(idx < 0){
+    toast("Kliyan pa jwenn!","e");
+    return;
+  }
+
+  custs[idx].points = Math.max(0, Math.round(newPoints));
+  lsSet("customers", custs);
+
+  if(isSupabaseConfigured && customerId){
+    try{
+      await ADB.updateCustomer(Number(customerId), { points: custs[idx].points, updated_at: new Date().toISOString() });
+    }catch(e){
+      console.warn('Failed to update customer points remotely', e);
+    }
+  }
+
+  renderClients();
+  renderDashboard();
+  toast("Pwen mete a jou!","s");
 }
 
 function resetPtsByEl(btn){
@@ -1701,7 +1750,7 @@ function resetPts(phone){
   toast("Pwen reset!","s");
 }
 
-async function resetCustomer(phone, customerId){
+async async function resetCustomer(phone, customerId){
   if(!confirm("Rekòmanse kont sa a a zero (pwen, istorik, komand)?")) return;
   var custs = lsGet("customers",[]);
   var idx   = custs.findIndex(function(c){return c.phone===phone;});
@@ -1734,6 +1783,65 @@ async function resetCustomer(phone, customerId){
   toast("Kont reset e istorik efase!","s");
 }
 
+async function deleteOrderById(id){
+  if(!confirm("Efase kòmand sa?")) return;
+
+  var ords = lsGet("orders",[]);
+  var target = ords.find(function(order){return String(order.id)===String(id);});
+  if(!target){
+    toast("Kòmand pa jwenn!","e");
+    return;
+  }
+
+  var custs = lsGet("customers",[]);
+  var matchedCustomer = custs.find(function(customer){
+    return String(customer.id||"") === String(target.customer_id||"") || String(customer.phone||"") === String(target.customer_phone||target.phone||"");
+  });
+
+  var updatedCustomers = custs.map(function(customer){
+    if(!matchedCustomer) return customer;
+    if(String(customer.id||"") !== String(matchedCustomer.id||"") && String(customer.phone||"") !== String(matchedCustomer.phone||"")) return customer;
+
+    customer.points = Math.max(0, Number(customer.points||0) - Number(target.ptsEarned||0));
+    customer.totalOrders = Math.max(0, Number(customer.totalOrders||0) - 1);
+    customer.totalSpent = Math.max(0, Number(customer.totalSpent||0) - Number(target.total||0));
+    if(!Array.isArray(customer.history)) customer.history = [];
+    customer.history = customer.history.filter(function(item){
+      if(typeof item === 'object' && item){
+        return String(item.orderId||item.id||"") !== String(target.id);
+      }
+      return true;
+    });
+    return customer;
+  });
+
+  var remainingOrders = ords.filter(function(order){return String(order.id)!==String(id);});
+  lsSet("orders", remainingOrders);
+  lsSet("customers", updatedCustomers);
+
+  if(isSupabaseConfigured){
+    try{
+      await ADB.deleteOrder(id);
+      if(matchedCustomer && matchedCustomer.id){
+        await ADB.updateCustomer(Number(matchedCustomer.id), {
+          points: Number(updatedCustomers.find(function(customer){return String(customer.id||"")===String(matchedCustomer.id||"");}).points||0),
+          orders_count: Math.max(0, Number(updatedCustomers.find(function(customer){return String(customer.id||"")===String(matchedCustomer.id||"");}).totalOrders||0)),
+          total_spent: Math.max(0, Number(updatedCustomers.find(function(customer){return String(customer.id||"")===String(matchedCustomer.id||"");}).totalSpent||0)),
+          history: updatedCustomers.find(function(customer){return String(customer.id||"")===String(matchedCustomer.id||"");}).history,
+          updated_at: new Date().toISOString()
+        });
+      }
+    }catch(e){
+      console.warn('Failed to sync order deletion remotely', e);
+    }
+  }
+
+  renderOrders();
+  renderDashboard();
+  renderClients();
+  toast("Kòmand efase!","e");
+}
+
 // ============================================================
 //  ORDERS
 // ============================================================
@@ -1749,8 +1857,9 @@ function renderOrders(){
       +"<td>"+(o.usedPoints?"<span style='color:var(--red);font-weight:800'>GRATIS</span>":"<span style='color:var(--green);font-weight:800'>+"+o.ptsEarned+" pts</span>")+"</td>"
       +"<td style='color:var(--gray)'>"+(o.via==="whatsapp"?"📱 WA":"🛒 Site")+"</td>"
       +"<td style='color:var(--gray);font-size:11px'>"+o.date+"</td>"
+      +"<td><button type='button' class='btn-save btn-sm btn-del' data-order-id='"+o.id+"' onclick='deleteOrderById(this.dataset.orderId)'>Efase</button></td>"
       +"</tr>";
-  }).join("") : "<tr><td colspan='7' style='text-align:center;color:var(--gray);padding:20px'>Pa gen komand</td></tr>";
+  }).join("") : "<tr><td colspan='8' style='text-align:center;color:var(--gray);padding:20px'>Pa gen komand</td></tr>";
 }
 
 async function renderReviews(){
