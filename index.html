@@ -1406,8 +1406,8 @@ async function sbGetCustomerByPhone(identifier){
   if(!supabaseClient) return null;
   try{
     var query = isEmail(identifier)
-      ? supabaseClient.from('customers').select('*').eq('email',id).single()
-      : supabaseClient.from('customers').select('*').eq('phone',id).single();
+      ? supabaseClient.from('customers').select('*').eq('email',id).maybeSingle()
+      : supabaseClient.from('customers').select('*').eq('phone',id).maybeSingle();
     var {data,error} = await query;
     if(error && error.code !== 'PGRST116') throw error;
     return normalizeCustomer(data);
@@ -1452,8 +1452,8 @@ async function refreshCustomerFromSupabase(identifier){
   try{
     var id = isEmail(identifier) ? normalizeEmail(identifier) : normalizePhone(identifier);
     var query = isEmail(identifier)
-      ? supabaseClient.from('customers').select('*').eq('email',id).single()
-      : supabaseClient.from('customers').select('*').eq('phone',id).single();
+      ? supabaseClient.from('customers').select('*').eq('email',id).maybeSingle()
+      : supabaseClient.from('customers').select('*').eq('phone',id).maybeSingle();
     var {data,error} = await query;
     if(error && error.code !== 'PGRST116') throw error;
     if(data){
