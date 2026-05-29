@@ -64,9 +64,18 @@ const ADB = {
     if(!isSupabaseConfigured){ /* handled below */ return null; }
     const remoteProduct = toRemoteProduct(p);
     if(p.id !== undefined && p.id !== null && p.id !== ""){
-      const {data,error} = await sb.from('products').update(remoteProduct).eq('id',p.id).select().single();
-      if(error) throw error;
-      return data;
+      try{
+        const {data,error} = await sb.from('products').update(remoteProduct).eq('id',p.id).select().single();
+        if(error) throw error;
+        return data;
+      }catch(error){
+        if(error && error.code === 'PGRST116'){
+          const {data:insertData,error:insertError} = await sb.from('products').insert(remoteProduct).select().single();
+          if(insertError) throw insertError;
+          return insertData;
+        }
+        throw error;
+      }
     } else {
       const {id,...rest} = remoteProduct;
       const {data,error} = await sb.from('products').insert(rest).select();
@@ -823,15 +832,37 @@ function resetBnForm(){
 var pImgData = null;
 
 async function uploadProductImage(file){
-  if(!window.ImageKit || !imagekit){
-    throw new Error('ImageKit SDK not available');
+  if(!IMAGEKIT_PUBLIC_KEY || IMAGEKIT_PUBLIC_KEY === 'YOUR_IMAGEKIT_PUBLIC_KEY'){
+    throw new Error('ImageKit public key not configured');
   }
-  const response = await imagekit.upload({
-    file: file,
-    fileName: file.name,
-    folder: '/kiktopfresco/products'
+
+  const authResponse = await fetch('/.netlify/functions/imagekit-auth');
+  if(!authResponse.ok){
+    throw new Error('Failed to fetch ImageKit auth');
+  }
+  const authData = await authResponse.json();
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('fileName', file.name);
+  formData.append('folder', '/kiktopfresco/products');
+  formData.append('publicKey', IMAGEKIT_PUBLIC_KEY);
+  formData.append('token', authData.token);
+  formData.append('signature', authData.signature);
+  formData.append('expire', String(authData.expire));
+
+  const uploadResponse = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
+    method: 'POST',
+    body: formData
   });
-  return response.url;
+
+  if(!uploadResponse.ok){
+    const errorText = await uploadResponse.text();
+    throw new Error(errorText || 'ImageKit upload failed');
+  }
+
+  const uploaded = await uploadResponse.json();
+  return uploaded.url || uploaded.filePath || '';
 }
 
 async function handleProdImg(input){
