@@ -1,9 +1,9 @@
 // ============================================================
 //  KikTop Fresco — Service Worker (PWA + Offline)
-//  Version 1.0
+//  Version 2.0
 // ============================================================
 
-const CACHE_NAME   = 'kiktop-v1';
+const CACHE_NAME   = 'kiktop-v2';
 const OFFLINE_URL  = '/offline.html';
 
 // Fichye pou cache statik (shell)
