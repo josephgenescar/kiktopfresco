@@ -1246,7 +1246,7 @@ async function saveBanner(){
   var existImg = eid ? ((banners.find(function(x){return String(x.id)===String(eid);})||{}).img||"") : "";
 
   var b = {
-    id      : eid || ("b"+Date.now()),
+    id      : eid || ("b_"+Date.now()),
     type    : bnType,
     title   : title,
     body    : body,
