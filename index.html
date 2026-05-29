@@ -1362,17 +1362,23 @@ try {
 // ---- STORAGE ----
 function lsGet(k,d){try{var v=localStorage.getItem("kt_"+k);return v!==null?JSON.parse(v):d;}catch(e){return d;}}
 function lsSet(k,v){try{localStorage.setItem("kt_"+k,JSON.stringify(v));}catch(e){}}
+function clearLegacyCustomerPersistence(){
+  try{
+    localStorage.removeItem("kt_curr");
+    localStorage.removeItem("kt_customers");
+  }catch(e){}
+}
 
 // ---- SUPABASE HELPERS ----
 async function sbGetCustomers(){
-  if(!supabaseClient) return lsGet("customers",[]);
+  if(!supabaseClient) return [];
   try{
     var {data,error} = await supabaseClient.from('customers').select('*');
     if(error) throw error;
     return data || [];
   }catch(e){
-    console.log('Supabase error, using localStorage:', e);
-    return lsGet("customers",[]);
+    console.log('Supabase error:', e);
+    return [];
   }
 }
 
@@ -1397,10 +1403,7 @@ function normalizeCustomer(c){
 
 async function sbGetCustomerByPhone(identifier){
   var id = isEmail(identifier) ? normalizeEmail(identifier) : normalizePhone(identifier);
-  if(!supabaseClient) return normalizeCustomer(lsGet("customers",[]).find(function(c){
-    var cust = normalizeCustomer(c);
-    return cust.email===id || cust.phone===id;
-  }));
+  if(!supabaseClient) return null;
   try{
     var query = isEmail(identifier)
       ? supabaseClient.from('customers').select('*').eq('email',id).single()
@@ -1410,25 +1413,14 @@ async function sbGetCustomerByPhone(identifier){
     return normalizeCustomer(data);
   }catch(e){
     console.log('Supabase error:', e);
-    return normalizeCustomer(lsGet("customers",[]).find(function(c){
-      var cust = normalizeCustomer(c);
-      return cust.email===id || cust.phone===id;
-    }));
+    return null;
   }
 }
 
 async function sbSaveCustomer(customer){
   customer = normalizeCustomer(customer);
   if(!supabaseClient){
-    var customers = lsGet("customers",[]);
-    var idx = customers.findIndex(function(c){
-      var cust = normalizeCustomer(c);
-      return cust.phone===customer.phone || cust.email===customer.email;
-    });
-    if(idx >= 0) customers[idx] = customer;
-    else customers.push(customer);
-    lsSet("customers",customers);
-    return customer;
+    return normalizeCustomer(customer);
   }
   try{
     var payload = {
@@ -1450,12 +1442,7 @@ async function sbSaveCustomer(customer){
     if(error) throw error;
     return normalizeCustomer(data);
   }catch(e){
-    console.log('Supabase error, using localStorage:', e);
-    var customers = lsGet("customers",[]);
-    var idx = customers.findIndex(function(c){return c.phone===customer.phone||c.email===customer.email;});
-    if(idx >= 0) customers[idx] = customer;
-    else customers.push(customer);
-    lsSet("customers",customers);
+    console.log('Supabase error:', e);
     return normalizeCustomer(customer);
   }
 }
@@ -1471,7 +1458,6 @@ async function refreshCustomerFromSupabase(identifier){
     if(error && error.code !== 'PGRST116') throw error;
     if(data){
       cust = normalizeCustomer(data);
-      localStorage.setItem("kt_curr",cust.email||cust.phone);
       return cust;
     }
   }catch(e){
@@ -1629,7 +1615,7 @@ var cart = [];
 var cust = null;
 var settings = lsGet("settings",{maxPoints:100,pointsRate:150});
 var products = lsGet("products",[]);
-var customers = lsGet("customers",[]);
+var customers = [];
 var orders = lsGet("orders",[]);
 
 function safeNumber(value, fallback){
@@ -1908,13 +1894,7 @@ async function init(){
     lsSet("banners", storedBanners);
   }
 
-  var ph=localStorage.getItem("kt_curr");
-  if(ph){
-    cust=normalizeCustomer(await sbGetCustomerByPhone(ph)||null);
-    if(supabaseClient && cust){
-      await refreshCustomerFromSupabase(ph);
-    }
-  }
+  clearLegacyCustomerPersistence();
   applyLang();
   loadBanner();
   switchTab("manger");
@@ -2663,7 +2643,6 @@ async function enroll(){
   }
 
   cust = normalizeCustomer(await sbSaveCustomer(c));
-  localStorage.setItem("kt_curr",cust.email||cust.phone);
   
   if(supabaseClient){
     await refreshCustomerFromSupabase(email);
@@ -2712,7 +2691,6 @@ async function doLogin(){
   }
 
   cust=normalizeCustomer(await sbSaveCustomer(c));
-  localStorage.setItem("kt_curr",cust.email||cust.phone);
   
   if(supabaseClient){
     await refreshCustomerFromSupabase(loginId);
@@ -2764,7 +2742,7 @@ function openCust(){
   openM("m-cust");
 }
 
-function logout(){cust=null;localStorage.removeItem("kt_curr");updNavPts();closeM("m-cust");updCartUI();}
+function logout(){cust=null;clearLegacyCustomerPersistence();updNavPts();closeM("m-cust");updCartUI();}
 function updNavPts(){document.getElementById("nav-pts").textContent=cust?Math.max(0, safeNumber(cust.points)):"0";}
 function openLogin(){openM("m-login");}
 
