@@ -602,11 +602,15 @@ const sb = isSupabaseConfigured ? supabase.createClient(SUPABASE_URL, SUPABASE_S
 
 const IMAGEKIT_PUBLIC_KEY = window.IMAGEKIT_ENV?.IMAGEKIT_PUBLIC_KEY || 'YOUR_IMAGEKIT_PUBLIC_KEY';
 const IMAGEKIT_URL_ENDPOINT = window.IMAGEKIT_ENV?.IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/7q1q0vmzk';
-const imagekit = new ImageKit({
+const imagekit = typeof ImageKit === 'function' ? new ImageKit({
   publicKey: IMAGEKIT_PUBLIC_KEY,
   urlEndpoint: IMAGEKIT_URL_ENDPOINT,
   authenticationEndpoint: '/.netlify/functions/imagekit-auth'
-});
+}) : null;
+
+if(!imagekit){
+  console.warn('ImageKit SDK unavailable; image uploads disabled.');
+}
 
 // Admin DB wrapper
 const ADB = {
@@ -1388,7 +1392,7 @@ function resetBnForm(){
 var pImgData = null;
 
 async function uploadProductImage(file){
-  if(!window.ImageKit){
+  if(!window.ImageKit || !imagekit){
     throw new Error('ImageKit SDK not available');
   }
   const response = await imagekit.upload({
@@ -1750,7 +1754,7 @@ function resetPts(phone){
   toast("Pwen reset!","s");
 }
 
-async async function resetCustomer(phone, customerId){
+async function resetCustomer(phone, customerId){
   if(!confirm("Rekòmanse kont sa a a zero (pwen, istorik, komand)?")) return;
   var custs = lsGet("customers",[]);
   var idx   = custs.findIndex(function(c){return c.phone===phone;});
