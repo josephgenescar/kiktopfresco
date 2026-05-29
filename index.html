@@ -1513,8 +1513,11 @@ async function sbSaveOrder(order){
 async function sbGetSettings(){
   if(!supabaseClient) return lsGet("settings",{maxPoints:100,pointsRate:150});
   try{
-    var {data,error} = await supabaseClient.from('settings').select('*').eq('id',1).single();
-    if(error) throw error;
+    var {data,error} = await supabaseClient.from('settings').select('*').eq('id',1).maybeSingle();
+    if(error && error.code !== 'PGRST116') throw error;
+    if(!data){
+      return lsGet("settings",{maxPoints:100,pointsRate:150});
+    }
     return {
       maxPoints:Number(data.max_points) || 100,
       pointsRate:Number(data.points_rate) || 150,
