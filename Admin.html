@@ -648,15 +648,16 @@ const ADB = {
   },
   async saveProduct(p){
     if(!isSupabaseConfigured){ /* handled below */ return null; }
+    const remoteProduct = toRemoteProduct(p);
     if(p.id !== undefined && p.id !== null && p.id !== ""){
-      const {data,error} = await sb.from('products').update(p).eq('id',p.id).select().single();
+      const {data,error} = await sb.from('products').update(remoteProduct).eq('id',p.id).select().single();
       if(error) throw error;
       return data;
     } else {
-      const {id,...rest} = p;
-      const {data,error} = await sb.from('products').insert(rest).select().single();
+      const {id,...rest} = remoteProduct;
+      const {data,error} = await sb.from('products').insert(rest).select();
       if(error) throw error;
-      return data;
+      return Array.isArray(data) ? data[0] : data;
     }
   },
   async deleteProduct(id){
@@ -782,13 +783,29 @@ const ADB = {
 
   // ── Sunday ──
   async getSunday(){
-    if(!isSupabaseConfigured){ try{return JSON.parse(localStorage.getItem('kt_sunday'))||{};}catch{return{};} }
-    const {data} = await sb.from('sunday_special').select('*').eq('id',1).single();
-    return data||{};
+    if(!isSupabaseConfigured){ return {}; }
+    const {data,error} = await sb.from('sunday_special').select('*').eq('id',1).maybeSingle();
+    if(error && error.code !== 'PGRST116') throw error;
+    if(!data){ return {}; }
+    return {
+      productId: Number(data.product_id) || null,
+      price: Number(data.special_price) || 0,
+      message: data.special_message || "",
+      image: data.image_url || "",
+      active: data.active !== false
+    };
   },
-  async saveSunday(productId, price, message){
-    if(!isSupabaseConfigured){ localStorage.setItem('kt_sunday',JSON.stringify({productId,price,message}));return; }
-    await sb.from('sunday_special').update({product_id:productId,price,message,updated_at:'now()'}).eq('id',1);
+  async saveSunday(productId, price, message, imageUrl){
+    if(!isSupabaseConfigured){ return; }
+    await sb.from('sunday_special').upsert({
+      id: 1,
+      product_id: Number(productId),
+      special_price: Number(price) || 0,
+      special_message: message || "",
+      image_url: imageUrl || null,
+      active: true,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
   },
 };
 
@@ -1499,8 +1516,12 @@ async function saveProd(){
   };
 
   try{
+    var remotePayload = Object.assign({}, p);
+    if(!eid){
+      delete remotePayload.id;
+    }
     if(isSupabaseConfigured){
-      var savedRow = await ADB.saveProduct(p);
+      var savedRow = await ADB.saveProduct(remotePayload);
       if(savedRow){
         p = normalizeProduct(savedRow);
       }
@@ -1597,13 +1618,17 @@ function resetProdForm(){
 // ============================================================
 //  SPECIAL DIMANCHE
 // ============================================================
-function renderSpecialPage(){
+async function renderSpecialPage(){
   renderProducts();
-  var sp = lsGet("sunday",{});
-  if(sp.productId) document.getElementById("sp-prod").value = sp.productId;
-  if(sp.price)     document.getElementById("sp-price").value = sp.price;
-  if(sp.message)   document.getElementById("sp-msg").value = sp.message;
-  if(sp.image)     spImgData = sp.image;
+  try{
+    var sp = await ADB.getSunday();
+    if(sp.productId) document.getElementById("sp-prod").value = sp.productId;
+    if(sp.price)     document.getElementById("sp-price").value = sp.price;
+    if(sp.message)   document.getElementById("sp-msg").value = sp.message;
+    spImgData = sp.image || "";
+  }catch(e){
+    console.warn('Failed to load Sunday special', e);
+  }
   updateSpPreview();
   document.getElementById("sp-prod").onchange  = updateSpPreview;
   document.getElementById("sp-price").oninput  = updateSpPreview;
@@ -1630,25 +1655,36 @@ function updateSpPreview(){
   }
 }
 
-function saveSpecial(){
+async function saveSpecial(){
   var pid   = document.getElementById("sp-prod").value;
   var price = parseInt(document.getElementById("sp-price").value);
   var msg   = document.getElementById("sp-msg").value.trim();
   var img   = spImgData || "";
   if(!pid||!price){toast("Chwazi pwodui ak pri!","e");return;}
-  lsSet("sunday",{productId:pid,price:price,message:msg,image:img});
+  try{
+    if(typeof ADB !== 'undefined' && typeof ADB.saveSunday === 'function'){
+      await ADB.saveSunday(pid, price, msg, img);
+    }
+  }catch(e){
+    console.warn('Failed to sync Sunday special', e);
+    toast("⚠️ Erè sove espesyal","e");
+    return;
+  }
   toast("✅ Spécial Dimanche sove!","s");
 }
 
 var spImgData = "";
-function handleSpecialImg(input){
-  if(input.files && input.files[0]){
-    var reader = new FileReader();
-    reader.onload = function(e){
-      spImgData = e.target.result;
-      document.getElementById("sp-pv-img").innerHTML = '<img src="'+spImgData+'" style="width:100%;height:auto;border-radius:12px;">';
-    };
-    reader.readAsDataURL(input.files[0]);
+async function handleSpecialImg(input){
+  var file = input.files && input.files[0];
+  if(!file){ return; }
+  if(file.size > 3*1024*1024){toast("Imaj twò gwo! Maks 3MB","e");return;}
+  try{
+    spImgData = await uploadProductImage(file);
+    document.getElementById("sp-pv-img").innerHTML = '<img src="'+spImgData+'" style="width:100%;height:auto;border-radius:12px;">';
+  }catch(err){
+    console.error('ImageKit upload error', err);
+    spImgData = "";
+    toast("Upload imaj echwe","e");
   }
 }
 

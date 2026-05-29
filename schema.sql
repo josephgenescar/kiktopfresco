@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS sunday_special (
   product_id BIGINT REFERENCES products(id) ON DELETE SET NULL,
   special_price INTEGER NOT NULL,
   special_message TEXT,
+  image_url TEXT,
   active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

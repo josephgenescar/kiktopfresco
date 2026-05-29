@@ -1747,6 +1747,28 @@ async function sbGetBanners(){
   }
 }
 
+async function sbGetSunday(){
+  if(!supabaseClient){ currentSunday = {}; return currentSunday; }
+  try{
+    var {data,error} = await supabaseClient.from('sunday_special').select('*').eq('id',1).maybeSingle();
+    if(error && error.code !== 'PGRST116') throw error;
+    if(!data){ currentSunday = {}; return currentSunday; }
+    currentSunday = {
+      productId: Number(data.product_id) || null,
+      price: Number(data.special_price) || 0,
+      message: data.special_message || "",
+      image: data.image_url || "",
+      active: data.active !== false,
+      updated_at: data.updated_at
+    };
+    return currentSunday;
+  }catch(e){
+    console.log('Supabase sunday error', e);
+    currentSunday = {};
+    return currentSunday;
+  }
+}
+
 function normalizeReviewRow(row){
   if(!row) return row;
   return {
@@ -1918,6 +1940,7 @@ var settings = lsGet("settings",{maxPoints:100,pointsRate:150});
 var products = lsGet("products",[]);
 var customers = [];
 var orders = lsGet("orders",[]);
+var currentSunday = {};
 
 function safeNumber(value, fallback){
   var n = Number(value);
@@ -2208,6 +2231,7 @@ async function init(){
     });
   }
 
+  await sbGetSunday();
   loadBanner();
   switchTab("manger");
   updCartUI();
@@ -2511,7 +2535,7 @@ function addToCart(pid){
 }
 
 function addSun(){
-  var sun=lsGet("sunday",{});
+  var sun=currentSunday || {};
   if(!sun.productId){toast(tr("t-no-sun"),"e");return;}
   var p=products.find(function(x){return String(x.id)===String(sun.productId);});
   if(!p){toast(tr("t-no-sun"),"e");return;}
@@ -2894,16 +2918,23 @@ async function goWA(){
 //  SUNDAY
 // ==================================================
 function updSunday(){
-  var sun=lsGet("sunday",{});
-  var p=sun.productId?products.find(function(x){return x.id===sun.productId;}):null;
-  if(p&&sun.price){
+  var sun = currentSunday || {};
+  var p = sun.productId ? products.find(function(x){return String(x.id)===String(sun.productId);}) : null;
+  if(p && sun.price){
     var name=(L==="fr")?p.fr:p.kr;
     var desc=(L==="fr")?p.df:p.dk;
     document.getElementById("sun-name").textContent=name;
     document.getElementById("sun-desc").textContent=sun.message||desc||"";
     document.getElementById("sun-new").textContent=sun.price+" HTG";
     document.getElementById("sun-old").textContent=p.price+" HTG";
-    if(p.img||IMGS[p.cat])document.getElementById("sun-img").src=p.img||IMGS[p.cat];
+    var imgSrc = sun.image || p.img || IMGS[p.cat];
+    if(imgSrc) document.getElementById("sun-img").src=imgSrc;
+  } else if(sun.image){
+    document.getElementById("sun-name").innerHTML=tr("sun-name-def");
+    document.getElementById("sun-desc").textContent=sun.message||"";
+    document.getElementById("sun-new").textContent=sun.price?sun.price+" HTG":"-";
+    document.getElementById("sun-old").textContent="";
+    document.getElementById("sun-img").src=sun.image;
   } else {
     document.getElementById("sun-name").innerHTML=tr("sun-name-def");
     document.getElementById("sun-desc").textContent="";
