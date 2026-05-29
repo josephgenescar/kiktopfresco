@@ -641,6 +641,60 @@ section::after{
 }
 section>*{position:relative;z-index:1;}
 
+/* ============ CUSTOMER REVIEWS ============ */
+.review-section{
+  padding:28px 20px 36px;
+  background:#fff;
+}
+.review-layout{
+  display:grid;
+  grid-template-columns:320px 1fr;
+  gap:16px;
+  align-items:start;
+}
+.review-form-card,
+.review-list-card{
+  background:#fff;
+  border-radius:18px;
+  box-shadow:0 10px 28px rgba(13,43,94,.12);
+  border:1px solid rgba(13,43,94,.08);
+  padding:18px;
+}
+.review-form-title{font-family:'Fredoka One',cursive;font-size:20px;color:var(--navy);margin-bottom:6px;}
+.review-form-copy{color:var(--gray);font-size:13px;margin-bottom:12px;}
+.review-form{display:flex;flex-direction:column;gap:10px;}
+.review-form label{display:flex;flex-direction:column;gap:6px;color:var(--navy);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;}
+.review-form input,
+.review-form select,
+.review-form textarea{
+  border:1px solid rgba(13,43,94,.16);
+  border-radius:10px;
+  background:#fff;
+  color:#111;
+  padding:10px 12px;
+  font-size:13px;
+  font-family:inherit;
+}
+.review-form textarea{resize:vertical;min-height:100px;}
+.review-list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.review-list{display:flex;flex-direction:column;gap:10px;max-height:520px;overflow:auto;padding-right:4px;}
+.review-card{
+  border-radius:14px;
+  padding:14px;
+  background:#fffdf6;
+  border:1px solid rgba(245,197,24,.28);
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.review-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
+.review-name{font-weight:800;color:var(--navy);font-size:14px;}
+.review-meta{color:var(--gray);font-size:11px;margin-top:2px;}
+.review-stars{color:var(--yellow);font-size:14px;letter-spacing:.08em;}
+.review-body{color:#333;margin:0;line-height:1.5;font-size:13px;}
+.review-date{color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.08em;}
+.review-empty{padding:20px;border:1px dashed rgba(13,43,94,.2);border-radius:12px;color:var(--gray);text-align:center;font-size:13px;background:#fff;}
+
 /* ============ FOOTER ============ */
 footer{background:var(--navy);padding:36px 20px;text-align:center;}
 .f-logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:12px;}
@@ -1159,6 +1213,56 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
   </div>
 </section>
 
+<section class="review-section" id="customer-reviews">
+  <div class="section-head" style="margin-bottom:16px;">
+    <div class="section-tag">Avis Clients</div>
+    <h2 style="font-family:'Fredoka One',cursive;font-size:clamp(24px,4vw,34px);color:var(--navy);margin:6px 0 0;">Ce que nos clients disent</h2>
+    <p id="review-summary" class="section-copy" style="color:var(--gray);max-width:720px;margin-top:10px;">Chargement des avis clients...</p>
+  </div>
+
+  <div class="review-layout">
+    <div class="review-form-card">
+      <div class="review-form-title">Laisse un avis</div>
+      <p class="review-form-copy">Partage ton experience pour aider la communaute KikTop Fresco.</p>
+      <form id="review-form" class="review-form">
+        <label>
+          Nom
+          <input type="text" id="review-name" placeholder="Ton nom" required>
+        </label>
+        <label>
+          Téléphone (optionnel)
+          <input type="tel" id="review-phone" placeholder="06xxxxxxx">
+        </label>
+        <label>
+          Note
+          <select id="review-rating">
+            <option value="5">5 étoiles</option>
+            <option value="4">4 étoiles</option>
+            <option value="3">3 étoiles</option>
+            <option value="2">2 étoiles</option>
+            <option value="1">1 étoile</option>
+          </select>
+        </label>
+        <label>
+          Ton avis
+          <textarea id="review-message" rows="5" placeholder="Decris ton experience..." required></textarea>
+        </label>
+        <button type="submit" class="btn-save">Envoyer l'avis</button>
+      </form>
+    </div>
+
+    <div class="review-list-card">
+      <div class="review-list-header">
+        <div>
+          <div class="review-form-title">Avis recents</div>
+          <p class="review-form-copy">Avis publies sur le site.</p>
+        </div>
+      </div>
+      <div id="customer-reviews-list" class="review-list"></div>
+    </div>
+  </div>
+</section>
+
 <!-- ████ FOOTER ████ -->
 <footer>
   <div class="f-logo">
@@ -1610,6 +1714,167 @@ async function sbGetBanners(){
   }
 }
 
+function normalizeReviewRow(row){
+  if(!row) return row;
+  return {
+    id: row.id,
+    customer_name: row.customer_name || row.name || "",
+    customer_phone: row.customer_phone || row.phone || "",
+    rating: Number(row.rating) || 5,
+    review: row.review || row.message || "",
+    approved: row.approved !== false,
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  };
+}
+
+function formatLocalDate(date){
+  var y = date.getFullYear();
+  var m = String(date.getMonth()+1).padStart(2,'0');
+  var d = String(date.getDate()).padStart(2,'0');
+  return y + "-" + m + "-" + d;
+}
+
+function getVisitorSessionId(){
+  var key = "kt_visitor_session";
+  var id = localStorage.getItem(key);
+  if(!id){
+    id = (window.crypto && typeof window.crypto.randomUUID === 'function') ? window.crypto.randomUUID() : (Date.now().toString() + "-" + Math.random().toString(36).slice(2,10));
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
+async function trackVisit(){
+  var sessionId = getVisitorSessionId();
+  var payload = {
+    session_id: sessionId,
+    visit_date: formatLocalDate(new Date()),
+    page: window.location.pathname || "/",
+    referrer: document.referrer || "",
+    user_agent: navigator.userAgent,
+    created_at: new Date().toISOString()
+  };
+
+  try{
+    if(supabaseClient){
+      await supabaseClient.from('site_visits').upsert(payload, { onConflict: 'session_id' }).select();
+      return;
+    }
+    var visits = lsGet("site_visits",[]);
+    var existing = visits.find(function(item){return item.session_id === sessionId;});
+    if(!existing){
+      visits.unshift(payload);
+      lsSet("site_visits", visits.slice(0,200));
+    }
+  }catch(e){
+    console.log('Supabase visit tracking failed:', e);
+    var visits = lsGet("site_visits",[]);
+    var existing = visits.find(function(item){return item.session_id === sessionId;});
+    if(!existing){
+      visits.unshift(payload);
+      lsSet("site_visits", visits.slice(0,200));
+    }
+  }
+}
+
+function buildStars(rating){
+  var safe = Math.max(1, Math.min(5, Number(rating)||5));
+  return '★'.repeat(safe) + '☆'.repeat(5 - safe);
+}
+
+function renderReviewSection(reviews){
+  var list = document.getElementById("customer-reviews-list");
+  var summary = document.getElementById("review-summary");
+  if(summary){
+    if(!reviews.length){
+      summary.textContent = "Aucun avis enregistré pour l’instant.";
+    } else {
+      var avg = (reviews.reduce(function(s,r){return s + Number(r.rating||5);},0) / reviews.length).toFixed(1);
+      summary.textContent = avg + "/5 — " + reviews.length + " avis clients";
+    }
+  }
+  if(list){
+    if(!reviews.length){
+      list.innerHTML = '<div class="review-empty">Aucun avis pour le moment. Soyez le premier à laisser votre avis !</div>';
+      return;
+    }
+    list.innerHTML = reviews.map(function(r){
+      return '<article class="review-card">'
+        + '<div class="review-top">'
+        + '<div>'
+        + '<div class="review-name">' + (r.customer_name || 'Client') + '</div>'
+        + '<div class="review-meta">' + (r.customer_phone ? r.customer_phone : 'Anonyme') + '</div>'
+        + '</div>'
+        + '<div class="review-stars">' + buildStars(r.rating) + '</div>'
+        + '</div>'
+        + '<p class="review-body">' + (r.review || '') + '</p>'
+        + '<div class="review-date">' + (r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Aujourd’hui') + '</div>'
+        + '</article>';
+    }).join("");
+  }
+}
+
+async function loadReviewsData(){
+  var rows = [];
+  try{
+    if(supabaseClient){
+      var {data,error} = await supabaseClient.from('customer_reviews').select('*').eq('approved', true).order('created_at', { ascending: false });
+      if(error) throw error;
+      rows = (data || []).map(normalizeReviewRow);
+      lsSet("reviews", rows);
+    } else {
+      rows = (lsGet("reviews", []) || []).map(normalizeReviewRow);
+    }
+  }catch(e){
+    console.log('Supabase reviews error, using localStorage:', e);
+    rows = (lsGet("reviews", []) || []).map(normalizeReviewRow);
+  }
+  rows = rows.filter(function(r){return r.approved !== false;});
+  renderReviewSection(rows);
+  return rows;
+}
+
+async function submitReview(){
+  var form = document.getElementById("review-form");
+  if(!form) return;
+  var name = document.getElementById("review-name").value.trim();
+  var phone = document.getElementById("review-phone").value.trim();
+  var rating = Number(document.getElementById("review-rating").value) || 5;
+  var message = document.getElementById("review-message").value.trim();
+
+  if(!name || !message){
+    toast("Remplis ton nom et ton avis!","e");
+    return;
+  }
+
+  var payload = {
+    customer_name: name,
+    customer_phone: phone,
+    rating: rating,
+    review: message,
+    approved: false,
+    created_at: new Date().toISOString()
+  };
+
+  try{
+    if(supabaseClient){
+      await supabaseClient.from('customer_reviews').insert(payload);
+    } else {
+      var saved = lsGet("reviews", []);
+      saved.unshift(normalizeReviewRow(payload));
+      lsSet("reviews", saved);
+    }
+    form.reset();
+    document.getElementById("review-rating").value = "5";
+    toast("Merci! Ton avis a ete enregistre et sera examine par l’admin.","s");
+    await loadReviewsData();
+  }catch(e){
+    console.log('Review submit error:', e);
+    toast("⚠️ Erreur enregistrement avis","e");
+  }
+}
+
 // ---- STATE ----
 var L = "fr";
 var curTab = "manger";
@@ -1899,6 +2164,17 @@ async function init(){
 
   clearLegacyCustomerPersistence();
   applyLang();
+  await trackVisit();
+  await loadReviewsData();
+
+  var reviewForm = document.getElementById("review-form");
+  if(reviewForm){
+    reviewForm.addEventListener("submit", function(ev){
+      ev.preventDefault();
+      submitReview();
+    });
+  }
+
   loadBanner();
   switchTab("manger");
   updCartUI();

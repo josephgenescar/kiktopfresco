@@ -7,6 +7,8 @@ DROP TABLE IF EXISTS sunday_special CASCADE;
 DROP TABLE IF EXISTS customers CASCADE;
 DROP TABLE IF EXISTS banners CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS customer_reviews CASCADE;
+DROP TABLE IF EXISTS site_visits CASCADE;
 DROP TABLE IF EXISTS settings CASCADE;
 
 -- Settings table
@@ -107,6 +109,29 @@ CREATE TABLE IF NOT EXISTS sunday_special (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Customer reviews table
+CREATE TABLE IF NOT EXISTS customer_reviews (
+  id BIGSERIAL PRIMARY KEY,
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT,
+  rating INTEGER DEFAULT 5,
+  review TEXT NOT NULL,
+  approved BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Site visits table
+CREATE TABLE IF NOT EXISTS site_visits (
+  session_id TEXT PRIMARY KEY,
+  visit_date TEXT,
+  page TEXT,
+  referrer TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Insert default sunday special
 INSERT INTO sunday_special (id, product_id, special_price, special_message, active)
 VALUES (1, NULL, 0, 'Special Dimanche', FALSE)
@@ -122,6 +147,10 @@ CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
 CREATE INDEX IF NOT EXISTS idx_products_tab ON products(tab);
 CREATE INDEX IF NOT EXISTS idx_banners_active ON banners(active);
 CREATE INDEX IF NOT EXISTS idx_banners_position ON banners(position);
+CREATE INDEX IF NOT EXISTS idx_customer_reviews_approved ON customer_reviews(approved);
+CREATE INDEX IF NOT EXISTS idx_customer_reviews_created_at ON customer_reviews(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_site_visits_visit_date ON site_visits(visit_date);
+CREATE INDEX IF NOT EXISTS idx_site_visits_created_at ON site_visits(created_at DESC);
 
 -- Disable RLS for now (using service role keys provides security)
 ALTER TABLE settings DISABLE ROW LEVEL SECURITY;
@@ -130,3 +159,5 @@ ALTER TABLE banners DISABLE ROW LEVEL SECURITY;
 ALTER TABLE customers DISABLE ROW LEVEL SECURITY;
 ALTER TABLE orders DISABLE ROW LEVEL SECURITY;
 ALTER TABLE sunday_special DISABLE ROW LEVEL SECURITY;
+ALTER TABLE customer_reviews DISABLE ROW LEVEL SECURITY;
+ALTER TABLE site_visits DISABLE ROW LEVEL SECURITY;

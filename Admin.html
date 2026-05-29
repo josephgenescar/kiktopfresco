@@ -281,6 +281,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
       <div class="nav-sep"></div>
       <div class="nav-item" onclick="showPage('clients')" data-p="clients"><span class="ni">👥</span><span>Kliyan</span></div>
       <div class="nav-item" onclick="showPage('orders')" data-p="orders"><span class="ni">📦</span><span>Kòmand</span></div>
+      <div class="nav-item" onclick="showPage('reviews')" data-p="reviews"><span class="ni">⭐</span><span>Avis Kliyan</span></div>
       <div class="nav-sep"></div>
       <div class="nav-item" onclick="showPage('settings')" data-p="settings"><span class="ni">⚙️</span><span>Paramèt</span></div>
     </div>
@@ -294,7 +295,10 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
         <div class="stats-row">
           <div class="stat"><div class="sn" id="ds-prods">0</div><div class="sl">Pwodui Aktif</div></div>
           <div class="stat"><div class="sn" id="ds-custs">0</div><div class="sl">Kliyan</div></div>
-          <div class="stat"><div class="sn" id="ds-orders">0</div><div class="sl">Kòmand</div></div>
+          <div class="stat"><div class="sn" id="ds-orders">0</div><div class="sl">Kòmand Total</div></div>
+          <div class="stat"><div class="sn" id="ds-orders-day">0</div><div class="sl">Kòmand Jounen</div></div>
+          <div class="stat"><div class="sn" id="ds-visits">0</div><div class="sl">Vizit Jounen</div></div>
+          <div class="stat"><div class="sn" id="ds-reviews">0</div><div class="sl">Avis Kliyan</div></div>
           <div class="stat"><div class="sn" id="ds-rev">0</div><div class="sl">Revni (HTG)</div></div>
           <div class="stat"><div class="sn" id="ds-bann">0</div><div class="sl">Annonces Aktif</div></div>
         </div>
@@ -302,6 +306,11 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
           <div class="card-title">📋 Dènye Kòmand</div>
           <table class="tbl"><thead><tr><th>#</th><th>Kliyan</th><th>Pwodui</th><th>Total</th><th>Pwen</th><th>Dat</th></tr></thead>
           <tbody id="db-orders-body"></tbody></table>
+        </div>
+        <div class="card">
+          <div class="card-title">⭐ Dènye Avis</div>
+          <table class="tbl"><thead><tr><th>Kliyan</th><th>Rating</th><th>Avis</th><th>Dat</th><th>Eta</th></tr></thead>
+          <tbody id="db-reviews-body"></tbody></table>
         </div>
         <div class="card">
           <div class="card-title">🏆 Top Kliyan</div>
@@ -520,6 +529,24 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
         </div>
       </div>
 
+      <!-- ===== REVIEWS ===== -->
+      <div class="page" id="page-reviews">
+        <div class="page-title">⭐ Avis Kliyan</div>
+        <div class="page-sub">Kontwole avis kliyan, aprobe, retire oswa efase</div>
+        <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
+          <div class="stat"><div class="sn" id="rv-total">0</div><div class="sl">Total Avis</div></div>
+          <div class="stat"><div class="sn" id="rv-approved">0</div><div class="sl">Aprovede</div></div>
+          <div class="stat"><div class="sn" id="rv-pending">0</div><div class="sl">Pandan</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">📝 Lis Avis</div>
+          <table class="tbl">
+            <thead><tr><th>Kliyan</th><th>Telefòn</th><th>Rating</th><th>Avis</th><th>Dat</th><th>Eta</th><th>Aksyon</th></tr></thead>
+            <tbody id="rv-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- ===== SETTINGS ===== -->
       <div class="page" id="page-settings">
         <div class="page-title">⚙️ Paramèt</div>
@@ -631,6 +658,56 @@ const ADB = {
   async deleteProduct(id){
     if(!isSupabaseConfigured){ /* handled below */ return; }
     await sb.from('products').delete().eq('id',id);
+  },
+
+  // ── Customers ──
+  async getCustomers(){
+    if(!isSupabaseConfigured){ try{return JSON.parse(localStorage.getItem('kt_customers'))||[];}catch{return[];} }
+    const {data} = await sb.from('customers').select('*').order('points',{ascending:false});
+    return data||[];
+  },
+
+  // ── Orders ──
+  async getOrders(){
+    if(!isSupabaseConfigured){ try{return JSON.parse(localStorage.getItem('kt_orders'))||[];}catch{return[];} }
+    const {data} = await sb.from('orders').select('*').order('created_at',{ascending:false});
+    return data||[];
+  },
+
+  // ── Reviews ──
+  async getReviews(){
+    if(!isSupabaseConfigured){ try{return JSON.parse(localStorage.getItem('kt_reviews'))||[];}catch{return[];} }
+    const {data} = await sb.from('customer_reviews').select('*').order('created_at',{ascending:false});
+    return data||[];
+  },
+  async deleteReview(id){
+    if(!isSupabaseConfigured){ return; }
+    await sb.from('customer_reviews').delete().eq('id',id);
+  },
+  async updateReview(id, payload){
+    if(!isSupabaseConfigured){ return; }
+    const {data,error} = await sb.from('customer_reviews').update(payload).eq('id',id).select().single();
+    if(error) throw error;
+    return data;
+  },
+
+  // ── Site Visits ──
+  async getSiteVisits(){
+    if(!isSupabaseConfigured){ try{return JSON.parse(localStorage.getItem('kt_site_visits'))||[];}catch{return[];} }
+    const {data} = await sb.from('site_visits').select('*').order('visit_date',{ascending:false});
+    return data||[];
+  },
+  async trackSiteVisit(payload){
+    if(!isSupabaseConfigured){
+      var visits = JSON.parse(localStorage.getItem('kt_site_visits')||'[]');
+      if(!Array.isArray(visits)) visits=[];
+      visits.unshift(payload);
+      localStorage.setItem('kt_site_visits', JSON.stringify(visits.slice(0,150)));
+      return payload;
+    }
+    const {data,error} = await sb.from('site_visits').upsert(payload, { onConflict: 'session_id' }).select().single();
+    if(error) throw error;
+    return data;
   },
 
   // ── Banners ──
@@ -776,6 +853,34 @@ function normalizeBanner(b){
   };
 }
 
+function normalizeReview(r){
+  if(!r) return r;
+  return {
+    id: r.id,
+    customer_name: r.customer_name || r.name || "",
+    customer_phone: r.customer_phone || r.phone || "",
+    rating: Number(r.rating) || 5,
+    review: r.review || r.message || "",
+    approved: r.approved === true || r.status === 'approved',
+    status: r.approved === true || r.status === 'approved' ? 'approved' : 'pending',
+    created_at: r.created_at,
+    updated_at: r.updated_at
+  };
+}
+
+function normalizeVisit(v){
+  if(!v) return v;
+  return {
+    id: v.id,
+    session_id: v.session_id || "",
+    visit_date: v.visit_date || (v.created_at ? new Date(v.created_at).toISOString().split('T')[0] : ''),
+    page: v.page || "/",
+    referrer: v.referrer || "",
+    user_agent: v.user_agent || "",
+    created_at: v.created_at
+  };
+}
+
 async function loadProductsFromSource(){
   var local = lsGet("products",[]);
   if(isSupabaseConfigured){
@@ -802,6 +907,65 @@ async function loadBannersFromSource(){
         return normalized;
       }
     }catch(e){console.warn('Failed to load remote banners', e);}
+  }
+  return local;
+}
+
+async function loadCustomersFromSource(){
+  var local = lsGet("customers",[]);
+  if(isSupabaseConfigured){
+    try{
+      var remote = await ADB.getCustomers();
+      if(Array.isArray(remote) && remote.length){
+        var normalized = remote.map(normalizeCustomer);
+        lsSet("customers", normalized);
+        return normalized;
+      }
+    }catch(e){console.warn('Failed to load remote customers', e);}
+  }
+  return local;
+}
+
+async function loadOrdersFromSource(){
+  var local = lsGet("orders",[]);
+  if(isSupabaseConfigured){
+    try{
+      var remote = await ADB.getOrders();
+      if(Array.isArray(remote) && remote.length){
+        lsSet("orders", remote);
+        return remote;
+      }
+    }catch(e){console.warn('Failed to load remote orders', e);}
+  }
+  return local;
+}
+
+async function loadReviewsFromSource(){
+  var local = lsGet("reviews",[]);
+  if(isSupabaseConfigured){
+    try{
+      var remote = await ADB.getReviews();
+      if(Array.isArray(remote) && remote.length){
+        var normalized = remote.map(normalizeReview);
+        lsSet("reviews", normalized);
+        return normalized;
+      }
+    }catch(e){console.warn('Failed to load remote reviews', e);}
+  }
+  return local;
+}
+
+async function loadVisitsFromSource(){
+  var local = lsGet("site_visits",[]);
+  if(isSupabaseConfigured){
+    try{
+      var remote = await ADB.getSiteVisits();
+      if(Array.isArray(remote) && remote.length){
+        var normalized = remote.map(normalizeVisit);
+        lsSet("site_visits", normalized);
+        return normalized;
+      }
+    }catch(e){console.warn('Failed to load remote site visits', e);}
   }
   return local;
 }
@@ -900,30 +1064,56 @@ function showPage(name){
   if(name==="special")   renderSpecialPage();
   if(name==="clients")   renderClients();
   if(name==="orders")    renderOrders();
+  if(name==="reviews")   renderReviews();
   if(name==="settings")  loadSettings();
 }
 
 async function refreshAll(){
   settings = await getAdminSettings();
-  renderDashboard();
+  await renderDashboard();
   renderProducts();
+  await renderReviews();
+}
+
+function formatLocalDate(date){
+  var y = date.getFullYear();
+  var m = String(date.getMonth()+1).padStart(2,'0');
+  var d = String(date.getDate()).padStart(2,'0');
+  return y + "-" + m + "-" + d;
 }
 
 // ============================================================
 //  DASHBOARD
 // ============================================================
-function renderDashboard(){
-  var prods   = lsGet("products",[]).filter(function(p){return p.status==="active";});
-  var custs   = lsGet("customers",[]).map(normalizeCustomer);
-  var ords    = lsGet("orders",[]);
-  var banners = [];try{banners=(JSON.parse(localStorage.getItem("kt_banners"))||[]).filter(function(b){return b.active!==false;});}catch(e){}
-  var rev     = ords.filter(function(o){return !o.usedPoints;}).reduce(function(s,o){return s+o.total;},0);
+async function renderDashboard(){
+  var prods   = await loadProductsFromSource();
+  var prodsActive = prods.filter(function(p){return p.status==="active";});
+  var custs   = await loadCustomersFromSource();
+  var custsNorm = custs.map(normalizeCustomer);
+  var ords    = await loadOrdersFromSource();
+  var banners = await loadBannersFromSource();
+  var reviews = await loadReviewsFromSource();
+  var visits  = await loadVisitsFromSource();
+  var rev     = ords.filter(function(o){return !o.usedPoints;}).reduce(function(s,o){return s+Number(o.total||0);},0);
+  var todayKey = formatLocalDate(new Date());
+  var todayOrders = ords.filter(function(o){
+    var d = o.created_at || o.date || "";
+    if(!d) return false;
+    try{ return new Date(d).toISOString().slice(0,10) === todayKey; }catch(e){ return false; }
+  });
+  var todayVisits = visits.filter(function(v){
+    var d = v.visit_date || (v.created_at ? new Date(v.created_at).toISOString().slice(0,10) : "");
+    return d === todayKey;
+  });
 
-  document.getElementById("ds-prods").textContent  = prods.length;
-  document.getElementById("ds-custs").textContent  = custs.length;
+  document.getElementById("ds-prods").textContent  = prodsActive.length;
+  document.getElementById("ds-custs").textContent  = custsNorm.length;
   document.getElementById("ds-orders").textContent = ords.length;
+  document.getElementById("ds-orders-day").textContent = todayOrders.length;
+  document.getElementById("ds-visits").textContent = todayVisits.length;
+  document.getElementById("ds-reviews").textContent = reviews.length;
   document.getElementById("ds-rev").textContent    = rev;
-  document.getElementById("ds-bann").textContent   = banners.length;
+  document.getElementById("ds-bann").textContent   = banners.filter(function(b){return b.active!==false;}).length;
 
   // Recent orders
   var tbody = document.getElementById("db-orders-body");
@@ -932,9 +1122,16 @@ function renderDashboard(){
     return "<tr><td><b style='color:var(--yellow)'>#"+o.id+"</b></td><td>"+o.customer+"</td><td style='max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+o.items+"</td><td>"+o.total+" HTG</td><td>"+(o.usedPoints?"<span style='color:var(--red)'>GRATIS</span>":"<span style='color:var(--green)'>+"+o.ptsEarned+" pts</span>")+"</td><td style='color:var(--gray);font-size:11px'>"+o.date+"</td></tr>";
   }).join("") : "<tr><td colspan='6' style='text-align:center;color:var(--gray);padding:20px'>Pa gen komand</td></tr>";
 
+  var reviewBody = document.getElementById("db-reviews-body");
+  var recentReviews = reviews.slice().sort(function(a,b){return new Date(b.created_at||0)-new Date(a.created_at||0);}).slice(0,8);
+  reviewBody.innerHTML = recentReviews.length ? recentReviews.map(function(r){
+    var stars = "★".repeat(Math.max(1, Number(r.rating)||0)) + "☆".repeat(Math.max(0, 5 - (Number(r.rating)||0)));
+    return "<tr><td style='font-weight:700'>"+r.customer_name+"</td><td style='color:var(--yellow);font-weight:800'>"+stars+"</td><td style='max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+r.review+"</td><td style='color:var(--gray);font-size:11px'>"+(r.created_at?new Date(r.created_at).toLocaleString():"-")+"</td><td><span class='"+(r.approved?"badge-on":"badge-off")+"'>"+(r.approved?"Apwouve":"Pandan")+"</span></td></tr>";
+  }).join("") : "<tr><td colspan='5' style='text-align:center;color:var(--gray);padding:20px'>Pa gen avis</td></tr>";
+
   // Top clients
   var topBody = document.getElementById("db-top-body");
-  var sorted  = custs.slice().sort(function(a,b){return b.points-a.points;}).slice(0,5);
+  var sorted  = custsNorm.slice().sort(function(a,b){return b.points-a.points;}).slice(0,5);
   topBody.innerHTML = sorted.length ? sorted.map(function(c,i){
     return "<tr><td><b style='color:var(--yellow)'>"+(i+1)+"</b></td><td>"+c.name+"</td><td><b style='color:var(--yellow)'>"+c.points+"</b></td><td>"+(c.totalOrders||0)+"</td></tr>";
   }).join("") : "<tr><td colspan='4' style='text-align:center;color:var(--gray);padding:20px'>Pa gen kliyan</td></tr>";
@@ -1556,6 +1753,66 @@ function renderOrders(){
   }).join("") : "<tr><td colspan='7' style='text-align:center;color:var(--gray);padding:20px'>Pa gen komand</td></tr>";
 }
 
+async function renderReviews(){
+  var reviews = await loadReviewsFromSource();
+  reviews = reviews.map(normalizeReview);
+  var approved = reviews.filter(function(r){return r.approved;});
+  var pending = reviews.filter(function(r){return !r.approved;});
+
+  document.getElementById("rv-total").textContent = reviews.length;
+  document.getElementById("rv-approved").textContent = approved.length;
+  document.getElementById("rv-pending").textContent = pending.length;
+
+  var tbody = document.getElementById("rv-tbody");
+  tbody.innerHTML = reviews.length ? reviews.map(function(r){
+    var stars = "★".repeat(Number(r.rating)||0)+"☆".repeat(Math.max(0,5-(Number(r.rating)||0)));
+    return "<tr>"
+      +"<td style='font-weight:700'>"+r.customer_name+"</td>"
+      +"<td style='color:var(--gray)'>"+(r.customer_phone||"-")+"</td>"
+      +"<td style='color:var(--yellow);font-weight:800'>"+stars+"</td>"
+      +"<td style='max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+r.review+"</td>"
+      +"<td style='color:var(--gray);font-size:11px'>"+(r.created_at?new Date(r.created_at).toLocaleString():"-")+"</td>"
+      +"<td><span class='"+(r.approved?"badge-on":"badge-off")+"'>"+(r.approved?"Aprovede":"Pandan")+"</span></td>"
+      +"<td><div style='display:flex;flex-wrap:wrap;gap:6px'>"
+      +(r.approved?"<button type='button' class='btn-save btn-sm btn-del' data-review-id='"+r.id+"' onclick='toggleReviewApproval(this.dataset.reviewId)'>Retire</button>":"<button type='button' class='btn-save btn-sm' data-review-id='"+r.id+"' onclick='toggleReviewApproval(this.dataset.reviewId)'>Aprowe</button>")
+      +"<button type='button' class='btn-save btn-sm btn-del' data-review-id='"+r.id+"' onclick='deleteReviewById(this.dataset.reviewId)'>Efase</button>"
+      +"</div></td>"
+      +"</tr>";
+  }).join("") : "<tr><td colspan='7' style='text-align:center;color:var(--gray);padding:20px'>Pa gen avis</td></tr>";
+}
+
+async function toggleReviewApproval(id){
+  var reviews = lsGet("reviews",[]).map(normalizeReview);
+  var review = reviews.find(function(item){return String(item.id)===String(id);});
+  if(!review){
+    review = (await loadReviewsFromSource()).map(normalizeReview).find(function(item){return String(item.id)===String(id);});
+  }
+  if(!review){ toast("Avis pa jwenn!","e"); return; }
+  review.approved = !review.approved;
+  review.status = review.approved ? 'approved' : 'pending';
+  lsSet("reviews", reviews);
+  if(isSupabaseConfigured){
+    try{ await ADB.updateReview(id, { approved: review.approved, updated_at: new Date().toISOString() }); }catch(e){ console.warn('Failed to update review', e); }
+  }
+  await renderReviews();
+  toast(review.approved ? "✅ Avis apwouve!" : "Avis retire!","s");
+}
+
+async function deleteReviewById(id){
+  if(!confirm("Efase avis sa?")) return;
+  try{
+    if(isSupabaseConfigured){ await ADB.deleteReview(id); }
+    var reviews = lsGet("reviews",[]).filter(function(item){return String(item.id)!==String(id);});
+    lsSet("reviews", reviews);
+    await renderReviews();
+    renderDashboard();
+    toast("Avis efase","e");
+  }catch(e){
+    console.warn('Review delete failed', e);
+    toast("⚠️ Erè efase avis","e");
+  }
+}
+
 // ============================================================
 //  SETTINGS
 // ============================================================
@@ -1600,9 +1857,9 @@ function clearOrders(){
 }
 
 function clearAll(){
-  if(!confirm("Efase TOUT done? (Pwodui, kliyan, komand)")) return;
+  if(!confirm("Efase TOUT done? (Pwodui, kliyan, komand, avis, vizit)")) return;
   if(!confirm("DÈNYE avètisman — aksyon sa pa ka defèt!")) return;
-  ["products","customers","orders","sunday"].forEach(function(k){localStorage.removeItem("kt_"+k);});
+  ["products","customers","orders","sunday","reviews","site_visits"].forEach(function(k){localStorage.removeItem("kt_"+k);});
   localStorage.removeItem("kt_banners");
   toast("Tout done efase!","e");
   setTimeout(function(){location.reload();},1200);
