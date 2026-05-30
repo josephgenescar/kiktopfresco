@@ -25,7 +25,6 @@
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/supabase-config.js"></script>
-<script src="js/cms-loader.js"></script>
 
 <style>
 /* ============ RESET ============ */
@@ -2204,20 +2203,12 @@ async function initInstallPrompt(){
 // ==================================================
 async function init(){
   initInstallPrompt();
-  if(typeof window.loadKiktopCmsData === 'function'){
-    try {
-      await window.loadKiktopCmsData();
-    } catch(e) {
-      console.log('⚠️ CMS fallback load failed:', e);
-    }
-  }
+  // CMS loader disabled - using Supabase only
   settings = await sbGetSettings();
   lsSet("settings", settings);
 
+  // Use Supabase data only
   var remoteProducts = await sbGetProducts();
-  if(!remoteProducts || !remoteProducts.length){
-    remoteProducts = Array.isArray(window.__KT_CMS_PRODUCTS) ? window.__KT_CMS_PRODUCTS : [];
-  }
   var storedProducts = remoteProducts && remoteProducts.length > 0 ? remoteProducts : lsGet("products",[]);
   if(storedProducts && storedProducts.length > 0){
     products = storedProducts.map(function(item){

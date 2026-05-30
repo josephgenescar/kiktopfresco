@@ -659,21 +659,31 @@ const ADB = {
   async saveProduct(p){
     if(!isSupabaseConfigured){ /* handled below */ return null; }
     const remoteProduct = toRemoteProduct(p);
+    console.log('saveProduct called with:', p);
+    console.log('remoteProduct:', remoteProduct);
+    console.log('p.id:', p.id, 'type:', typeof p.id);
     if(p.id !== undefined && p.id !== null && p.id !== ""){
       try{
+        console.log('Updating product with ID:', p.id);
         const {data,error} = await sb.from('products').update(remoteProduct).eq('id',p.id).select().single();
+        console.log('Update result - data:', data, 'error:', error);
         if(error) throw error;
         return data;
       }catch(error){
+        console.log('Update error:', error);
         if(error && error.code === 'PGRST116'){
+          console.log('Product not found, inserting instead');
           const {data:insertData,error:insertError} = await sb.from('products').insert(remoteProduct).select().single();
+          console.log('Insert result - data:', insertData, 'error:', insertError);
           if(insertError) throw insertError;
           return insertData;
         }
         throw error;
       }
     } else {
+      console.log('Inserting new product');
       const {data,error} = await sb.from('products').insert(remoteProduct).select();
+      console.log('Insert result - data:', data, 'error:', error);
       if(error) throw error;
       return Array.isArray(data) ? data[0] : data;
     }
