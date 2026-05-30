@@ -747,8 +747,17 @@ const ADB = {
       if(error) throw error;
       return data;
     } else {
-      const {id,...rest} = b;
-      const {data,error} = await sb.from('banners').insert(rest).select().single();
+      const bannerData = {
+        title: b.title,
+        body: b.body,
+        icon: b.icon,
+        bg: b.bg,
+        color: b.color,
+        img: b.img,
+        link: b.link,
+        active: b.active
+      };
+      const {data,error} = await sb.from('banners').insert(bannerData).select().single();
       if(error) throw error;
       return data;
     }
@@ -1278,8 +1287,9 @@ async function saveBanner(){
     resetBnForm();
     toast("✅ Annonce sove! Afiche sou sit la.","s");
   }catch(e){
-    console.warn('Banner save failed', e);
-    toast("⚠️ Erè sove annonce","e");
+    console.error('Banner save failed:', e);
+    console.error('Error details:', JSON.stringify(e));
+    toast("⚠️ Erè sove annonce: "+e.message,"e");
   }
 }
 
