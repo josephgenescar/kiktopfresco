@@ -1559,9 +1559,6 @@ async function saveProd(){
 
   try{
     var remotePayload = Object.assign({}, p);
-    if(!eid){
-      delete remotePayload.id;
-    }
     if(isSupabaseConfigured){
       var savedRow = await ADB.saveProduct(remotePayload);
       if(savedRow){
