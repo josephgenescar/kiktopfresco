@@ -1564,18 +1564,21 @@ async function saveProd(){
       if(savedRow){
         p = normalizeProduct(savedRow);
       }
-    }
-    prods = lsGet("products",[]);
-    if(eid){
-      var idx = prods.findIndex(function(x){return String(x.id)===String(eid);});
-      if(idx>=0) prods[idx] = p;
-      else prods.push(p);
-      toast("✅ Pwodui modifye: "+nameFr,"s");
+      prods = await ADB.getProducts();
+      lsSet("products", prods);
     } else {
-      prods.push(p);
-      toast("✅ Pwodui ajoute: "+nameFr,"s");
+      prods = lsGet("products",[]);
+      if(eid){
+        var idx = prods.findIndex(function(x){return String(x.id)===String(eid);});
+        if(idx>=0) prods[idx] = p;
+        else prods.push(p);
+        toast("✅ Pwodui modifye: "+nameFr,"s");
+      } else {
+        prods.push(p);
+        toast("✅ Pwodui ajoute: "+nameFr,"s");
+      }
+      lsSet("products", prods);
     }
-    lsSet("products", prods);
     resetProdForm();
     await renderProducts();
   }catch(e){
