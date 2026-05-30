@@ -642,9 +642,19 @@ const ADB = {
 
   // ── Products ──
   async getProducts(){
-    if(!isSupabaseConfigured){ try{return JSON.parse(localStorage.getItem('kt_products'))||[];}catch{return [];} }
-    const {data} = await sb.from('products').select('*').order('position');
-    return data||[];
+    if(!isSupabaseConfigured){ return lsGet("products",[]); }
+    try{
+      const {data,error} = await sb.from('products').select('*').order('position');
+      if(error) throw error;
+      var normalized = (data||[]).map(normalizeProduct);
+      if(normalized.length > 0){
+        lsSet("products", normalized);
+      }
+      return normalized;
+    }catch(e){
+      console.log('Supabase getProducts error:', e);
+      return lsGet("products",[]);
+    }
   },
   async saveProduct(p){
     if(!isSupabaseConfigured){ /* handled below */ return null; }
@@ -1561,11 +1571,19 @@ async function saveProd(){
     var remotePayload = Object.assign({}, p);
     if(isSupabaseConfigured){
       var savedRow = await ADB.saveProduct(remotePayload);
+      console.log('Saved row:', savedRow);
       if(savedRow){
         p = normalizeProduct(savedRow);
       }
       prods = await ADB.getProducts();
-      lsSet("products", prods);
+      console.log('Products from Supabase:', prods);
+      if(prods && prods.length > 0){
+        lsSet("products", prods);
+      } else {
+        console.warn('Supabase returned empty products, keeping local data');
+        prods = lsGet("products",[]);
+      }
+      toast("✅ Pwodui sove: "+nameFr,"s");
     } else {
       prods = lsGet("products",[]);
       if(eid){

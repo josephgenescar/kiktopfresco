@@ -2475,7 +2475,7 @@ function renderProds(){
       var badgeClass = isInactive ? "off" : bc;
       var html='<div class="pcard'+(isInactive?" pcard-disabled":"")+'"'+(isInactive?"":" data-pid=\""+pid+"\" onclick=\"addToCart(this.dataset.pid)\"")+">";
       html+='<div class="pcard-top">';
-      if(img)html+='<img src="'+img+'" alt="'+name+'" loading="lazy" onerror="this.style.display=\'none\'">';
+      if(img)html+='<img src="'+img+'" alt="'+name+'" onerror="this.style.display=\'none\'">';
       if(badgeText)html+='<span class="pbadge '+badgeClass+'">'+badgeText+"</span>";
       if(p.alc)html+='<span class="alc-tag">18+</span>';
       html+="</div>";
@@ -2606,7 +2606,7 @@ function updCartUI(){
       var name=(L==="fr")?it.fr:it.kr;
       var img=it.img||IMGS[it.cat]||"";
       html+='<div class="ci">';
-      if(img){html+='<img class="ci-img" src="'+img+'" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\'">';}
+      if(img){html+='<img class="ci-img" src="'+img+'" onerror="this.onerror=null;this.style.display=\'none\'">';}
       else{html+='<div class="ci-em">'+it.em+"</div>";}
       html+='<div class="ci-info">';
       html+='<div class="ci-name">'+name+(it.sun?" ⭐":"")+"</div>";
@@ -2630,7 +2630,7 @@ function updCartUI(){
         var un=((L==="fr")?u.fr:u.kr).substring(0,15);
         var ui=u.img||IMGS[u.cat]||"";
         html+='<div class="uitem" data-pid="'+upid+'" onclick="addToCart(this.dataset.pid)">';
-        if(ui){html+='<img src="'+ui+'" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\'">';}
+        if(ui){html+='<img src="'+ui+'" onerror="this.onerror=null;this.style.display=\'none\'">';}
         else{html+='<div class="uitem-em">'+u.em+"</div>";}
         html+='<div class="uitem-n">'+un+"</div>";
         html+='<div class="uitem-p">'+u.price+" HTG</div></div>";
