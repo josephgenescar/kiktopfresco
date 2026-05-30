@@ -743,7 +743,7 @@ const ADB = {
   async saveBanner(b){
     if(!isSupabaseConfigured){ return null; }
     if(b.id && !b.id.toString().startsWith('b_')){
-      const {data,error} = await sb.from('banners').update({title:b.title,body:b.body,icon:b.icon,bg:b.bg,color:b.color,img:b.img,link:b.link,active:b.active}).eq('id',b.id).select().single();
+      const {data,error} = await sb.from('banners').update({title:b.title,body:b.body,icon:b.icon,bg:b.bg,color:b.color,img:b.img,link:b.link,active:b.active}).eq('id',b.id);
       if(error) throw error;
       return data;
     } else {
@@ -757,7 +757,7 @@ const ADB = {
         link: b.link,
         active: b.active
       };
-      const {data,error} = await sb.from('banners').insert(bannerData).select().single();
+      const {data,error} = await sb.from('banners').insert(bannerData);
       if(error) throw error;
       return data;
     }
@@ -1535,7 +1535,7 @@ async function saveProd(){
   var imgVal = pImgData || document.getElementById("p-img-url").value.trim();
 
   var p = {
-    id      : eid ? eid : String(Date.now()),
+    id      : eid ? eid : Date.now(),
     fr      : nameFr,
     name_fr : nameFr,
     kr      : nameKr||nameFr,
@@ -1553,7 +1553,8 @@ async function saveProd(){
     img     : imgVal,
     badge   : document.getElementById("p-badge").value.trim(),
     status  : document.getElementById("p-status").value,
-    alc     : document.getElementById("p-alc").value === "true"
+    alc     : document.getElementById("p-alc").value === "true",
+    alcohol : document.getElementById("p-alc").value === "true"
   };
 
   try{
