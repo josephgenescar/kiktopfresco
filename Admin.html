@@ -952,16 +952,24 @@ function normalizeVisit(v){
 
 async function loadProductsFromSource(){
   var local = lsGet("products",[]);
+  console.log('loadProductsFromSource - isSupabaseConfigured:', isSupabaseConfigured);
+  console.log('loadProductsFromSource - local products count:', local.length);
   if(isSupabaseConfigured){
     try{
+      console.log('Loading products from Supabase...');
       var remote = await ADB.getProducts();
+      console.log('Products from Supabase:', remote);
       if(Array.isArray(remote) && remote.length){
         var normalized = remote.map(normalizeProduct);
         lsSet("products", normalized);
+        console.log('Loaded', normalized.length, 'products from Supabase');
         return normalized;
+      } else {
+        console.log('Supabase returned empty products, using local');
       }
     }catch(e){console.warn('Failed to load remote products', e);}
   }
+  console.log('Using local products:', local.length);
   return local;
 }
 
