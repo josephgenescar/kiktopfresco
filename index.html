@@ -1009,6 +1009,7 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
     <a href="#sunday" id="nl-2">&#11088; Special</a>
     <a href="#menu" id="nl-3">Menu</a>
     <a href="#points" id="nl-4">Points</a>
+    <a href="#" onclick="openM('m-register');return false;" id="nl-reg">&#128100; S inscrire</a>
     <a href="#wa-section" class="wa-link" id="nl-5">&#128241; Commander</a>
   </div>
   <div class="nav-right">
@@ -1028,6 +1029,7 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
   <a href="#sunday" onclick="closeMob()" id="mn-2">&#11088; Special</a>
   <a href="#menu" onclick="closeMob()" id="mn-3">&#127869; Menu</a>
   <a href="#points" onclick="closeMob()" id="mn-4">&#127942; Points</a>
+  <a href="#" onclick="openM('m-register');closeMob();return false;" id="mn-reg">&#128100; S inscrire</a>
   <a href="#wa-section" onclick="closeMob()" id="mn-5">&#128241; Commander WhatsApp</a>
   <a href="#" onclick="openLogin();closeMob();return false;" id="mn-6">&#128273; Connexion</a>
   <div class="mob-lang-row">
@@ -1389,7 +1391,29 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
       <button class="btn-enroll" onclick="doLogin()" id="login-btn">&#128640; Se Connecter</button>
       <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--gray);">
         <span id="no-acc">Pas de compte?</span>
-        <a href="#points" onclick="closeM('m-login')" style="color:var(--blue);font-weight:700;margin-left:4px;" id="signup-a">S inscrire!</a>
+        <a href="#" onclick="closeM('m-login');openM('m-register');return false;" style="color:var(--blue);font-weight:700;margin-left:4px;" id="signup-a">S inscrire!</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Register -->
+<div class="moverlay" id="m-register" onclick="if(event.target===this)closeM('m-register')">
+  <div class="mbox">
+    <div class="ltop">
+      <div class="li">&#128100;</div>
+      <h3 id="reg-h">Inscrivez-vous Gratuitement!</h3>
+      <p id="reg-p">Creez un compte pour commencer a gagner des points maintenant</p>
+    </div>
+    <div class="mbody">
+      <input class="ipt" type="text" id="reg-name" placeholder="Votre nom (ex: Marie Jean)">
+      <input class="ipt" type="email" id="reg-email" placeholder="Votre adresse email">
+      <input class="ipt" type="password" id="reg-password" placeholder="Votre mot de passe">
+      <input class="ipt" type="tel" id="reg-phone" placeholder="Votre numero de telephone">
+      <button class="btn-enroll" onclick="doRegister()" id="reg-btn">&#128640; S inscrire - GRATUIT</button>
+      <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--gray);">
+        <span id="has-acc">Deja un compte?</span>
+        <a href="#" onclick="closeM('m-register');openM('m-login');return false;" style="color:var(--blue);font-weight:700;margin-left:4px;" id="login-a">Se Connecter</a>
       </p>
     </div>
   </div>
@@ -2986,11 +3010,11 @@ async function enroll(){
   }
 
   cust = normalizeCustomer(await sbSaveCustomer(c));
-  
+
   if(supabaseClient){
     await refreshCustomerFromSupabase(email);
   }
-  
+
   updNavPts();
   updCartUI();
   toast(tr("t-welcome")+" "+name,"s");
@@ -2998,6 +3022,48 @@ async function enroll(){
   document.getElementById("eEmail").value="";
   document.getElementById("ePassword").value="";
   document.getElementById("ePhone").value="";
+  openCust();
+}
+
+async function doRegister(){
+  var name=document.getElementById("reg-name").value.trim();
+  var email=document.getElementById("reg-email").value.trim().toLowerCase();
+  var password=document.getElementById("reg-password").value;
+  var phone=document.getElementById("reg-phone").value.trim();
+  email = normalizeEmail(email);
+  phone = normalizePhone(phone);
+  if(!name||!email||!password||!phone){toast(tr("t-err-fields"),"e");return;}
+  if(!isEmail(email)){toast(tr("t-err-fields"),"e");return;}
+
+  var existing = await sbGetCustomerByPhone(email) || await sbGetCustomerByPhone(phone);
+  if(existing){toast(tr("t-err-exists"),"e");return;}
+
+  var c={name:name,email:email,phone:phone,password:password,points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString()};
+  if(supabaseClient){
+    try{
+      var {data,error} = await supabaseClient.auth.signUp({email:email,password:password,options:{data:{name:name,phone:phone,role:"customer"}}});
+      if(error){toast(error.message||tr("t-err-exists"),"e");return;}
+    }catch(e){
+      console.log('Supabase auth signUp error:', e);
+      toast(e.message||tr("t-err-exists"),"e");
+      return;
+    }
+  }
+
+  cust = normalizeCustomer(await sbSaveCustomer(c));
+
+  if(supabaseClient){
+    await refreshCustomerFromSupabase(email);
+  }
+
+  updNavPts();
+  updCartUI();
+  closeM("m-register");
+  toast(tr("t-welcome")+" "+name,"s");
+  document.getElementById("reg-name").value="";
+  document.getElementById("reg-email").value="";
+  document.getElementById("reg-password").value="";
+  document.getElementById("reg-phone").value="";
   openCust();
 }
 

@@ -663,8 +663,7 @@ const ADB = {
         throw error;
       }
     } else {
-      const {id,...rest} = remoteProduct;
-      const {data,error} = await sb.from('products').insert(rest).select();
+      const {data,error} = await sb.from('products').insert(remoteProduct).select();
       if(error) throw error;
       return Array.isArray(data) ? data[0] : data;
     }
@@ -835,6 +834,7 @@ const DB={
 
 function toRemoteProduct(p){
   return {
+    id: p.id,
     name_fr: p.fr || p.name_fr || p.name || "",
     name_kr: p.kr || p.name_kr || p.name || p.fr || "",
     tab: p.tab || "manger",
