@@ -1,9 +1,9 @@
 ---
-name: Beer
-description: bay tet la yon couleur
+name: Prestige
+description: La bierre d'haïti
 category: Alcool 18+
-price: 98
-image: /images/uploads/whatsapp-image-2026-05-12-at-20.18.44-3-.jpeg
+price: 200
+image: /images/uploads/biere.jpeg
 inStock: true
 pointValue: 1
 available: true
