@@ -16,10 +16,32 @@ const sb = isSupabaseConfigured ? supabase.createClient(SUPABASE_URL, SUPABASE_S
 
 const IMAGEKIT_PUBLIC_KEY = window.IMAGEKIT_ENV?.IMAGEKIT_PUBLIC_KEY || 'YOUR_IMAGEKIT_PUBLIC_KEY';
 const IMAGEKIT_URL_ENDPOINT = window.IMAGEKIT_ENV?.IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/7q1q0vmzk';
+const IMAGEKIT_AUTH_ENDPOINT = window.IMAGEKIT_ENV?.IMAGEKIT_AUTH_ENDPOINT || '/.netlify/functions/imagekit-auth';
+function getImageKitAuthUrls(){
+  var urls = [];
+  var primary = IMAGEKIT_AUTH_ENDPOINT.startsWith('/') ? window.location.origin + IMAGEKIT_AUTH_ENDPOINT : IMAGEKIT_AUTH_ENDPOINT;
+  if(primary) urls.push(primary);
+  var fallback = window.location.origin + '/imagekit-auth';
+  if(!urls.includes(fallback)) urls.push(fallback);
+
+  var devPorts = ['8888'];
+  var devHosts = ['localhost', '127.0.0.1'];
+  devHosts.forEach(function(host){
+    devPorts.forEach(function(port){
+      var origin = window.location.protocol + '//' + host + ':' + port;
+      var candidate = IMAGEKIT_AUTH_ENDPOINT.startsWith('/') ? origin + IMAGEKIT_AUTH_ENDPOINT : IMAGEKIT_AUTH_ENDPOINT;
+      if(!urls.includes(candidate)) urls.push(candidate);
+      var alt = origin + '/imagekit-auth';
+      if(!urls.includes(alt)) urls.push(alt);
+    });
+  });
+
+  return urls;
+}
 const imagekit = typeof ImageKit === 'function' ? new ImageKit({
   publicKey: IMAGEKIT_PUBLIC_KEY,
   urlEndpoint: IMAGEKIT_URL_ENDPOINT,
-  authenticationEndpoint: '/.netlify/functions/imagekit-auth'
+  authenticationEndpoint: IMAGEKIT_AUTH_ENDPOINT
 }) : null;
 
 if(!imagekit){
@@ -176,6 +198,52 @@ const ADB = {
     await sb.from('banners').update({active}).eq('id',id);
   },
 
+  // ── Local Ads / Publicité locale ──
+  async getAds(){
+    if(!isSupabaseConfigured){ console.warn('Supabase not configured for local_ads'); return []; }
+    const {data,error} = await sb.from('local_ads').select('*').order('position');
+    if(error){ throw error; }
+    return data||[];
+  },
+  async saveAd(a){
+    if(!isSupabaseConfigured){ return null; }
+    const payload = {
+      title: a.title || '',
+      subtitle: a.subtitle || '',
+      body: a.body || '',
+      button_text: a.btnText || '',
+      img: a.img || '',
+      link: a.link || '',
+      active: a.active === true,
+      position: Number(a.position) || 0,
+      created_at: a.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    if(a.id){
+      const {data,error} = await sb.from('local_ads').update(payload).eq('id',a.id).select().single();
+      if(error){
+        if(error.code === 'PGRST116'){
+          const {data:insertData, error:insertError} = await sb.from('local_ads').insert(payload).select().single();
+          if(insertError) throw insertError;
+          return insertData;
+        }
+        throw error;
+      }
+      return data;
+    }
+    const {data,error} = await sb.from('local_ads').insert(payload).select().single();
+    if(error) throw error;
+    return data;
+  },
+  async deleteAd(id){
+    if(!isSupabaseConfigured){ /* handled below */ return; }
+    await sb.from('local_ads').delete().eq('id',id);
+  },
+  async toggleAd(id, active){
+    if(!isSupabaseConfigured){ /* handled below */ return; }
+    await sb.from('local_ads').update({active}).eq('id',id);
+  },
+
   // ── Customers ──
   async getCustomers(){
     if(!isSupabaseConfigured){ try{return JSON.parse(localStorage.getItem('kt_customers'))||[];}catch{return[];} }
@@ -307,6 +375,26 @@ function normalizeBanner(b){
   };
 }
 
+function normalizeAd(a){
+  if(!a) return a;
+  var active = true;
+  if(a.active === false || a.active === 'false' || a.active === 0 || a.active === '0') active = false;
+  return {
+    id: a.id,
+    title: a.title || "",
+    subtitle: a.subtitle || a.subtitle_text || "",
+    body: a.body || "",
+    btnText: a.btnText || a.button_text || "Wè plis",
+    link: a.link || "",
+    img: a.img || a.image || "",
+    active: active,
+    position: Number(a.position) || 0,
+    created: a.created || a.created_at || "",
+    created_at: a.created_at,
+    updated_at: a.updated_at
+  };
+}
+
 function normalizeReview(r){
   if(!r) return r;
   return {
@@ -363,6 +451,22 @@ async function loadBannersFromSource(){
     }catch(e){console.warn('Failed to load remote banners', e);}
   }
   return local;
+}
+
+async function loadAdsFromSource(){
+  if(!isSupabaseConfigured){
+    console.warn('Supabase not configured for local_ads');
+    return [];
+  }
+  try{
+    var remote = await ADB.getAds();
+    if(Array.isArray(remote)){
+      return remote.map(normalizeAd);
+    }
+  }catch(e){
+    console.warn('Failed to load remote local_ads', e);
+  }
+  return [];
 }
 
 async function loadCustomersFromSource(){
@@ -514,6 +618,7 @@ function showPage(name){
   document.querySelector("[data-p='"+name+"']").classList.add("on");
   if(name==="dashboard") renderDashboard();
   if(name==="annonces")  renderBanners();
+  if(name==="ads")       renderAds();
   if(name==="products")  renderProducts();
   if(name==="special")   renderSpecialPage();
   if(name==="clients")   renderClients();
@@ -826,6 +931,232 @@ function resetBnForm(){
   document.getElementById("bn-form-title").textContent = "➕ Kreye Nouvo Annonce";
 }
 
+var adImgData = null;
+
+function updateAdSaveState(){
+  var btn = document.getElementById("save-ad-btn");
+  var hint = document.getElementById("ad-save-hint");
+  if(!btn || !hint) return;
+  var hasImage = !!adImgData;
+  var eid = document.getElementById("ad-edit-id").value;
+  if(!hasImage && eid){
+    var ads = window._ktAds || [];
+    var existing = ads.find(function(x){return String(x.id)===String(eid);});
+    hasImage = !!(existing && existing.img);
+  }
+  btn.disabled = !hasImage;
+  hint.textContent = hasImage ? "Imaj pare. Ou ka sove kounye a." : "Upload foto a avan ou sove."
+}
+
+async function handleAdImg(input){
+  var file = input.files[0];
+  if(!file) return;
+  if(file.size > 3*1024*1024){toast("Imaj twò gwo! Maks 3MB","e");return;}
+  try{
+    document.getElementById("ad-img-info").textContent = "⏳ Upload imaj...";
+    adImgData = await uploadProductImage(file);
+    document.getElementById("ad-img-info").textContent = "✅ "+file.name+" (ImageKit)";
+    document.getElementById("ad-img-preview-wrap").innerHTML =
+      '<img src="'+adImgData+'" style="max-height:130px;border-radius:8px;object-fit:cover;width:100%"><p style="color:var(--gray);font-size:11px;margin-top:6px">✅ '+file.name+'</p>';
+    document.getElementById("ad-save-hint").textContent = "Imaj telechaje. Ou ka sove kounye a.";
+    updateAdSaveState();
+    adPreview();
+  }catch(err){
+    console.error('ImageKit upload error', err);
+    adImgData = null;
+    var msg = err && err.message ? err.message : String(err);
+    document.getElementById("ad-img-info").textContent = "❌ Upload echwe: " + msg;
+    toast("Upload imaj echwe: " + msg,"e");
+  }
+}
+
+function adPreview(){
+  var box = document.getElementById("ad-live-preview");
+  var title = document.getElementById("ad-title").value.trim() || "Tit reklam lokal...";
+  var subtitle = document.getElementById("ad-subtitle").value.trim();
+  var body = document.getElementById("ad-body").value.trim();
+  var button = document.getElementById("ad-button").value.trim() || "Wè plis";
+  var img = adImgData;
+  if(img){
+    box.innerHTML = '<div style="position:relative;border-radius:18px;overflow:hidden;background:#111;color:#fff">'
+      +'<img src="'+img+'" style="width:100%;height:220px;object-fit:cover;display:block">'
+      +'<div style="position:absolute;left:0;right:0;bottom:0;padding:18px;backdrop-filter:blur(10px);background:linear-gradient(transparent,rgba(0,0,0,0.7));">'
+      +'<div style="font-size:18px;font-weight:900;margin-bottom:6px">'+title+'</div>'
+      +(subtitle?'<div style="font-size:13px;color:rgba(255,255,255,0.85);margin-bottom:8px">'+subtitle+'</div>':'')
+      +(body?'<div style="font-size:12px;color:rgba(255,255,255,0.8);line-height:1.4">'+body+'</div>':'')
+      +'<div style="margin-top:12px;padding:10px 16px;background:rgba(245,197,24,0.95);color:#0d2b5e;display:inline-block;border-radius:999px;font-weight:800;">'+button+'</div>'
+      +'</div></div>';
+  } else {
+    box.innerHTML = '<div style="border-radius:18px;background:#0D2B5E;padding:22px;color:#fff;display:flex;flex-direction:column;gap:10px;">'
+      +'<div style="font-size:20px;font-weight:900">'+title+'</div>'
+      +(subtitle?'<div style="font-size:14px;color:rgba(255,255,255,0.85)">'+subtitle+'</div>':'')
+      +(body?'<div style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.5">'+body+'</div>':'')
+      +'<div style="margin-top:10px;padding:10px 16px;background:#fff;color:#0d2b5e;border-radius:999px;font-weight:800;width:max-content;">'+button+'</div>'
+      +'</div>';
+  }
+}
+
+async function saveAd(){
+  var eid = document.getElementById("ad-edit-id").value;
+  var title = document.getElementById("ad-title").value.trim();
+  var subtitle = document.getElementById("ad-subtitle").value.trim();
+  var body = document.getElementById("ad-body").value.trim();
+  var btnText = document.getElementById("ad-button").value.trim() || "Wè plis";
+  var link = document.getElementById("ad-link").value.trim();
+  var active = document.getElementById("ad-status").value === "true";
+  console.log('saveAd clicked', { title, subtitle, body, btnText, link, active, adImgData, isSupabaseConfigured });
+  var ads = window._ktAds || [];
+  var existing = eid ? ads.find(function(x){return String(x.id)===String(eid);}) : null;
+  var img = adImgData || (existing ? existing.img : "");
+  if(!title){
+    toast("Tit obligatwa pou reklam la!","e");
+    return;
+  }
+  if(!img){
+    document.getElementById("ad-img-info").textContent = "❌ Upload yon imaj obligatwa pou sove reklam la.";
+    toast("Upload yon imaj pou reklam la.","e");
+    return;
+  }
+  if(!isSupabaseConfigured){
+    toast("Supabase pa configured pou local ads","e");
+    return;
+  }
+  var ad = {
+    id: eid || undefined,
+    title: title,
+    subtitle: subtitle,
+    body: body,
+    btnText: btnText,
+    link: link,
+    img: img,
+    active: active,
+    position: existing ? existing.position : 0,
+    created_at: existing ? existing.created_at : new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  try{
+    var saved = await ADB.saveAd(ad);
+    if(saved){ saved = normalizeAd(saved); }
+    await renderAds();
+    resetAdForm();
+    toast("✅ Publicité lokal sove!","s");
+  }catch(e){
+    console.warn('Ad save failed', e);
+    toast("⚠️ Erè sove publicite","e");
+  }
+}
+
+async function renderAds(){
+  var ads = await loadAdsFromSource();
+  ads = ads.map(normalizeAd);
+  window._ktAds = ads;
+  document.getElementById("ad-count").textContent = ads.length;
+  var list = document.getElementById("ad-list");
+  if(!ads.length){
+    list.innerHTML = '<div style="text-align:center;padding:36px;color:var(--gray);"><div style="font-size:44px;margin-bottom:10px;">🛍️</div><p>Pa gen publicite toujou. Kreye premye a!</p></div>';
+    return;
+  }
+  var html = "";
+  ads.forEach(function(ad){
+    html += '<div class="bn-item">';
+    html += '<div class="bn-thumb">'+(ad.img?'<img src="'+ad.img+'" style="width:100%;height:100%;object-fit:cover">':'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;">🛍️</div>')+'</div>';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div style="font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ad.title+'</div>';
+    if(ad.subtitle) html += '<div style="font-size:12px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px">'+ad.subtitle+'</div>';
+    if(ad.body) html += '<div style="font-size:11px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px">'+ad.body+'</div>';
+    html += '<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:6px">'+(ad.active?"✅ Aktif":"👁️ Kache")+'</div>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">';
+    html += '<button type="button" class="btn-save btn-sm btn-edit" data-id="'+ad.id+'" data-action="edit">✏️ Edit</button>';
+    html += '<button type="button" class="btn-save btn-sm btn-del" data-id="'+ad.id+'" data-action="delete">🗑</button>';
+    html += '<button type="button" class="'+(ad.active?"btn-toggle-on":"btn-toggle-off")+'" data-id="'+ad.id+'" data-action="toggle">'+(ad.active?"✅ Aktif":"👁️ Kache")+'</button>';
+    html += '</div></div>';
+  });
+  list.innerHTML = html;
+}
+
+document.body.addEventListener("click", function(e){
+  var btn = e.target.closest("#ad-list button[data-id]");
+  if(!btn) return;
+  var id = btn.dataset.id;
+  var action = btn.dataset.action;
+  if(action === "edit") return editAd(id);
+  if(action === "delete") return deleteAd(id);
+  if(action === "toggle") return toggleAd(id);
+});
+
+function editAd(id){
+  var ads = window._ktAds || [];
+  var ad = ads.find(function(x){return String(x.id)===String(id);});
+  if(!ad) return;
+  document.getElementById("ad-edit-id").value = ad.id;
+  document.getElementById("ad-form-title").textContent = "✏️ Modifye Publicité";
+  document.getElementById("ad-title").value = ad.title || "";
+  document.getElementById("ad-subtitle").value = ad.subtitle || "";
+  document.getElementById("ad-body").value = ad.body || "";
+  document.getElementById("ad-button").value = ad.btnText || "";
+  document.getElementById("ad-link").value = ad.link || "";
+  document.getElementById("ad-status").value = ad.active!==false?"true":"false";
+  if(ad.img){
+    adImgData = ad.img;
+    document.getElementById("ad-img-preview-wrap").innerHTML =
+      '<img src="'+ad.img+'" style="max-height:130px;border-radius:8px;object-fit:cover;width:100%"><p style="color:var(--gray);font-size:11px;margin-top:6px">✅ Imaj aktyèl</p>';
+    document.getElementById("ad-img-info").textContent = "✅ Imaj chaje";
+    document.getElementById("ad-save-hint").textContent = "Imaj la pare. Ou ka sove kounye a.";
+  }
+  adPreview();
+  updateAdSaveState();
+  document.getElementById("page-ads").scrollTop = 0;
+}
+
+async function toggleAd(id){
+  if(!isSupabaseConfigured){ toast("Supabase pa configured pou local ads","e"); return; }
+  var ads = window._ktAds || [];
+  var ad = ads.find(function(x){return String(x.id)===String(id);});
+  if(!ad) return;
+  var newActive = !ad.active;
+  try{
+    await ADB.toggleAd(id, newActive);
+    await renderAds();
+    toast(newActive?"✅ Publicité aktive!":"Publicité kache","s");
+  }catch(e){
+    console.warn('Ad toggle failed', e);
+    toast("⚠️ Erè chanje eta publicité","e");
+  }
+}
+
+async function deleteAd(id){
+  if(!confirm("Efase publicité sa?")) return;
+  if(!isSupabaseConfigured){ toast("Supabase pa configured pou local ads","e"); return; }
+  try{
+    await ADB.deleteAd(id);
+    await renderAds();
+    toast("Publicité efase","e");
+  }catch(e){
+    console.warn('Ad delete failed', e);
+    toast("⚠️ Erè efase publicité","e");
+  }
+}
+
+function resetAdForm(){
+  document.getElementById("ad-edit-id").value = "";
+  document.getElementById("ad-title").value = "";
+  document.getElementById("ad-subtitle").value = "";
+  document.getElementById("ad-body").value = "";
+  document.getElementById("ad-button").value = "";
+  document.getElementById("ad-link").value = "";
+  document.getElementById("ad-status").value = "true";
+  document.getElementById("ad-img-preview-wrap").innerHTML =
+    '<div style="font-size:40px;margin-bottom:8px">🖼️</div><p style="color:var(--gray);font-size:14px;font-weight:700">Klike pou chwazi yon imaj</p>';
+  document.getElementById("ad-img-info").textContent = "";
+  document.getElementById("ad-live-preview").innerHTML =
+    '<div style="text-align:center;color:rgba(255,255,255,0.25);font-size:13px;padding:10px">Ranpli fòm nan pou wè aperçu...</div>';
+  document.getElementById("ad-save-hint").textContent = "Upload foto a avan ou sove.";
+  adImgData = null;
+  document.getElementById("ad-form-title").textContent = "➕ Kreye Nouvo Publicité";
+  updateAdSaveState();
+}
+
 // ============================================================
 //  PRODUCTS
 // ============================================================
@@ -836,11 +1167,33 @@ async function uploadProductImage(file){
     throw new Error('ImageKit public key not configured');
   }
 
-  const authResponse = await fetch('/.netlify/functions/imagekit-auth');
-  if(!authResponse.ok){
-    throw new Error('Failed to fetch ImageKit auth');
+  var authData = null;
+  var authUrls = getImageKitAuthUrls();
+  var authResponse = null;
+  var lastError = null;
+
+  for(var i=0;i<authUrls.length;i++){
+    var authUrl = authUrls[i];
+    try{
+      authResponse = await fetch(authUrl, { method:'GET' });
+    }catch(err){
+      lastError = err;
+      authResponse = null;
+    }
+    if(authResponse && authResponse.ok){
+      authData = await authResponse.json();
+      break;
+    }
+    if(authResponse && authResponse.status !== 404){
+      var authText = await authResponse.text();
+      throw new Error('Failed to fetch ImageKit auth (' + authResponse.status + '): ' + authText);
+    }
   }
-  const authData = await authResponse.json();
+
+  if(!authData){
+    var info = lastError ? lastError.message : 'No response';
+    throw new Error('ImageKit auth unavailable. Tried: ' + authUrls.join(' or ') + '. ' + info + '. Use Netlify dev or deploy to Netlify so functions are available.');
+  }
 
   const formData = new FormData();
   formData.append('file', file);
@@ -862,7 +1215,16 @@ async function uploadProductImage(file){
   }
 
   const uploaded = await uploadResponse.json();
-  return uploaded.url || uploaded.filePath || '';
+  var imageUrl = uploaded.url || '';
+  if(!imageUrl && uploaded.filePath){
+    var path = uploaded.filePath;
+    if(!path.startsWith('/')) path = '/'+path;
+    imageUrl = IMAGEKIT_URL_ENDPOINT.replace(/\/$/, '') + path;
+  }
+  if(!imageUrl){
+    throw new Error('ImageKit upload returned no URL');
+  }
+  return imageUrl;
 }
 
 async function handleProdImg(input){

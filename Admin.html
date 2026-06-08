@@ -144,6 +144,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
   cursor:pointer;transition:.2s;
 }
 .btn-save:hover{background:var(--gold);}
+.btn-save:disabled{opacity:.45;cursor:not-allowed;background:rgba(242,211,82,.6);}
 .btn-cancel{
   background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);
   border:1px solid rgba(255,255,255,0.1);border-radius:10px;
@@ -241,6 +242,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
   <script src="https://cdn.jsdelivr.net/npm/imagekit@6.0.0/dist/imagekit.min.js"></script>
   <script src="/supabase-config.js"></script>
   <script src="/imagekit-config.js"></script>
+  <script src="/admin-inline.js"></script>
 
 <!-- LOGIN -->
 <div id="login-screen">
@@ -275,6 +277,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
     <div class="sidebar">
       <div class="nav-item on" onclick="showPage('dashboard')" data-p="dashboard"><span class="ni">📊</span><span>Dashboard</span></div>
       <div class="nav-item" onclick="showPage('annonces')" data-p="annonces"><span class="ni">📢</span><span>Annonces</span></div>
+      <div class="nav-item" onclick="showPage('ads')" data-p="ads"><span class="ni">🛍️</span><span>Publisite</span></div>
       <div class="nav-sep"></div>
       <div class="nav-item" onclick="showPage('products')" data-p="products"><span class="ni">🍽️</span><span>Pwodui</span></div>
       <div class="nav-item" onclick="showPage('special')" data-p="special"><span class="ni">🌟</span><span>Spécial</span></div>
@@ -392,6 +395,68 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:#fff;min-height:
             <div style="text-align:center;padding:36px;color:var(--gray);">
               <div style="font-size:44px;margin-bottom:10px;">📢</div>
               <p>Pa gen annonce toujou. Kreye premye a!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== LOCAL ADS ===== -->
+      <div class="page" id="page-ads">
+        <div class="page-title">🛍️ Publicité locale</div>
+        <div class="page-sub">Ajoute yon reklam lokal ak imaj, tit, bouton ak lye. Upload pase pa ImageKit.</div>
+
+        <div class="card">
+          <div class="card-title" id="ad-form-title">➕ Kreye Nouvo Publicité</div>
+          <input type="hidden" id="ad-edit-id">
+
+          <div class="fg">
+            <label>Imaj * (JPG/PNG maks 3MB)</label>
+            <div class="img-drop" id="ad-img-drop" onclick="document.getElementById('ad-img-file').click()">
+              <div id="ad-img-preview-wrap">
+                <div style="font-size:40px;margin-bottom:8px">🖼️</div>
+                <p style="color:var(--gray);font-size:14px;font-weight:700">Klike pou chwazi yon imaj</p>
+              </div>
+            </div>
+            <input type="file" id="ad-img-file" accept="image/*" style="display:none;" onchange="handleAdImg(this)">
+            <div style="margin-top:8px;color:var(--gray);font-size:13px" id="ad-img-info"></div>
+          </div>
+
+          <div class="form2">
+            <div class="fg"><label>Tit *</label><input type="text" id="ad-title" placeholder="ex: Offres locales spéciales" oninput="adPreview()"></div>
+            <div class="fg"><label>Sous-tit</label><input type="text" id="ad-subtitle" placeholder="ex: Soutien petites entreprises" oninput="adPreview()"></div>
+          </div>
+          <div class="fg"><label>Deskripsyon</label><textarea id="ad-body" placeholder="ex: Anons pou biznis lokal nan zòn nou an" oninput="adPreview()"></textarea></div>
+          <div class="form2">
+            <div class="fg"><label>Tèks bouton</label><input type="text" id="ad-button" placeholder="ex: Wè plis" oninput="adPreview()"></div>
+            <div class="fg"><label>Lyen (opsyonèl)</label><input type="url" id="ad-link" placeholder="https://..."></div>
+          </div>
+          <div class="fg"><label>Estati</label>
+            <select id="ad-status">
+              <option value="true">✅ Aktif — Afiche kounye a</option>
+              <option value="false">👁️ Kache — Pa afiche</option>
+            </select>
+          </div>
+
+          <div style="margin:16px 0 6px;">
+            <div style="font-size:11px;color:var(--gray);font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">👁️ Aperçu dirèk</div>
+            <div class="bn-preview-box" id="ad-live-preview">
+              <div style="text-align:center;color:rgba(255,255,255,0.25);font-size:13px;padding:10px;">Ranpli fòm nan pou wè aperçu...</div>
+            </div>
+          </div>
+
+          <div class="btns-row">
+            <button type="button" id="save-ad-btn" class="btn-save" onclick="saveAd()">💾 Sove & Publiye</button>
+            <button type="button" class="btn-cancel" onclick="resetAdForm()">🔄 Anile</button>
+          </div>
+          <div id="ad-save-hint" style="font-size:13px;color:var(--gray);margin-top:10px;">Upload foto a avan ou sove.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📋 Reklam Lokal (<span id="ad-count">0</span>)</div>
+          <div id="ad-list">
+            <div style="text-align:center;padding:36px;color:var(--gray);">
+              <div style="font-size:44px;margin-bottom:10px;">🛍️</div>
+              <p>Pa gen publicite toujou. Kreye premye a!</p>
             </div>
           </div>
         </div>
@@ -602,10 +667,32 @@ const sb = isSupabaseConfigured ? supabase.createClient(SUPABASE_URL, SUPABASE_S
 
 const IMAGEKIT_PUBLIC_KEY = window.IMAGEKIT_ENV?.IMAGEKIT_PUBLIC_KEY || 'YOUR_IMAGEKIT_PUBLIC_KEY';
 const IMAGEKIT_URL_ENDPOINT = window.IMAGEKIT_ENV?.IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/7q1q0vmzk';
+const IMAGEKIT_AUTH_ENDPOINT = window.IMAGEKIT_ENV?.IMAGEKIT_AUTH_ENDPOINT || '/.netlify/functions/imagekit-auth';
+function getImageKitAuthUrls(){
+  var urls = [];
+  var primary = IMAGEKIT_AUTH_ENDPOINT.startsWith('/') ? window.location.origin + IMAGEKIT_AUTH_ENDPOINT : IMAGEKIT_AUTH_ENDPOINT;
+  if(primary) urls.push(primary);
+  var fallback = window.location.origin + '/imagekit-auth';
+  if(!urls.includes(fallback)) urls.push(fallback);
+
+  var devPorts = ['8888'];
+  var devHosts = ['localhost', '127.0.0.1'];
+  devHosts.forEach(function(host){
+    devPorts.forEach(function(port){
+      var origin = window.location.protocol + '//' + host + ':' + port;
+      var candidate = IMAGEKIT_AUTH_ENDPOINT.startsWith('/') ? origin + IMAGEKIT_AUTH_ENDPOINT : IMAGEKIT_AUTH_ENDPOINT;
+      if(!urls.includes(candidate)) urls.push(candidate);
+      var alt = origin + '/imagekit-auth';
+      if(!urls.includes(alt)) urls.push(alt);
+    });
+  });
+
+  return urls;
+}
 const imagekit = typeof ImageKit === 'function' ? new ImageKit({
   publicKey: IMAGEKIT_PUBLIC_KEY,
   urlEndpoint: IMAGEKIT_URL_ENDPOINT,
-  authenticationEndpoint: '/.netlify/functions/imagekit-auth'
+  authenticationEndpoint: IMAGEKIT_AUTH_ENDPOINT
 }) : null;
 
 if(!imagekit){
@@ -1460,11 +1547,33 @@ async function uploadProductImage(file){
     throw new Error('ImageKit public key not configured');
   }
 
-  const authResponse = await fetch('/.netlify/functions/imagekit-auth');
-  if(!authResponse.ok){
-    throw new Error('Failed to fetch ImageKit auth');
+  var authData = null;
+  var authUrls = getImageKitAuthUrls();
+  var authResponse = null;
+  var lastError = null;
+
+  for(var i=0;i<authUrls.length;i++){
+    var authUrl = authUrls[i];
+    try{
+      authResponse = await fetch(authUrl, { method:'GET' });
+    }catch(err){
+      lastError = err;
+      authResponse = null;
+    }
+    if(authResponse && authResponse.ok){
+      authData = await authResponse.json();
+      break;
+    }
+    if(authResponse && authResponse.status !== 404){
+      var authText = await authResponse.text();
+      throw new Error('Failed to fetch ImageKit auth (' + authResponse.status + '): ' + authText);
+    }
   }
-  const authData = await authResponse.json();
+
+  if(!authData){
+    var info = lastError ? lastError.message : 'No response';
+    throw new Error('ImageKit auth unavailable. Tried: ' + authUrls.join(' or ') + '. ' + info + '. Use Netlify dev or deploy to Netlify so functions are available.');
+  }
 
   const formData = new FormData();
   formData.append('file', file);
