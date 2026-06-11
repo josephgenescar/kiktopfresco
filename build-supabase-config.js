@@ -8,7 +8,7 @@ const env = {
 };
 
 const imagekit = {
-  IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY || 'YOUR_IMAGEKIT_PUBLIC_KEY',
+  IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY || 'public_sa7MixHzY8zh2SQbI1h2p+lnvS4=',
   IMAGEKIT_URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/7q1q0vmzk'
 };
 
