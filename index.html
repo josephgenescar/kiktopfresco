@@ -3664,31 +3664,18 @@ async function loadSignupAds(){
     
     var ads = [];
     
-    // Try Supabase first
     if(supabaseClient) {
       try {
         var {data, error} = await supabaseClient.from('local_ads')
           .select('*')
           .eq('active', true)
           .order('position');
-        
+
         if(!error && data && data.length > 0) {
           ads = sanitizeAds(data);
         }
       } catch(e) {
-        console.warn('Supabase ads load failed, trying localStorage:', e);
-      }
-    }
-    
-    // Fallback to the ads saved from the admin panel when Supabase returns no rows.
-    if(ads.length === 0) {
-      try {
-        var localAds = JSON.parse(localStorage.getItem('kt_local_ads') || '[]');
-        if(localAds && localAds.length > 0) {
-          ads = sanitizeAds(localAds);
-        }
-      } catch(e) {
-        console.warn('localStorage ads load failed:', e);
+        console.warn('Supabase ads load failed:', e);
       }
     }
     
@@ -3752,14 +3739,6 @@ async function loadCompactSiteAds() {
         if(!error && data && data.length) ads = sanitizeAds(data);
       } catch(e) {
         console.warn('Supabase compact ads failed:', e);
-      }
-    }
-    if(!ads.length) {
-      try {
-        var localAds = JSON.parse(localStorage.getItem('kt_local_ads') || '[]');
-        ads = sanitizeAds(localAds);
-      } catch(e) {
-        console.warn('localStorage compact ads failed:', e);
       }
     }
     return sanitizeAds(ads);
