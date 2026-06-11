@@ -59,25 +59,33 @@ const imagekit = typeof ImageKit === 'function' ? new ImageKit({
 }) : null;
 
 async function uploadToSupabaseStorage(file) {
-  if(!sb || !sb.storage || typeof sb.storage.from !== 'function') {
-    throw new Error('Supabase storage is not available');
+  if(!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    throw new Error('Supabase storage credentials are not configured');
   }
 
   const cleanName = String(file && file.name ? file.name : 'upload')
     .replace(/\s+/g, '-')
     .replace(/[^a-zA-Z0-9._-]/g, '');
   const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${cleanName || 'image'}`;
+  const uploadUrl = `${SUPABASE_URL}/storage/v1/object/uploads/${encodeURIComponent(safeName)}`;
 
-  const { data, error } = await sb.storage.from('uploads').upload(safeName, file, {
-    cacheControl: '3600',
-    upsert: true
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_SERVICE_KEY,
+      'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+      'x-upsert': 'true',
+      'Content-Type': 'application/octet-stream'
+    },
+    body: file
   });
 
-  if(error) {
-    throw new Error(error.message || 'Supabase image upload failed');
+  const text = await response.text();
+  if(!response.ok) {
+    throw new Error(`Supabase upload failed: ${response.status} ${response.statusText}${text ? ' - ' + text : ''}`);
   }
 
-  return `${SUPABASE_URL}/storage/v1/object/public/uploads/${encodeURIComponent(data.path || safeName)}`;
+  return `${SUPABASE_URL}/storage/v1/object/public/uploads/${encodeURIComponent(safeName)}`;
 }
 
 if(!imagekit){
