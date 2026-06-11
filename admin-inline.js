@@ -498,19 +498,19 @@ async function loadBannersFromSource(){
 }
 
 async function loadAdsFromSource(){
-  var local = lsGet("local_ads",[]);
   if(isSupabaseConfigured){
     try{
       var remote = await ADB.getAds();
-      if(Array.isArray(remote) && remote.length){
+      if(Array.isArray(remote)){
         lsSet("local_ads", remote);
         return remote;
       }
     }catch(e){
       console.warn('Failed to load remote local_ads', e);
+      return [];
     }
   }
-  return local;
+  return lsGet("local_ads", []);
 }
 
 async function loadCustomersFromSource(){
@@ -1082,12 +1082,21 @@ async function saveAd(){
     if(isSupabaseConfigured){
       try {
         saved = await ADB.saveAd(ad);
-        if(saved){ saved = normalizeAd(saved); }
+        if(saved){
+          saved = normalizeAd(saved);
+        }
       } catch(e){
-        console.warn('Supabase save failed, using localStorage:', e);
+        console.error('Supabase save failed:', e);
+        toast('⚠️ Enregistrement Supabase echwe.','e');
+        return;
       }
+      lsSet("local_ads", [saved].concat(lsGet("local_ads", []).filter(function(x){ return String(x.id) !== String(saved.id); })));
+      await renderAds();
+      resetAdForm();
+      toast("✅ Publicité sove nan Supabase!","s");
+      return;
     }
-    // Always save to localStorage as backup
+
     ads = lsGet("local_ads", []);
     if(eid){
       var idx = ads.findIndex(function(x){return String(x.id)===String(eid);});
