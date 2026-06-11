@@ -548,6 +548,12 @@ nav.banner-visible{
 .pts-promo-dots{display:flex;gap:6px;justify-content:center;align-items:center;}
 .pts-promo-dot{width:8px;height:8px;border-radius:999px;background:#d1d5db;cursor:pointer;transition:transform .18s,background .18s;}
 .pts-promo-dot.active{background:linear-gradient(135deg,#F5C518,#E8B400);transform:scale(1.12);} 
+.promo-carousel{display:flex;flex-direction:column;gap:8px;}
+.promo-track{display:flex;transition:transform .35s ease;will-change:transform;width:100%;overflow:hidden;}
+.promo-slide{min-width:100%;box-sizing:border-box;}
+.promo-dots{display:flex;gap:6px;justify-content:center;align-items:center;}
+.promo-dot{width:8px;height:8px;border-radius:999px;background:#d1d5db;cursor:pointer;transition:transform .18s,background .18s;}
+.promo-dot.active{background:linear-gradient(135deg,#F5C518,#E8B400);transform:scale(1.12);} 
 @media (max-width: 980px){
   .pts-grid{grid-template-columns:1fr;}
   .pts-side{grid-template-columns:1fr;gap:16px;}
@@ -3666,39 +3672,67 @@ async function loadSignupAds(){
 function renderSignupAds(ads) {
   var container = document.getElementById('ads-list-signup');
   if(!container) return;
-  
+
+  if(window.__signupPromoTimer) {
+    clearInterval(window.__signupPromoTimer);
+    window.__signupPromoTimer = null;
+  }
+
   if(!ads || ads.length === 0) {
     container.innerHTML = '<div style="text-align:center;color:#999;font-size:12px;padding:16px;">Aucune promotion active pour le moment</div>';
     return;
   }
-  
-  var html = '';
-  ads.forEach(function(ad) {
-    if(!ad.active) return;
-    
+
+  var items = ads.filter(function(ad){ return ad && ad.active !== false; }).map(function(ad) {
     var imgHtml = ad.img ? '<img src="' + ad.img + '" alt="' + (ad.title || 'Promotion') + '" class="signup-ad-img">' : '<div class="signup-ad-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;font-size:30px;">🛍️</div>';
-    
     var link = ad.link || '#';
-    var target = link.startsWith('http') ? ' target="_blank"' : '';
+    var target = link.startsWith('http') ? ' target="_blank" rel="noopener"' : '';
     var onclick = link.startsWith('http') ? '' : ' onclick="return false;"';
-    
-    // Get button text - handle different field name possibilities
     var btnText = ad.button_text || ad.btnText || 'Wè plis';
     var subtitle = ad.subtitle || ad.subtitle_text || '';
-    
-    html += '<a href="' + link + '"' + target + ' style="text-decoration:none;"' + onclick + '>';
-    html += '<div class="signup-ad-item">';
-    html += imgHtml;
-    html += '<div class="signup-ad-body">';
-    html += '<div class="signup-ad-title">' + (ad.title || 'Promotion') + '</div>';
-    if(subtitle) html += '<div class="signup-ad-subtitle">' + subtitle + '</div>';
-    html += '<button type="button" class="signup-ad-btn">' + btnText + '</button>';
-    html += '</div>';
-    html += '</div>';
-    html += '</a>';
+
+    return '<article class="promo-slide"><a href="' + link + '"' + target + ' style="text-decoration:none;"' + onclick + '>' +
+      '<div class="signup-ad-item">' + imgHtml +
+      '<div class="signup-ad-body">' +
+      '<div class="signup-ad-title">' + (ad.title || 'Promotion') + '</div>' +
+      (subtitle ? '<div class="signup-ad-subtitle">' + subtitle + '</div>' : '') +
+      '<button type="button" class="signup-ad-btn">' + btnText + '</button>' +
+      '</div></div></a></article>';
   });
-  
-  container.innerHTML = html;
+
+  container.innerHTML = '<div class="promo-carousel">' +
+    '<div class="promo-track" id="signup-promo-track">' + items.join('') + '</div>' +
+    '<div class="promo-dots" id="signup-promo-dots"></div>' +
+    '</div>';
+
+  var track = document.getElementById('signup-promo-track');
+  var dots = document.getElementById('signup-promo-dots');
+  if(track && dots && items.length > 1) {
+    for(var i = 0; i < items.length; i++) {
+      var dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'promo-dot' + (i === 0 ? ' active' : '');
+      dot.setAttribute('aria-label', 'Afficher la promotion ' + (i + 1));
+      dot.onclick = (function(index) {
+        return function() { showSlide(index); };
+      })(i);
+      dots.appendChild(dot);
+    }
+
+    var currentIndex = 0;
+    function showSlide(index) {
+      currentIndex = (index + items.length) % items.length;
+      track.style.transform = 'translateX(-' + (currentIndex * 100) + '%)';
+      Array.prototype.forEach.call(dots.children, function(dot, idx) {
+        dot.classList.toggle('active', idx === currentIndex);
+      });
+    }
+
+    showSlide(0);
+    window.__signupPromoTimer = setInterval(function() {
+      showSlide(currentIndex + 1);
+    }, 4500);
+  }
 }
 
 async function loadAndRenderSignupAds() {
@@ -3773,7 +3807,7 @@ function renderCompactSiteAds(ads) {
     var target = link.startsWith('http') ? ' target="_blank" rel="noopener"' : '';
     var subtitle = ad.subtitle || ad.subtitle_text || ad.body || '';
     var buttonText = ad.button_text || ad.btnText || 'Wè plis';
-    return '<article class="pts-promo-slide"><a href="' + link + '"' + target + ' style="text-decoration:none;color:inherit;">' +
+    return '<article class="pts-promo-slide pts-promo-static"><a href="' + link + '"' + target + ' style="text-decoration:none;color:inherit;">' +
       '<div class="pts-promo-item">' + img +
       '<div class="pts-promo-content">' +
       '<div class="pts-promo-title">' + (ad.title || 'Promotion locale') + '</div>' +
