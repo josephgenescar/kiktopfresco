@@ -544,7 +544,7 @@ nav.banner-visible{
 .pts-promo-btn{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5C518,#E8B400);color:#0D2B5E;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:800;text-decoration:none;}
 .pts-promo-slider{display:flex;flex-direction:column;gap:8px;max-width:100%;overflow:hidden;}
 .pts-promo-track{display:flex;transition:transform .35s ease;will-change:transform;width:100%;overflow:hidden;}
-.pts-promo-slide{min-width:100%;box-sizing:border-box;overflow:hidden;}
+.pts-promo-slide{flex:0 0 100%;min-width:100%;box-sizing:border-box;overflow:hidden;}
 .pts-promo-dots{display:flex;gap:6px;justify-content:center;align-items:center;}
 .pts-promo-stack{display:flex;flex-direction:column;gap:10px;}
 .pts-promo-dot{width:8px;height:8px;border-radius:999px;background:#d1d5db;cursor:pointer;transition:transform .18s,background .18s;}
@@ -3785,21 +3785,22 @@ function renderCompactSiteAds(ads) {
   function normalizeAdImage(src) {
     var value = (src || '').toString().trim();
     if(!value) return '';
-    if(/^https?:\/\//i.test(value) || /^data:/i.test(value)) return value;
+    if(/^(https?:\/\/|data:|blob:)/i.test(value)) return value;
+    if(/^\/\//.test(value)) return 'https:' + value;
     if(/^[A-Za-z]:\\/.test(value) || /^[A-Za-z]:\//.test(value)) {
       value = value.replace(/\\/g, '/');
       value = value.replace(/^([A-Za-z]:)\//, '/$1/');
     }
-    if(value.indexOf('images/') === 0) value = './' + value;
-    if(value.indexOf('/images/') === 0) value = '.' + value;
-    return value;
+    if(/^(images|uploads|assets|media)\//i.test(value)) return './' + value;
+    if(/^\/(images|uploads|assets|media)\//i.test(value)) return '.' + value;
+    return value.indexOf('./') === 0 || value.indexOf('../') === 0 ? value : './' + value;
   }
 
   var items = ads.filter(function(ad){ return ad && ad.active !== false; }).map(function(ad) {
     var imgSrc = normalizeAdImage(ad.img || ad.image || ad.image_url || '');
-    var fallback = '<div class="pts-promo-thumb pts-promo-fallback" style="display:none;">🛍️</div>';
+    var fallback = '<div class="pts-promo-thumb pts-promo-fallback" style="display:flex;">🛍️</div>';
     var img = imgSrc
-      ? '<img class="pts-promo-thumb" src="' + imgSrc + '" alt="' + (ad.title || 'Publicité') + '" onerror="this.style.display=\'none\'; this.nextElementSibling && (this.nextElementSibling.style.display=\'flex\');">' + fallback
+      ? '<img class="pts-promo-thumb" src="' + imgSrc + '" alt="' + (ad.title || 'Publicité') + '" onload="this.style.opacity=\'1\'; this.nextElementSibling && (this.nextElementSibling.style.display=\'none\');" onerror="this.style.display=\'none\'; this.nextElementSibling && (this.nextElementSibling.style.display=\'flex\'); this.onerror=null;">' + fallback
       : '<div class="pts-promo-thumb pts-promo-fallback" style="display:flex;">🛍️</div>';
     var link = ad.link || '#';
     var target = link.startsWith('http') ? ' target="_blank" rel="noopener"' : '';
@@ -3836,6 +3837,7 @@ function renderCompactSiteAds(ads) {
     var currentIndex = 0;
     function showSlide(index) {
       currentIndex = (index + items.length) % items.length;
+      track.style.width = (items.length * 100) + '%';
       track.style.transform = 'translateX(-' + (currentIndex * 100) + '%)';
       Array.prototype.forEach.call(dots.children, function(dot, idx) {
         dot.classList.toggle('active', idx === currentIndex);
