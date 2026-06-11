@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS sunday_special CASCADE;
 DROP TABLE IF EXISTS customers CASCADE;
 DROP TABLE IF EXISTS banners CASCADE;
+DROP TABLE IF EXISTS local_ads CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS customer_reviews CASCADE;
 DROP TABLE IF EXISTS site_visits CASCADE;
@@ -66,6 +67,21 @@ CREATE TABLE IF NOT EXISTS banners (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Local ads / publicite locale table
+CREATE TABLE IF NOT EXISTS local_ads (
+  id BIGSERIAL PRIMARY KEY,
+  title TEXT,
+  subtitle TEXT,
+  body TEXT,
+  button_text TEXT DEFAULT 'Wè plis',
+  img TEXT,
+  link TEXT,
+  active BOOLEAN DEFAULT TRUE,
+  position INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Customers table
 CREATE TABLE IF NOT EXISTS customers (
   id BIGSERIAL PRIMARY KEY,
@@ -77,9 +93,14 @@ CREATE TABLE IF NOT EXISTS customers (
   orders_count INTEGER DEFAULT 0,
   total_spent INTEGER DEFAULT 0,
   history JSONB DEFAULT '[]'::jsonb,
+  referral_code TEXT UNIQUE,
+  referred_by BIGINT REFERENCES customers(id) ON DELETE SET NULL,
+  referral_source TEXT DEFAULT '',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_customers_referral_code ON customers (referral_code);
 
 -- Orders table
 CREATE TABLE IF NOT EXISTS orders (
@@ -148,6 +169,8 @@ CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
 CREATE INDEX IF NOT EXISTS idx_products_tab ON products(tab);
 CREATE INDEX IF NOT EXISTS idx_banners_active ON banners(active);
 CREATE INDEX IF NOT EXISTS idx_banners_position ON banners(position);
+CREATE INDEX IF NOT EXISTS idx_local_ads_active ON local_ads(active);
+CREATE INDEX IF NOT EXISTS idx_local_ads_position ON local_ads(position);
 CREATE INDEX IF NOT EXISTS idx_customer_reviews_approved ON customer_reviews(approved);
 CREATE INDEX IF NOT EXISTS idx_customer_reviews_created_at ON customer_reviews(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_site_visits_visit_date ON site_visits(visit_date);
@@ -157,6 +180,7 @@ CREATE INDEX IF NOT EXISTS idx_site_visits_created_at ON site_visits(created_at 
 ALTER TABLE settings DISABLE ROW LEVEL SECURITY;
 ALTER TABLE products DISABLE ROW LEVEL SECURITY;
 ALTER TABLE banners DISABLE ROW LEVEL SECURITY;
+ALTER TABLE local_ads DISABLE ROW LEVEL SECURITY;
 ALTER TABLE customers DISABLE ROW LEVEL SECURITY;
 ALTER TABLE orders DISABLE ROW LEVEL SECURITY;
 ALTER TABLE sunday_special DISABLE ROW LEVEL SECURITY;

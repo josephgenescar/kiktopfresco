@@ -523,7 +523,43 @@ nav.banner-visible{
   background:#fff;
   padding:64px 20px;
 }
-.pts-wrap{max-width:860px;margin:0 auto;text-align:center;}
+.pts-wrap{max-width:1100px;margin:0 auto;text-align:center;}
+.pts-grid{display:grid;grid-template-columns:1.1fr 380px;gap:24px;align-items:start;}
+.pts-copy{text-align:left;}
+.pts-copy .pts-desc{margin:0 auto 18px 0;}
+.pts-side{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:stretch;}
+.pts-form,.pts-promo-card{width:100%;height:100%;box-sizing:border-box;}
+.pts-promo-card{
+  background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:14px 14px 12px;
+  box-shadow:0 14px 26px rgba(13,43,94,0.08);text-align:left;display:flex;flex-direction:column;justify-content:flex-start;
+  overflow:hidden;max-width:360px;margin:0 auto;box-sizing:border-box;min-height:390px;
+}
+.pts-promo-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:#6b7280;font-weight:800;}
+.pts-promo-item{display:grid;grid-template-columns:92px 1fr;gap:12px;align-items:center;min-height:92px;}
+.pts-promo-content{min-width:0;display:flex;flex-direction:column;justify-content:center;}
+.pts-promo-thumb{width:92px;height:72px;object-fit:cover;border-radius:12px;background:#e5e7eb;display:block;flex:0 0 auto;}
+.pts-promo-fallback{display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;background:linear-gradient(135deg,#0D2B5E,#1E6DE2);}
+.pts-promo-title{font-size:14px;font-weight:800;color:#0D2B5E;line-height:1.15;margin-bottom:2px;}
+.pts-promo-sub{font-size:12px;color:#5b6472;line-height:1.15;margin-bottom:6px;}
+.pts-promo-btn{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5C518,#E8B400);color:#0D2B5E;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:800;text-decoration:none;}
+.pts-promo-slider{display:flex;flex-direction:column;gap:8px;max-width:100%;overflow:hidden;}
+.pts-promo-track{display:flex;transition:transform .35s ease;will-change:transform;width:100%;overflow:hidden;}
+.pts-promo-slide{min-width:100%;box-sizing:border-box;overflow:hidden;}
+.pts-promo-dots{display:flex;gap:6px;justify-content:center;align-items:center;}
+.pts-promo-dot{width:8px;height:8px;border-radius:999px;background:#d1d5db;cursor:pointer;transition:transform .18s,background .18s;}
+.pts-promo-dot.active{background:linear-gradient(135deg,#F5C518,#E8B400);transform:scale(1.12);} 
+@media (max-width: 980px){
+  .pts-grid{grid-template-columns:1fr;}
+  .pts-side{grid-template-columns:1fr;gap:16px;}
+  .pts-promo-card{max-width:100%;min-height:auto;}
+}
+@media (max-width: 560px){
+  .pts-promo-item{grid-template-columns:1fr;gap:10px;}
+  .pts-promo-thumb{width:100%;height:110px;}
+  .pts-promo-title{font-size:13px;}
+  .pts-promo-sub{font-size:11px;}
+  .pts-promo-btn{width:100%;justify-content:center;}
+}
 .pts-stag{
   display:inline-block;background:rgba(0,0,0,.1);color:#D63031;
   font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
@@ -551,6 +587,7 @@ nav.banner-visible{
 .pts-form{
   background:#fff;border-radius:22px;max-width:360px;margin:0 auto;
   padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3);
+  display:flex;flex-direction:column;justify-content:center;
 }
 .pts-form h3{font-family:'Fredoka One',cursive;font-size:21px;color:var(--navy);margin-bottom:5px;}
 .pts-form p{color:var(--gray);font-size:13px;margin-bottom:16px;}
@@ -898,39 +935,126 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
 }
 
 /* Signup Local Ads Styles */
+.compact-ad-wrap{
+  max-width: 1180px;
+  margin: -10px auto 0;
+  padding: 0 18px 18px;
+}
+.compact-ad-shell{
+  display: flex;
+  justify-content: flex-end;
+}
+.compact-ad-card{
+  background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(245,247,255,0.98));
+  border: 1px solid rgba(13,43,94,0.10);
+  border-radius: 18px;
+  box-shadow: 0 14px 28px rgba(13,43,94,0.10);
+  padding: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.compact-ad-card::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(245,197,24,0.06), transparent 35%);
+  pointer-events: none;
+}
+.compact-ad-label{
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: #6b7280;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.compact-ad-slot{
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.compact-ad-thumb{
+  width: 88px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #e5e7eb;
+}
+.compact-ad-title{
+  font-size: 13px;
+  font-weight: 800;
+  color: #0D2B5E;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+.compact-ad-subtitle{
+  font-size: 11px;
+  color: #5b6472;
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+.compact-ad-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #F5C518, #E8B400);
+  color: #0D2B5E;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+}
+@media (min-width: 1100px){
+  .compact-ad-wrap{padding: 0 26px 18px;}
+  .compact-ad-card{max-width: 420px;}
+}
+@media (max-width: 700px){
+  .compact-ad-wrap{padding:0 12px 14px;}
+  .compact-ad-shell{justify-content:flex-start;}
+  .compact-ad-slot{grid-template-columns: 72px 1fr;}
+  .compact-ad-thumb{width:72px;height:56px;}
+}
 .signup-ad-item{
-  border-radius:12px;
+  border-radius:14px;
   overflow:hidden;
   background:#fff;
-  border:1px solid #e0e0e0;
+  border:1px solid #e5e7eb;
   cursor:pointer;
-  transition:all 0.3s;
+  transition:all 0.25s;
   display:flex;
-  flex-direction:column;
+  flex-direction:row;
+  align-items:center;
+  gap:10px;
+  padding:8px;
 }
 .signup-ad-item:hover{
   border-color:var(--yellow);
-  box-shadow:0 4px 12px rgba(245,197,24,0.2);
-  transform:translateY(-2px);
+  box-shadow:0 6px 14px rgba(13,43,94,0.08);
+  transform:translateY(-1px);
 }
 .signup-ad-img{
-  width:100%;
-  height:140px;
+  width:78px;
+  height:58px;
+  flex:0 0 78px;
   object-fit:cover;
+  border-radius:10px;
   background:#eee;
 }
 .signup-ad-body{
-  padding:10px;
+  padding:0;
   flex:1;
   display:flex;
   flex-direction:column;
+  min-width:0;
 }
 .signup-ad-title{
-  font-size:13px;
+  font-size:12px;
   font-weight:800;
   color:#0D2B5E;
-  margin-bottom:3px;
-  line-height:1.2;
+  margin-bottom:2px;
+  line-height:1.15;
   overflow:hidden;
   text-overflow:ellipsis;
   display:-webkit-box;
@@ -938,10 +1062,10 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
   -webkit-box-orient:vertical;
 }
 .signup-ad-subtitle{
-  font-size:11px;
-  color:#666;
-  margin-bottom:6px;
-  line-height:1.2;
+  font-size:10px;
+  color:#5b6472;
+  margin-bottom:5px;
+  line-height:1.15;
   overflow:hidden;
   text-overflow:ellipsis;
   display:-webkit-box;
@@ -952,14 +1076,15 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
   background:linear-gradient(135deg, var(--yellow), var(--gold));
   color:#0D2B5E;
   border:none;
-  border-radius:8px;
-  padding:7px 10px;
-  font-size:11px;
+  border-radius:999px;
+  padding:6px 8px;
+  font-size:10px;
   font-weight:800;
   cursor:pointer;
   text-align:center;
   transition:all 0.2s;
   margin-top:auto;
+  width:fit-content;
 }
 .signup-ad-btn:hover{
   transform:scale(1.05);
@@ -1054,6 +1179,10 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
 
 /* ============ RESPONSIVE ============ */
 @media(max-width:900px){
+  .pts-grid{grid-template-columns:1fr;}
+  .pts-copy{text-align:center;}
+  .pts-copy .pts-desc{margin:0 auto 18px;}
+  .pts-side{grid-template-columns:1fr;max-width:420px;margin:0 auto;}
   .about-in,.sun-body{grid-template-columns:1fr;}
   .hero-content{flex-direction:column;gap:30px;}
   .hero-left,.hero-right{text-align:center;}
@@ -1250,34 +1379,44 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
 <!-- ████ POINTS ████ -->
 <section id="points" class="section-photo photo-right">
   <div class="pts-wrap">
-    <div class="pts-stag" id="pt-tag">Systeme de Points</div>
-    <h2 id="pt-h2">Achetez, Gagnez, Profitez GRATUITEMENT!</h2>
-    <p class="pts-desc" id="pt-desc">Chaque 150 gourdes = 1 point. A 100 points &mdash; une commande 100% GRATUITE!</p>
-    <div class="pts-steps">
-      <div class="pts-step">
-        <span class="ps-ic">&#128722;</span>
-        <h3 id="ps1-h">Commander</h3>
-        <p id="ps1-p">Depensez 150 gourdes pour gagner 1 point automatiquement</p>
+    <div class="pts-grid">
+      <div class="pts-copy">
+        <div class="pts-stag" id="pt-tag">Systeme de Points</div>
+        <h2 id="pt-h2">Achetez, Gagnez, Profitez GRATUITEMENT!</h2>
+        <p class="pts-desc" id="pt-desc">Chaque 150 gourdes = 1 point. A 100 points &mdash; une commande 100% GRATUITE!</p>
+        <div class="pts-steps">
+          <div class="pts-step">
+            <span class="ps-ic">&#128722;</span>
+            <h3 id="ps1-h">Commander</h3>
+            <p id="ps1-p">Depensez 150 gourdes pour gagner 1 point automatiquement</p>
+          </div>
+          <div class="pts-step">
+            <span class="ps-ic">&#11088;</span>
+            <h3 id="ps2-h">Gagner des Points</h3>
+            <p id="ps2-p">Suivez vos points sur votre profil en temps reel</p>
+          </div>
+          <div class="pts-step">
+            <span class="ps-ic">&#127873;</span>
+            <h3 id="ps3-h">100 Points = GRATUIT!</h3>
+            <p id="ps3-p">Utilisez vos points pour une commande entierement gratuite!</p>
+          </div>
+        </div>
       </div>
-      <div class="pts-step">
-        <span class="ps-ic">&#11088;</span>
-        <h3 id="ps2-h">Gagner des Points</h3>
-        <p id="ps2-p">Suivez vos points sur votre profil en temps reel</p>
+      <div class="pts-side">
+        <div class="pts-form">
+          <h3 id="pf-h">Inscrivez-vous Gratuitement!</h3>
+          <p id="pf-p">Creez un compte pour commencer a gagner des points maintenant</p>
+          <input class="ipt" type="text" id="eName" placeholder="Votre nom (ex: Marie Jean)">
+          <input class="ipt" type="email" id="eEmail" placeholder="Votre adresse email">
+          <input class="ipt" type="password" id="ePassword" placeholder="Votre mot de passe">
+          <input class="ipt" type="tel" id="ePhone" placeholder="Votre numero de telephone">
+          <button class="btn-enroll" onclick="enroll()" id="enroll-btn">&#128640; S inscrire - GRATUIT</button>
+        </div>
+        <div class="pts-promo-card">
+          <div class="pts-promo-label">📢 Publicité locale</div>
+          <div id="points-ad-slot">Chargement des promotions...</div>
+        </div>
       </div>
-      <div class="pts-step">
-        <span class="ps-ic">&#127873;</span>
-        <h3 id="ps3-h">100 Points = GRATUIT!</h3>
-        <p id="ps3-p">Utilisez vos points pour une commande entierement gratuite!</p>
-      </div>
-    </div>
-    <div class="pts-form">
-      <h3 id="pf-h">Inscrivez-vous Gratuitement!</h3>
-      <p id="pf-p">Creez un compte pour commencer a gagner des points maintenant</p>
-      <input class="ipt" type="text" id="eName" placeholder="Votre nom (ex: Marie Jean)">
-      <input class="ipt" type="email" id="eEmail" placeholder="Votre adresse email">
-      <input class="ipt" type="password" id="ePassword" placeholder="Votre mot de passe">
-      <input class="ipt" type="tel" id="ePhone" placeholder="Votre numero de telephone">
-      <button class="btn-enroll" onclick="enroll()" id="enroll-btn">&#128640; S inscrire - GRATUIT</button>
     </div>
   </div>
 </section>
@@ -1507,9 +1646,9 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
     </div>
     
     <!-- Right: Local Ads Container -->
-    <div style="width:280px;background:#f9f9f9;border-left:1px solid #e0e0e0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;" id="ads-container-signup">
-      <div style="font-size:12px;font-weight:800;color:#666;text-transform:uppercase;letter-spacing:0.5px;">📢 PROMOTIONS LOCALES</div>
-      <div id="ads-list-signup" style="display:flex;flex-direction:column;gap:10px;flex:1;">
+    <div style="width:320px;max-width:34vw;background:#fff;border-left:1px solid #e5e7eb;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;" id="ads-container-signup">
+      <div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">📢 Promotions locales</div>
+      <div id="ads-list-signup" style="display:flex;flex-direction:column;gap:8px;flex:1;">
         <div style="text-align:center;color:#999;font-size:12px;padding:16px;">Chargement des promotions...</div>
       </div>
     </div>
@@ -1656,7 +1795,85 @@ function normalizeCustomer(c){
   c.totalOrders = safeNumber(c.totalOrders);
   c.history = Array.isArray(c.history) ? c.history : [];
   c.name = c.name || c.email || "Client";
+  c.referral_code = (c.referral_code || '').toString().trim().toUpperCase() || '';
+  c.referral_source = (c.referral_source || '').toString().trim().toUpperCase() || '';
+  c.referred_by = c.referred_by !== undefined && c.referred_by !== null ? Number(c.referred_by) || null : null;
   return c;
+}
+
+function getReferralCodeFromUrl(){
+  try {
+    return new URLSearchParams(window.location.search).get('ref') || '';
+  } catch(e) {
+    return '';
+  }
+}
+
+function generateReferralCode(){
+  var randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return 'REF-' + randomPart;
+}
+
+async function ensureCustomerReferralCode(customer){
+  if(!customer) return customer;
+  var c = normalizeCustomer(JSON.parse(JSON.stringify(customer)));
+  if(c.referral_code){
+    return c;
+  }
+  c.referral_code = generateReferralCode();
+  c.referral_source = c.referral_source || '';
+  c.referred_by = c.referred_by !== undefined && c.referred_by !== null ? Number(c.referred_by) || null : null;
+  try {
+    var saved = await sbSaveCustomer(c);
+    if(saved && saved.referral_code) {
+      cust = normalizeCustomer(saved);
+      return cust;
+    }
+  } catch(e) {
+    console.warn('Failed to generate referral code for customer:', e);
+  }
+  return c;
+}
+
+async function findCustomerByReferralCode(code){
+  var normalized = (code || '').toString().trim().toUpperCase();
+  if(!normalized) return null;
+  if(supabaseClient){
+    try {
+      var {data,error} = await supabaseClient.from('customers').select('*').eq('referral_code', normalized).maybeSingle();
+      if(!error && data) return normalizeCustomer(data);
+    } catch(e) {
+      console.warn('Referral lookup failed in Supabase:', e);
+    }
+  }
+  var localCustomers = lsGet('customers', []);
+  var found = localCustomers.find(function(item){ return normalizeCustomer(item).referral_code === normalized; });
+  return found ? normalizeCustomer(found) : null;
+}
+
+async function applyReferralBonus(newCustomer, referrer, referralCode){
+  if(!newCustomer || !referrer || !referralCode) return null;
+  if(String(newCustomer.id) === String(referrer.id)) return null;
+
+  var bonusToReferrer = 7;
+  var bonusToNew = 0;
+  var now = new Date().toLocaleDateString();
+
+  var referrerCopy = normalizeCustomer(JSON.parse(JSON.stringify(referrer)));
+  referrerCopy.points = safeNumber(referrerCopy.points) + bonusToReferrer;
+  referrerCopy.history = Array.isArray(referrerCopy.history) ? referrerCopy.history.slice() : [];
+  referrerCopy.history.unshift({desc:'Bonus parrainage (' + referralCode + ')', pts:bonusToReferrer, date:now});
+
+  var newCopy = normalizeCustomer(JSON.parse(JSON.stringify(newCustomer)));
+  newCopy.points = safeNumber(newCopy.points) + bonusToNew;
+  newCopy.history = Array.isArray(newCopy.history) ? newCopy.history.slice() : [];
+  newCopy.history.unshift({desc:'Bonus de bienvenue via parrainage', pts:bonusToNew, date:now});
+  newCopy.referred_by = referrerCopy.id;
+  newCopy.referral_source = referralCode;
+
+  await sbSaveCustomer(referrerCopy);
+  var savedNew = await sbSaveCustomer(newCopy);
+  return {referrer: referrerCopy, newCustomer: savedNew};
 }
 
 async function sbGetCustomerByPhone(identifier){
@@ -1691,6 +1908,9 @@ async function sbSaveCustomer(customer){
       orders_count: safeNumber(customer.totalOrders),
       total_spent: safeNumber(customer.totalSpent || 0),
       history: Array.isArray(customer.history) ? customer.history : [],
+      referral_code: customer.referral_code || '',
+      referred_by: customer.referred_by || null,
+      referral_source: customer.referral_source || '',
       updated_at: new Date().toISOString()
     };
     if(payload.id === undefined || payload.id === null || payload.id === ""){
@@ -3086,7 +3306,8 @@ async function enroll(){
   var existing = await sbGetCustomerByPhone(email) || await sbGetCustomerByPhone(phone);
   if(existing){toast(tr("t-err-exists"),"e");return;}
 
-  var c={name:name,email:email,phone:phone,password:password,points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString()};
+  var referralCode = getReferralCodeFromUrl();
+  var c={name:name,email:email,phone:phone,password:password,points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString(),referral_code:generateReferralCode(),referral_source:referralCode || '',referred_by:null};
   if(supabaseClient){
     try{
       var {data,error} = await supabaseClient.auth.signUp({email:email,password:password,options:{data:{name:name,phone:phone,role:"customer"}}});
@@ -3099,6 +3320,16 @@ async function enroll(){
   }
 
   cust = normalizeCustomer(await sbSaveCustomer(c));
+
+  if(getReferralCodeFromUrl()){
+    var referrer = await findCustomerByReferralCode(getReferralCodeFromUrl());
+    if(referrer && String(referrer.id) !== String(cust.id)){
+      var bonusResult = await applyReferralBonus(cust, referrer, getReferralCodeFromUrl());
+      if(bonusResult && bonusResult.newCustomer) {
+        cust = normalizeCustomer(bonusResult.newCustomer);
+      }
+    }
+  }
 
   if(supabaseClient){
     await refreshCustomerFromSupabase(email);
@@ -3127,7 +3358,8 @@ async function doRegister(){
   var existing = await sbGetCustomerByPhone(email) || await sbGetCustomerByPhone(phone);
   if(existing){toast(tr("t-err-exists"),"e");return;}
 
-  var c={name:name,email:email,phone:phone,password:password,points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString()};
+  var referralCode = getReferralCodeFromUrl();
+  var c={name:name,email:email,phone:phone,password:password,points:0,totalOrders:0,history:[],joined:new Date().toLocaleDateString(),referral_code:generateReferralCode(),referral_source:referralCode || '',referred_by:null};
   if(supabaseClient){
     try{
       var {data,error} = await supabaseClient.auth.signUp({email:email,password:password,options:{data:{name:name,phone:phone,role:"customer"}}});
@@ -3140,6 +3372,16 @@ async function doRegister(){
   }
 
   cust = normalizeCustomer(await sbSaveCustomer(c));
+
+  if(getReferralCodeFromUrl()){
+    var referrer = await findCustomerByReferralCode(getReferralCodeFromUrl());
+    if(referrer && String(referrer.id) !== String(cust.id)){
+      var bonusResult = await applyReferralBonus(cust, referrer, getReferralCodeFromUrl());
+      if(bonusResult && bonusResult.newCustomer) {
+        cust = normalizeCustomer(bonusResult.newCustomer);
+      }
+    }
+  }
 
   if(supabaseClient){
     await refreshCustomerFromSupabase(email);
@@ -3201,8 +3443,43 @@ async function doLogin(){
   openCust();
 }
 
-function openCust(){
+function getReferralShareUrl(referralCode){
+  var base = (window.location.href || '').split('?')[0].split('#')[0];
+  var code = (referralCode || '').toString().trim().toUpperCase();
+  if(!code) return '';
+  return base + (base.indexOf('?') > -1 ? '&' : '?') + 'ref=' + encodeURIComponent(code);
+}
+
+function copyReferralLink(){
+  var url = getReferralShareUrl(cust && cust.referral_code ? cust.referral_code : '');
+  if(!url){toast('Pa gen kòd parennage pou kopye','e');return;}
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(function(){toast('Lien parennage kopye!','s');}).catch(function(){fallbackCopy(url);});
+  } else {
+    fallbackCopy(url);
+  }
+}
+
+function fallbackCopy(text){
+  try {
+    var temp = document.createElement('textarea');
+    temp.value = text;
+    temp.setAttribute('readonly','');
+    temp.style.position='fixed';
+    temp.style.top='-9999px';
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand('copy');
+    document.body.removeChild(temp);
+    toast('Lien parennage kopye!','s');
+  } catch(e) {
+    toast('Pa ka kopye lien an','e');
+  }
+}
+
+async function openCust(){
   if(!cust){openM("m-login");return;}
+  cust = await ensureCustomerReferralCode(cust);
   var c=cust;
   var safePts = Math.max(0, Number(c.points) || 0);
   var safeMaxPoints = Math.max(1, Number(settings.maxPoints) || 100);
@@ -3223,6 +3500,17 @@ function openCust(){
   html+='<div class="rwd-card '+(rdy?"ready":"pending")+'">';
   html+='<h4>'+(rdy?tr("p-rdy"):(safeMaxPoints-safePts)+" "+tr("p-more"))+"</h4>";
   html+='<p>'+(rdy?tr("use-pts-lbl"):tr("p-close"))+"</p></div>";
+  html+='<div class="rwd-card" style="background:linear-gradient(135deg,#fff8e1,#fff3cd);border:1px solid rgba(245,158,11,0.25);margin-top:12px;">';
+  html+='<h4 style="margin-bottom:6px;color:var(--navy);">🤝 Kòd ak Lyen Parrainage</h4>';
+  html+='<p style="font-size:12px;color:var(--gray);margin-bottom:8px;">Pataje sa a pou chak nouvo kliyan ki enskri ap rekonet se ou.</p>';
+  html+='<div style="display:grid;gap:8px;">';
+  html+='<div style="background:#fff;border:1px solid rgba(15,23,42,0.08);border-radius:10px;padding:10px;">';
+  html+='<div style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;">Kòd ou</div>';
+  html+='<div style="font-family:Fredoka One,cursive;font-size:18px;color:var(--navy);">'+(c.referral_code || '—')+'</div>';
+  html+='</div>';
+  html+='<button class="btn-enroll" style="width:100%;justify-content:center;background:linear-gradient(135deg,#2563eb,#1d4ed8);" onclick="copyReferralLink()">📋 Kopye lien parennage</button>';
+  html+='<div style="font-size:11px;color:var(--gray);word-break:break-all;">'+getReferralShareUrl(c.referral_code)+'</div>';
+  html+='</div></div>';
   var hist=c.history||[];
   if(hist.length){
     for(var i=0;i<Math.min(5,hist.length);i++){
@@ -3250,6 +3538,19 @@ function openLogin(){openM("m-login");}
 var _signupAdsCache = null;
 var _signupAdsLastFetch = 0;
 
+function isDemoAd(ad) {
+  if(!ad) return false;
+  var title = (ad.title || '').trim().toLowerCase();
+  var subtitle = (ad.subtitle || ad.subtitle_text || '').trim().toLowerCase();
+  var btn = (ad.button_text || ad.btnText || '').trim().toLowerCase();
+  return (title === 'promo a' && subtitle === 'essayez' && btn === 'wè plis') ||
+         (title === 'promo b' && subtitle === 'bonus' && btn === 'achte');
+}
+
+function sanitizeAds(list) {
+  return (list || []).filter(function(ad) { return ad && ad.active !== false && !isDemoAd(ad); });
+}
+
 async function loadSignupAds(){
   try {
     // Cache ads for 30 seconds
@@ -3269,7 +3570,7 @@ async function loadSignupAds(){
           .order('position');
         
         if(!error && data && data.length > 0) {
-          ads = data;
+          ads = sanitizeAds(data);
         }
       } catch(e) {
         console.warn('Supabase ads load failed, trying localStorage:', e);
@@ -3281,7 +3582,10 @@ async function loadSignupAds(){
       try {
         var localAds = JSON.parse(localStorage.getItem('kt_local_ads') || '[]');
         if(localAds && localAds.length > 0) {
-          ads = localAds.filter(function(a) { return a.active !== false; });
+          ads = sanitizeAds(localAds);
+          if(ads.length !== localAds.length) {
+            localStorage.setItem('kt_local_ads', JSON.stringify(ads));
+          }
         }
       } catch(e) {
         console.warn('localStorage ads load failed:', e);
@@ -3340,6 +3644,122 @@ async function loadAndRenderSignupAds() {
   renderSignupAds(ads);
 }
 
+async function loadCompactSiteAds() {
+  try {
+    var ads = [];
+    if(supabaseClient) {
+      try {
+        var {data, error} = await supabaseClient.from('local_ads')
+          .select('*')
+          .eq('active', true)
+          .order('position');
+        if(!error && data && data.length) ads = sanitizeAds(data);
+      } catch(e) {
+        console.warn('Supabase compact ads failed:', e);
+      }
+    }
+    if(!ads.length) {
+      try {
+        ads = sanitizeAds(JSON.parse(localStorage.getItem('kt_local_ads') || '[]'));
+        if(ads.length !== JSON.parse(localStorage.getItem('kt_local_ads') || '[]').length) {
+          localStorage.setItem('kt_local_ads', JSON.stringify(ads));
+        }
+      } catch(e) {
+        console.warn('localStorage compact ads failed:', e);
+      }
+    }
+    return sanitizeAds(ads);
+  } catch(e) {
+    console.warn('Failed to load compact site ads:', e);
+    return [];
+  }
+}
+
+function renderCompactSiteAds(ads) {
+  var slot = document.getElementById('points-ad-slot') || document.getElementById('compact-ad-slot');
+  if(!slot) return;
+  if(!ads || !ads.length) {
+    slot.innerHTML = '<div style="color:#6b7280;font-size:12px;">Aucune publicité active pour le moment.</div>';
+    return;
+  }
+
+  if(window.__ptsPromoTimer) {
+    clearInterval(window.__ptsPromoTimer);
+    window.__ptsPromoTimer = null;
+  }
+
+  function normalizeAdImage(src) {
+    var value = (src || '').toString().trim();
+    if(!value) return '';
+    if(/^https?:\/\//i.test(value) || /^data:/i.test(value)) return value;
+    if(/^[A-Za-z]:\\/.test(value) || /^[A-Za-z]:\//.test(value)) {
+      value = value.replace(/\\/g, '/');
+      value = value.replace(/^([A-Za-z]:)\//, '/$1/');
+    }
+    if(value.indexOf('images/') === 0) value = './' + value;
+    if(value.indexOf('/images/') === 0) value = '.' + value;
+    return value;
+  }
+
+  var items = ads.filter(function(ad){ return ad && ad.active !== false; }).map(function(ad) {
+    var imgSrc = normalizeAdImage(ad.img || ad.image || ad.image_url || '');
+    var fallback = '<div class="pts-promo-thumb pts-promo-fallback" style="display:none;">🛍️</div>';
+    var img = imgSrc
+      ? '<img class="pts-promo-thumb" src="' + imgSrc + '" alt="' + (ad.title || 'Publicité') + '" onerror="this.style.display=\'none\'; this.nextElementSibling && (this.nextElementSibling.style.display=\'flex\');">' + fallback
+      : '<div class="pts-promo-thumb pts-promo-fallback" style="display:flex;">🛍️</div>';
+    var link = ad.link || '#';
+    var target = link.startsWith('http') ? ' target="_blank" rel="noopener"' : '';
+    var subtitle = ad.subtitle || ad.subtitle_text || ad.body || '';
+    var buttonText = ad.button_text || ad.btnText || 'Wè plis';
+    return '<article class="pts-promo-slide"><a href="' + link + '"' + target + ' style="text-decoration:none;color:inherit;">' +
+      '<div class="pts-promo-item">' + img +
+      '<div class="pts-promo-content">' +
+      '<div class="pts-promo-title">' + (ad.title || 'Promotion locale') + '</div>' +
+      (subtitle ? '<div class="pts-promo-sub">' + subtitle + '</div>' : '') +
+      '<span class="pts-promo-btn">' + buttonText + '</span>' +
+      '</div></div></a></article>';
+  });
+
+  slot.innerHTML = '<div class="pts-promo-slider">' +
+    '<div class="pts-promo-track" id="pts-promo-track">' + items.join('') + '</div>' +
+    '<div class="pts-promo-dots" id="pts-promo-dots"></div>' +
+    '</div>';
+
+  var track = document.getElementById('pts-promo-track');
+  var dots = document.getElementById('pts-promo-dots');
+  if(track && dots && items.length > 1) {
+    for(var i = 0; i < items.length; i++) {
+      var dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'pts-promo-dot' + (i === 0 ? ' active' : '');
+      dot.setAttribute('aria-label', 'Afficher la promotion ' + (i + 1));
+      dot.onclick = (function(index) {
+        return function() { showSlide(index); };
+      })(i);
+      dots.appendChild(dot);
+    }
+
+    var currentIndex = 0;
+    function showSlide(index) {
+      currentIndex = (index + items.length) % items.length;
+      track.style.transform = 'translateX(-' + (currentIndex * 100) + '%)';
+      Array.prototype.forEach.call(dots.children, function(dot, idx) {
+        dot.classList.toggle('active', idx === currentIndex);
+      });
+    }
+
+    showSlide(0);
+    window.__ptsPromoTimer = setInterval(function() {
+      showSlide(currentIndex + 1);
+    }, 4500);
+  }
+}
+
+async function loadAndRenderCompactSiteAds() {
+  var ads = await loadCompactSiteAds();
+  renderCompactSiteAds(ads);
+}
+
 // ==================================================
 //  MODAL / UI UTILS
 // ==================================================
@@ -3368,6 +3788,7 @@ function toast(msg,type){
 L=localStorage.getItem("kt_lang")||"fr";
 document.querySelectorAll(".lbtn").forEach(function(b){b.classList.toggle("on",b.textContent.trim()===L.toUpperCase());});
 document.querySelectorAll(".mlbtn").forEach(function(b){b.classList.toggle("on",b.textContent.trim()===L.toUpperCase());});
+loadAndRenderCompactSiteAds();
 init();
 </script>
 </body>

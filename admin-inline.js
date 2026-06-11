@@ -19,22 +19,36 @@ const IMAGEKIT_URL_ENDPOINT = window.IMAGEKIT_ENV?.IMAGEKIT_URL_ENDPOINT || 'htt
 const IMAGEKIT_AUTH_ENDPOINT = window.IMAGEKIT_ENV?.IMAGEKIT_AUTH_ENDPOINT || '/.netlify/functions/imagekit-auth';
 function getImageKitAuthUrls(){
   var urls = [];
-  var primary = IMAGEKIT_AUTH_ENDPOINT.startsWith('/') ? window.location.origin + IMAGEKIT_AUTH_ENDPOINT : IMAGEKIT_AUTH_ENDPOINT;
-  if(primary) urls.push(primary);
-  var fallback = window.location.origin + '/imagekit-auth';
-  if(!urls.includes(fallback)) urls.push(fallback);
+  var add = function(value){
+    if(value && !urls.includes(value)) urls.push(value);
+  };
 
-  var devPorts = ['8888'];
-  var devHosts = ['localhost', '127.0.0.1'];
-  devHosts.forEach(function(host){
-    devPorts.forEach(function(port){
+  var currentOrigin = window.location.origin || '';
+  var authBase = IMAGEKIT_AUTH_ENDPOINT.startsWith('/') ? currentOrigin + IMAGEKIT_AUTH_ENDPOINT : IMAGEKIT_AUTH_ENDPOINT;
+  add(authBase);
+  add(currentOrigin + '/imagekit-auth');
+
+  var currentHost = window.location.hostname || 'localhost';
+  var currentPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+  var altHosts = ['localhost', '127.0.0.1'];
+  var altPorts = [currentPort, '5503', '8888'];
+
+  altHosts.forEach(function(host){
+    altPorts.forEach(function(port){
       var origin = window.location.protocol + '//' + host + ':' + port;
-      var candidate = IMAGEKIT_AUTH_ENDPOINT.startsWith('/') ? origin + IMAGEKIT_AUTH_ENDPOINT : IMAGEKIT_AUTH_ENDPOINT;
-      if(!urls.includes(candidate)) urls.push(candidate);
-      var alt = origin + '/imagekit-auth';
-      if(!urls.includes(alt)) urls.push(alt);
+      add(IMAGEKIT_AUTH_ENDPOINT.startsWith('/') ? origin + IMAGEKIT_AUTH_ENDPOINT : IMAGEKIT_AUTH_ENDPOINT);
+      add(origin + '/imagekit-auth');
     });
   });
+
+  // Also try the opposite host on the current port to cover localhost/127.0.0.1 mismatches.
+  if(currentHost === 'localhost'){
+    add(window.location.protocol + '//127.0.0.1:' + currentPort + IMAGEKIT_AUTH_ENDPOINT);
+    add(window.location.protocol + '//127.0.0.1:' + currentPort + '/imagekit-auth');
+  } else if(currentHost === '127.0.0.1'){
+    add(window.location.protocol + '//localhost:' + currentPort + IMAGEKIT_AUTH_ENDPOINT);
+    add(window.location.protocol + '//localhost:' + currentPort + '/imagekit-auth');
+  }
 
   return urls;
 }
@@ -541,6 +555,9 @@ function normalizeCustomer(c){
   c.history = Array.isArray(c.history) ? c.history : [];
   c.name = c.name || c.email || "Client";
   c.phone = c.phone || "";
+  c.referral_code = (c.referral_code || '').toString().trim().toUpperCase() || '';
+  c.referral_source = (c.referral_source || '').toString().trim().toUpperCase() || '';
+  c.referred_by = c.referred_by !== undefined && c.referred_by !== null ? Number(c.referred_by) || null : null;
   return c;
 }
 
@@ -833,7 +850,7 @@ async function renderBanners(){
   list.innerHTML = html;
 }
 
-document.body.addEventListener("click", function(e){
+document.addEventListener("click", function(e){
   if(!e.target.closest("#bn-list button[data-id]")) return;
   handleBnClick(e);
 });
@@ -1012,10 +1029,10 @@ async function saveAd(){
     toast("Tit obligatwa pou reklam la!","e");
     return;
   }
-  if(!img){
-    document.getElementById("ad-img-info").textContent = "❌ Upload yon imaj obligatwa pou sove reklam la.";
-    toast("Upload yon imaj pou reklam la.","e");
-    return;
+  // Image is optional for editing/deleting existing ads.
+  // Keep the current image if the user did not upload a new one.
+  if(!img && existing && existing.img){
+    img = existing.img;
   }
   var ad = {
     id: eid || ("ad"+Date.now()),
@@ -1087,7 +1104,7 @@ async function renderAds(){
   list.innerHTML = html;
 }
 
-document.body.addEventListener("click", function(e){
+document.addEventListener("click", function(e){
   var btn = e.target.closest("#ad-list button[data-id]");
   if(!btn) return;
   var id = btn.dataset.id;
@@ -1531,24 +1548,34 @@ async function handleSpecialImg(input){
 // ============================================================
 //  CLIENTS
 // ============================================================
-function renderClients(){
-  var custs = lsGet("customers",[]).map(normalizeCustomer);
+async function renderClients(){
+  var custs = await loadCustomersFromSource();
+  custs = (custs || []).map(normalizeCustomer);
   var max   = settings.maxPoints||100;
   var sorted = custs.slice().sort(function(a,b){return b.points-a.points;});
+
+  var referralCount = custs.filter(function(c){return c.referral_code;}).length;
+  var referredCount = custs.filter(function(c){return c.referred_by;}).length;
 
   document.getElementById("cl-total").textContent = custs.length;
   document.getElementById("cl-ready").textContent = custs.filter(function(c){return c.points>=max;}).length;
   document.getElementById("cl-avg").textContent   = custs.length ? Math.round(custs.reduce(function(s,c){return s+c.points;},0)/custs.length) : 0;
+  document.getElementById("cl-ref").textContent   = referralCount;
+  document.getElementById("cl-referred").textContent = referredCount;
 
   var tbody = document.getElementById("cl-tbody");
   tbody.innerHTML = sorted.length ? sorted.map(function(c,i){
     var pct  = Math.min(100, c.points/max*100);
     var col  = c.points>=max?"var(--green)":"var(--yellow)";
     var phoneB64 = btoa(unescape(encodeURIComponent(c.phone)));
+    var referrerName = c.referred_by ? (custs.find(function(x){return String(x.id)===String(c.referred_by);})||{}).name || 'ID '+c.referred_by : '—';
     return "<tr data-customer-id='"+(c.id||"")+"'>"
       +"<td><b style='color:var(--yellow)'>"+(i+1)+"</b></td>"
       +"<td style='font-weight:700'>"+c.name+"</td>"
       +"<td style='color:var(--gray)'>"+c.phone+"</td>"
+      +"<td style='font-size:12px;color:var(--gray)'>"+(c.referral_code || '—')+"</td>"
+      +"<td style='font-size:12px;color:var(--gray)'>"+(c.referral_source || '—')+"</td>"
+      +"<td style='font-size:12px;color:var(--gray)'>"+referrerName+"</td>"
       +"<td><div style='display:flex;flex-direction:column;gap:6px'>"
         +"<div style='display:flex;align-items:center;gap:8px'>"
           +"<div class='pts-bar'><div class='pts-fill' style='width:"+pct+"%;background:"+col+"'></div></div>"
@@ -1566,7 +1593,7 @@ function renderClients(){
         +"<button type='button' class='btn-save btn-sm btn-del' data-phone='"+phoneB64+"' data-customer-id='"+(c.id||"")+"' onclick='resetCustomerByEl(this)'>Reset Kont</button>"
       +"</div></td>"
       +"</tr>";
-  }).join("") : "<tr><td colspan='7' style='text-align:center;color:var(--gray);padding:20px'>Pa gen kliyan</td></tr>";
+  }).join("") : "<tr><td colspan='10' style='text-align:center;color:var(--gray);padding:20px'>Pa gen kliyan</td></tr>";
 }
 
 async function saveCustomerPoints(btn){
