@@ -58,6 +58,28 @@ const imagekit = typeof ImageKit === 'function' ? new ImageKit({
   authenticationEndpoint: IMAGEKIT_AUTH_ENDPOINT
 }) : null;
 
+async function uploadToSupabaseStorage(file) {
+  if(!sb || !sb.storage || typeof sb.storage.from !== 'function') {
+    throw new Error('Supabase storage is not available');
+  }
+
+  const cleanName = String(file && file.name ? file.name : 'upload')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-zA-Z0-9._-]/g, '');
+  const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${cleanName || 'image'}`;
+
+  const { data, error } = await sb.storage.from('uploads').upload(safeName, file, {
+    cacheControl: '3600',
+    upsert: true
+  });
+
+  if(error) {
+    throw new Error(error.message || 'Supabase image upload failed');
+  }
+
+  return `${SUPABASE_URL}/storage/v1/object/public/uploads/${encodeURIComponent(data.path || safeName)}`;
+}
+
 if(!imagekit){
   console.warn('ImageKit SDK unavailable; image uploads disabled.');
 }
@@ -1213,12 +1235,12 @@ function resetAdForm(){
 var pImgData = null;
 
 async function uploadProductImage(file){
-  if(!IMAGEKIT_PUBLIC_KEY || IMAGEKIT_PUBLIC_KEY === 'YOUR_IMAGEKIT_PUBLIC_KEY'){
-    throw new Error('ImageKit public key not configured');
-  }
+  async function tryImageKitUpload() {
+    if(!IMAGEKIT_PUBLIC_KEY || IMAGEKIT_PUBLIC_KEY === 'YOUR_IMAGEKIT_PUBLIC_KEY') {
+      throw new Error('ImageKit public key not configured');
+    }
 
-  if(typeof ImageKit === 'function' && imagekit && typeof imagekit.upload === 'function'){
-    try{
+    if(typeof ImageKit === 'function' && imagekit && typeof imagekit.upload === 'function'){
       const uploaded = await imagekit.upload({
         file: file,
         fileName: file.name,
@@ -1236,69 +1258,79 @@ async function uploadProductImage(file){
         throw new Error('ImageKit upload returned no URL');
       }
       return imageUrl;
-    } catch (sdkErr) {
-      console.warn('ImageKit SDK upload failed, retrying with manual auth flow:', sdkErr);
     }
-  }
 
-  var authData = null;
-  var authUrls = getImageKitAuthUrls();
-  var authResponse = null;
-  var lastError = null;
+    var authData = null;
+    var authUrls = getImageKitAuthUrls();
+    var authResponse = null;
+    var lastError = null;
 
-  for(var i=0;i<authUrls.length;i++){
-    var authUrl = authUrls[i];
-    try{
-      authResponse = await fetch(authUrl, { method:'GET' });
-    }catch(err){
-      lastError = err;
-      authResponse = null;
+    for(var i=0;i<authUrls.length;i++){
+      var authUrl = authUrls[i];
+      try{
+        authResponse = await fetch(authUrl, { method:'GET' });
+      }catch(err){
+        lastError = err;
+        authResponse = null;
+      }
+      if(authResponse && authResponse.ok){
+        authData = await authResponse.json();
+        break;
+      }
+      if(authResponse && authResponse.status !== 404){
+        var authText = await authResponse.text();
+        throw new Error('Failed to fetch ImageKit auth (' + authResponse.status + '): ' + authText);
+      }
     }
-    if(authResponse && authResponse.ok){
-      authData = await authResponse.json();
-      break;
+
+    if(!authData || !authData.token || !authData.signature || !authData.expire){
+      var info = lastError ? lastError.message : 'No response';
+      throw new Error('ImageKit auth response is invalid. Tried: ' + authUrls.join(' or ') + '. ' + info + '.');
     }
-    if(authResponse && authResponse.status !== 404){
-      var authText = await authResponse.text();
-      throw new Error('Failed to fetch ImageKit auth (' + authResponse.status + '): ' + authText);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('fileName', file.name);
+    formData.append('folder', '/kiktopfresco/products');
+    formData.append('publicKey', IMAGEKIT_PUBLIC_KEY);
+    formData.append('token', authData.token);
+    formData.append('signature', authData.signature);
+    formData.append('expire', String(authData.expire));
+
+    const uploadResponse = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    if(!uploadResponse.ok){
+      const errorText = await uploadResponse.text();
+      throw new Error(errorText || 'ImageKit upload failed');
     }
+
+    const uploaded = await uploadResponse.json();
+    var imageUrl = uploaded.url || '';
+    if(!imageUrl && uploaded.filePath){
+      var path = uploaded.filePath;
+      if(!path.startsWith('/')) path = '/' + path;
+      imageUrl = IMAGEKIT_URL_ENDPOINT.replace(/\/$/, '') + path;
+    }
+    if(!imageUrl){
+      throw new Error('ImageKit upload returned no URL');
+    }
+    return imageUrl;
   }
 
-  if(!authData || !authData.token || !authData.signature || !authData.expire){
-    var info = lastError ? lastError.message : 'No response';
-    throw new Error('ImageKit auth response is invalid. Tried: ' + authUrls.join(' or ') + '. ' + info + '.');
+  try {
+    return await tryImageKitUpload();
+  } catch (imageKitErr) {
+    console.warn('ImageKit upload failed, trying Supabase fallback:', imageKitErr);
   }
 
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('fileName', file.name);
-  formData.append('folder', '/kiktopfresco/products');
-  formData.append('publicKey', IMAGEKIT_PUBLIC_KEY);
-  formData.append('token', authData.token);
-  formData.append('signature', authData.signature);
-  formData.append('expire', String(authData.expire));
-
-  const uploadResponse = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
-    method: 'POST',
-    body: formData
-  });
-
-  if(!uploadResponse.ok){
-    const errorText = await uploadResponse.text();
-    throw new Error(errorText || 'ImageKit upload failed');
+  try {
+    return await uploadToSupabaseStorage(file);
+  } catch (supabaseErr) {
+    throw new Error('ImageKit upload failed and Supabase fallback also failed: ' + (supabaseErr && supabaseErr.message ? supabaseErr.message : supabaseErr));
   }
-
-  const uploaded = await uploadResponse.json();
-  var imageUrl = uploaded.url || '';
-  if(!imageUrl && uploaded.filePath){
-    var path = uploaded.filePath;
-    if(!path.startsWith('/')) path = '/'+path;
-    imageUrl = IMAGEKIT_URL_ENDPOINT.replace(/\/$/, '') + path;
-  }
-  if(!imageUrl){
-    throw new Error('ImageKit upload returned no URL');
-  }
-  return imageUrl;
 }
 
 async function handleProdImg(input){
