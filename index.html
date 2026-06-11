@@ -99,8 +99,8 @@ section{
 }
 
 /* Image banner */
-.bn-img-wrap{position:relative;}
-.bn-img-wrap img{width:100%;max-height:220px;object-fit:cover;display:block;}
+.bn-img-wrap{position:relative;width:100%;height:100%;}
+.bn-img-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
 .bn-img-caption{
   position:absolute;bottom:0;left:0;right:0;
   background:linear-gradient(transparent,rgba(0,0,0,.6));
@@ -2702,13 +2702,13 @@ var bnList=[], bnIdx=0, bnTmr=null;
 
 function loadBanner(){
   try{
-    // First try to load from localStorage (CMS announcements)
-    var stored = JSON.parse(localStorage.getItem("kt_banners"));
+    // Load banners from localStorage (loaded from Supabase in init)
+    var stored = lsGet("banners",[]);
     if(stored && Array.isArray(stored) && stored.length > 0){
       bnList = stored.filter(function(b){return b.active!==false;});
-      console.log('✅ Banners loaded from CMS');
+      console.log('✅ Banners loaded from Supabase:', bnList.length, 'banners');
     } else {
-      // Default announcement if no CMS banners
+      // Default announcement if no banners
       bnList = [{
         title: "🎉 Grande ouverture KikTop Fresco!",
         body: "Bienvenue! 🌟 Venez découvrir nos délicieuses pâtés créoles et frescos naturels. Ouvert 7j/7!",
@@ -2731,7 +2731,7 @@ function loadBanner(){
     }];
     console.log('⚠️ Using default banner (error)');
   }
-  
+
   var zone=document.getElementById("banner-zone");
   if(!bnList.length){zone.style.display="none";return;}
   bnIdx=0;
