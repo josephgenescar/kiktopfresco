@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const ImageKit = require('imagekit');
+const crypto = require('crypto');
 
 function loadLocalEnv() {
   try {
@@ -28,6 +28,25 @@ function loadLocalEnv() {
 
 loadLocalEnv();
 
+function sanitizeEnvValue(value) {
+  return String(value || '').trim().replace(/^['"]|['"]$/g, '');
+}
+
+function generateAuthParams(publicKey, privateKey, urlEndpoint) {
+  if (!publicKey || !privateKey || !urlEndpoint) {
+    throw new Error('ImageKit environment variables are not configured');
+  }
+
+  const token = crypto.randomUUID();
+  const expire = Math.floor(Date.now() / 1000) + 60 * 30;
+  const signature = crypto
+    .createHmac('sha1', privateKey)
+    .update(token + expire)
+    .digest('hex');
+
+  return { token, expire, signature, publicKey, urlEndpoint };
+}
+
 exports.handler = async function (event) {
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -54,7 +73,11 @@ exports.handler = async function (event) {
     };
   }
 
-  if (!process.env.IMAGEKIT_PUBLIC_KEY || !process.env.IMAGEKIT_PRIVATE_KEY || !process.env.IMAGEKIT_URL_ENDPOINT) {
+  const publicKey = sanitizeEnvValue(process.env.IMAGEKIT_PUBLIC_KEY);
+  const privateKey = sanitizeEnvValue(process.env.IMAGEKIT_PRIVATE_KEY);
+  const urlEndpoint = sanitizeEnvValue(process.env.IMAGEKIT_URL_ENDPOINT);
+
+  if (!publicKey || !privateKey || !urlEndpoint) {
     return {
       statusCode: 500,
       headers: {
@@ -67,12 +90,7 @@ exports.handler = async function (event) {
   }
 
   try {
-    const imagekit = new ImageKit({
-      publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-      privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-      urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
-    });
-    const authParams = imagekit.getAuthenticationParameters();
+    const authParams = generateAuthParams(publicKey, privateKey, urlEndpoint);
     return {
       statusCode: 200,
       headers: {
@@ -80,7 +98,7 @@ exports.handler = async function (event) {
         'Access-Control-Allow-Origin': '*',
         'Cache-Control': 'no-store',
       },
-      body: JSON.stringify(authParams),
+      body: JSON.stringify({ token: authParams.token, expire: authParams.expire, signature: authParams.signature }),
     };
   } catch (error) {
     return {

@@ -3822,6 +3822,23 @@ async function loadAndRenderCompactSiteAds() {
   renderCompactSiteAds(ads);
 }
 
+function refreshPublicAds() {
+  _signupAdsCache = null;
+  loadAndRenderSignupAds();
+  loadAndRenderCompactSiteAds();
+}
+
+window.addEventListener('storage', function(event) {
+  if(!event || !event.key) return;
+  if(event.key === 'kt_local_ads' || event.key === 'local_ads') {
+    refreshPublicAds();
+  }
+});
+
+window.addEventListener('focus', function() {
+  refreshPublicAds();
+});
+
 // ==================================================
 //  MODAL / UI UTILS
 // ==================================================
