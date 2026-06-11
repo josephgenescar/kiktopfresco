@@ -1873,7 +1873,7 @@ async function applyReferralBonus(newCustomer, referrer, referralCode){
   if(String(newCustomer.id) === String(referrer.id)) return null;
 
   var bonusToReferrer = 7;
-  var bonusToNew = 0;
+  var bonusToNew = 5;
   var now = new Date().toLocaleDateString();
 
   var referrerCopy = normalizeCustomer(JSON.parse(JSON.stringify(referrer)));
@@ -1884,7 +1884,7 @@ async function applyReferralBonus(newCustomer, referrer, referralCode){
   var newCopy = normalizeCustomer(JSON.parse(JSON.stringify(newCustomer)));
   newCopy.points = safeNumber(newCopy.points) + bonusToNew;
   newCopy.history = Array.isArray(newCopy.history) ? newCopy.history.slice() : [];
-  newCopy.history.unshift({desc:'Bonus de bienvenue via parrainage', pts:bonusToNew, date:now});
+  newCopy.history.unshift({desc:'Bonus de bienvenue via parrainage (+5 pts)', pts:bonusToNew, date:now});
   newCopy.referred_by = referrerCopy.id;
   newCopy.referral_source = referralCode;
 
