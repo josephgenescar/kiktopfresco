@@ -1217,6 +1217,30 @@ async function uploadProductImage(file){
     throw new Error('ImageKit public key not configured');
   }
 
+  if(typeof ImageKit === 'function' && imagekit && typeof imagekit.upload === 'function'){
+    try{
+      const uploaded = await imagekit.upload({
+        file: file,
+        fileName: file.name,
+        folder: '/kiktopfresco/products',
+        useUniqueFileName: true
+      });
+
+      var imageUrl = uploaded && (uploaded.url || '');
+      if(!imageUrl && uploaded && uploaded.filePath){
+        var path = uploaded.filePath;
+        if(!path.startsWith('/')) path = '/' + path;
+        imageUrl = IMAGEKIT_URL_ENDPOINT.replace(/\/$/, '') + path;
+      }
+      if(!imageUrl){
+        throw new Error('ImageKit upload returned no URL');
+      }
+      return imageUrl;
+    } catch (sdkErr) {
+      console.warn('ImageKit SDK upload failed, retrying with manual auth flow:', sdkErr);
+    }
+  }
+
   var authData = null;
   var authUrls = getImageKitAuthUrls();
   var authResponse = null;
@@ -1240,9 +1264,9 @@ async function uploadProductImage(file){
     }
   }
 
-  if(!authData){
+  if(!authData || !authData.token || !authData.signature || !authData.expire){
     var info = lastError ? lastError.message : 'No response';
-    throw new Error('ImageKit auth unavailable. Tried: ' + authUrls.join(' or ') + '. ' + info + '. Use Netlify dev or deploy to Netlify so functions are available.');
+    throw new Error('ImageKit auth response is invalid. Tried: ' + authUrls.join(' or ') + '. ' + info + '.');
   }
 
   const formData = new FormData();
