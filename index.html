@@ -546,6 +546,7 @@ nav.banner-visible{
 .pts-promo-track{display:flex;transition:transform .35s ease;will-change:transform;width:100%;overflow:hidden;}
 .pts-promo-slide{min-width:100%;box-sizing:border-box;overflow:hidden;}
 .pts-promo-dots{display:flex;gap:6px;justify-content:center;align-items:center;}
+.pts-promo-stack{display:flex;flex-direction:column;gap:10px;}
 .pts-promo-dot{width:8px;height:8px;border-radius:999px;background:#d1d5db;cursor:pointer;transition:transform .18s,background .18s;}
 .pts-promo-dot.active{background:linear-gradient(135deg,#F5C518,#E8B400);transform:scale(1.12);} 
 .promo-carousel{display:flex;flex-direction:column;gap:8px;}
@@ -945,9 +946,35 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
   }
   #m-register #ads-container-signup{
     width:100%!important;
+    max-width:100%!important;
+    flex:1 1 auto;
     border-left:none!important;
     border-top:1px solid #e0e0e0!important;
     max-height:280px;
+  }
+}
+@media(max-width:560px){
+  #m-register .mbox{
+    max-width:100%;
+  }
+  #m-register #ads-container-signup{
+    width:100%!important;
+    max-width:100%!important;
+    padding:12px!important;
+  }
+  .signup-ad-item{
+    flex-direction:column;
+    align-items:stretch;
+    padding:10px;
+  }
+  .signup-ad-img{
+    width:100%;
+    height:96px;
+    flex:0 0 96px;
+  }
+  .signup-ad-btn{
+    width:100%;
+    justify-content:center;
   }
 }
 
@@ -1106,6 +1133,14 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
 .signup-ad-btn:hover{
   transform:scale(1.05);
   box-shadow:0 4px 10px rgba(245,197,24,0.4);
+}
+.signup-ad-stack{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.signup-ad-stack .promo-slide{
+  min-width:100%;
 }
 .moverlay.show .mbox{transform:scale(1) translateY(0);}
 .mhd{
@@ -1663,7 +1698,7 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
     </div>
     
     <!-- Right: Local Ads Container -->
-    <div style="width:320px;max-width:34vw;background:#fff;border-left:1px solid #e5e7eb;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;" id="ads-container-signup">
+    <div style="width:320px;max-width:34vw;min-width:0;flex:0 0 320px;background:#fff;border-left:1px solid #e5e7eb;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;" id="ads-container-signup">
       <div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">📢 Promotions locales</div>
       <div id="ads-list-signup" style="display:flex;flex-direction:column;gap:8px;flex:1;">
         <div style="text-align:center;color:#999;font-size:12px;padding:16px;">Chargement des promotions...</div>
@@ -3645,15 +3680,12 @@ async function loadSignupAds(){
       }
     }
     
-    // Fallback to localStorage if no Supabase ads
+    // Fallback to the ads saved from the admin panel when Supabase returns no rows.
     if(ads.length === 0) {
       try {
         var localAds = JSON.parse(localStorage.getItem('kt_local_ads') || '[]');
         if(localAds && localAds.length > 0) {
           ads = sanitizeAds(localAds);
-          if(ads.length !== localAds.length) {
-            localStorage.setItem('kt_local_ads', JSON.stringify(ads));
-          }
         }
       } catch(e) {
         console.warn('localStorage ads load failed:', e);
@@ -3700,39 +3732,7 @@ function renderSignupAds(ads) {
       '</div></div></a></article>';
   });
 
-  container.innerHTML = '<div class="promo-carousel">' +
-    '<div class="promo-track" id="signup-promo-track">' + items.join('') + '</div>' +
-    '<div class="promo-dots" id="signup-promo-dots"></div>' +
-    '</div>';
-
-  var track = document.getElementById('signup-promo-track');
-  var dots = document.getElementById('signup-promo-dots');
-  if(track && dots && items.length > 1) {
-    for(var i = 0; i < items.length; i++) {
-      var dot = document.createElement('button');
-      dot.type = 'button';
-      dot.className = 'promo-dot' + (i === 0 ? ' active' : '');
-      dot.setAttribute('aria-label', 'Afficher la promotion ' + (i + 1));
-      dot.onclick = (function(index) {
-        return function() { showSlide(index); };
-      })(i);
-      dots.appendChild(dot);
-    }
-
-    var currentIndex = 0;
-    function showSlide(index) {
-      currentIndex = (index + items.length) % items.length;
-      track.style.transform = 'translateX(-' + (currentIndex * 100) + '%)';
-      Array.prototype.forEach.call(dots.children, function(dot, idx) {
-        dot.classList.toggle('active', idx === currentIndex);
-      });
-    }
-
-    showSlide(0);
-    window.__signupPromoTimer = setInterval(function() {
-      showSlide(currentIndex + 1);
-    }, 4500);
-  }
+  container.innerHTML = '<div class="signup-ad-stack">' + items.join('') + '</div>';
 }
 
 async function loadAndRenderSignupAds() {
@@ -3756,10 +3756,8 @@ async function loadCompactSiteAds() {
     }
     if(!ads.length) {
       try {
-        ads = sanitizeAds(JSON.parse(localStorage.getItem('kt_local_ads') || '[]'));
-        if(ads.length !== JSON.parse(localStorage.getItem('kt_local_ads') || '[]').length) {
-          localStorage.setItem('kt_local_ads', JSON.stringify(ads));
-        }
+        var localAds = JSON.parse(localStorage.getItem('kt_local_ads') || '[]');
+        ads = sanitizeAds(localAds);
       } catch(e) {
         console.warn('localStorage compact ads failed:', e);
       }
