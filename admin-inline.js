@@ -1002,7 +1002,7 @@ async function handleAdImg(input){
   try{
     document.getElementById("ad-img-info").textContent = "⏳ Upload imaj...";
     adImgData = await uploadProductImage(file);
-    document.getElementById("ad-img-info").textContent = "✅ "+file.name+" (ImageKit)";
+    document.getElementById("ad-img-info").textContent = "✅ "+file.name+" (Supabase)";
     document.getElementById("ad-img-preview-wrap").innerHTML =
       '<img src="'+adImgData+'" style="max-height:130px;border-radius:8px;object-fit:cover;width:100%"><p style="color:var(--gray);font-size:11px;margin-top:6px">✅ '+file.name+'</p>';
     document.getElementById("ad-save-hint").textContent = "Imaj telechaje. Ou ka sove kounye a.";
@@ -1329,15 +1329,15 @@ async function uploadProductImage(file){
   }
 
   try {
-    return await tryImageKitUpload();
-  } catch (imageKitErr) {
-    console.warn('ImageKit upload failed, trying Supabase fallback:', imageKitErr);
+    return await uploadToSupabaseStorage(file);
+  } catch (supabaseErr) {
+    console.warn('Supabase upload failed, trying ImageKit fallback:', supabaseErr);
   }
 
   try {
-    return await uploadToSupabaseStorage(file);
-  } catch (supabaseErr) {
-    throw new Error('ImageKit upload failed and Supabase fallback also failed: ' + (supabaseErr && supabaseErr.message ? supabaseErr.message : supabaseErr));
+    return await tryImageKitUpload();
+  } catch (imageKitErr) {
+    throw new Error('Supabase upload failed and ImageKit fallback also failed: ' + (imageKitErr && imageKitErr.message ? imageKitErr.message : imageKitErr));
   }
 }
 
@@ -1349,7 +1349,7 @@ async function handleProdImg(input){
     document.getElementById("p-img-info").textContent = "⏳ Upload imaj...";
     pImgData = await uploadProductImage(file);
     document.getElementById("p-img-url").value = "";
-    document.getElementById("p-img-info").textContent = "✅ "+file.name+" (ImageKit)";
+    document.getElementById("p-img-info").textContent = "✅ "+file.name+" (Supabase)";
   }catch(err){
     console.error('ImageKit upload error', err);
     pImgData = null;
