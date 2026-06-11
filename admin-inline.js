@@ -251,6 +251,7 @@ const ADB = {
   },
   async saveAd(a){
     if(!isSupabaseConfigured){ return null; }
+    const hasDbId = a && a.id !== undefined && a.id !== null && String(a.id).match(/^\d+$/);
     const payload = {
       title: a.title || '',
       subtitle: a.subtitle || '',
@@ -263,18 +264,13 @@ const ADB = {
       created_at: a.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
-    if(a.id){
-      const {data,error} = await sb.from('local_ads').update(payload).eq('id',a.id).select().single();
-      if(error){
-        if(error.code === 'PGRST116'){
-          const {data:insertData, error:insertError} = await sb.from('local_ads').insert(payload).select().single();
-          if(insertError) throw insertError;
-          return insertData;
-        }
-        throw error;
-      }
+
+    if(hasDbId){
+      const {data,error} = await sb.from('local_ads').update(payload).eq('id', Number(a.id)).select().single();
+      if(error) throw error;
       return data;
     }
+
     const {data,error} = await sb.from('local_ads').insert(payload).select().single();
     if(error) throw error;
     return data;
