@@ -454,19 +454,19 @@ async function loadBannersFromSource(){
 }
 
 async function loadAdsFromSource(){
-  if(!isSupabaseConfigured){
-    console.warn('Supabase not configured for local_ads');
-    return [];
-  }
-  try{
-    var remote = await ADB.getAds();
-    if(Array.isArray(remote)){
-      return remote.map(normalizeAd);
+  var local = lsGet("local_ads",[]);
+  if(isSupabaseConfigured){
+    try{
+      var remote = await ADB.getAds();
+      if(Array.isArray(remote) && remote.length){
+        lsSet("local_ads", remote);
+        return remote;
+      }
+    }catch(e){
+      console.warn('Failed to load remote local_ads', e);
     }
-  }catch(e){
-    console.warn('Failed to load remote local_ads', e);
   }
-  return [];
+  return local;
 }
 
 async function loadCustomersFromSource(){
@@ -1005,7 +1005,7 @@ async function saveAd(){
   var link = document.getElementById("ad-link").value.trim();
   var active = document.getElementById("ad-status").value === "true";
   console.log('saveAd clicked', { title, subtitle, body, btnText, link, active, adImgData, isSupabaseConfigured });
-  var ads = window._ktAds || [];
+  var ads = lsGet("local_ads", []);
   var existing = eid ? ads.find(function(x){return String(x.id)===String(eid);}) : null;
   var img = adImgData || (existing ? existing.img : "");
   if(!title){
@@ -1017,12 +1017,8 @@ async function saveAd(){
     toast("Upload yon imaj pou reklam la.","e");
     return;
   }
-  if(!isSupabaseConfigured){
-    toast("Supabase pa configured pou local ads","e");
-    return;
-  }
   var ad = {
-    id: eid || undefined,
+    id: eid || ("ad"+Date.now()),
     title: title,
     subtitle: subtitle,
     body: body,
@@ -1035,8 +1031,24 @@ async function saveAd(){
     updated_at: new Date().toISOString()
   };
   try{
-    var saved = await ADB.saveAd(ad);
-    if(saved){ saved = normalizeAd(saved); }
+    var saved = ad;
+    if(isSupabaseConfigured){
+      try {
+        saved = await ADB.saveAd(ad);
+        if(saved){ saved = normalizeAd(saved); }
+      } catch(e){
+        console.warn('Supabase save failed, using localStorage:', e);
+      }
+    }
+    // Always save to localStorage as backup
+    ads = lsGet("local_ads", []);
+    if(eid){
+      var idx = ads.findIndex(function(x){return String(x.id)===String(eid);});
+      if(idx >= 0) ads[idx] = saved; else ads.unshift(saved);
+    } else {
+      ads.unshift(saved);
+    }
+    lsSet("local_ads", ads);
     await renderAds();
     resetAdForm();
     toast("✅ Publicité lokal sove!","s");
@@ -1110,13 +1122,25 @@ function editAd(id){
 }
 
 async function toggleAd(id){
-  if(!isSupabaseConfigured){ toast("Supabase pa configured pou local ads","e"); return; }
-  var ads = window._ktAds || [];
+  var ads = lsGet("local_ads", []);
   var ad = ads.find(function(x){return String(x.id)===String(id);});
   if(!ad) return;
   var newActive = !ad.active;
   try{
-    await ADB.toggleAd(id, newActive);
+    if(isSupabaseConfigured){
+      try {
+        await ADB.toggleAd(id, newActive);
+      } catch(e) {
+        console.warn('Supabase toggle failed, using localStorage:', e);
+      }
+    }
+    // Update localStorage
+    ads = lsGet("local_ads", []);
+    var idx = ads.findIndex(function(x){return String(x.id)===String(id);});
+    if(idx >= 0) {
+      ads[idx].active = newActive;
+      lsSet("local_ads", ads);
+    }
     await renderAds();
     toast(newActive?"✅ Publicité aktive!":"Publicité kache","s");
   }catch(e){
@@ -1127,9 +1151,18 @@ async function toggleAd(id){
 
 async function deleteAd(id){
   if(!confirm("Efase publicité sa?")) return;
-  if(!isSupabaseConfigured){ toast("Supabase pa configured pou local ads","e"); return; }
   try{
-    await ADB.deleteAd(id);
+    if(isSupabaseConfigured){
+      try {
+        await ADB.deleteAd(id);
+      } catch(e) {
+        console.warn('Supabase delete failed, using localStorage:', e);
+      }
+    }
+    // Delete from localStorage
+    var ads = lsGet("local_ads", []);
+    ads = ads.filter(function(x){return String(x.id)!==String(id);});
+    lsSet("local_ads", ads);
     await renderAds();
     toast("Publicité efase","e");
   }catch(e){

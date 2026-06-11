@@ -878,6 +878,93 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
   max-height:90vh;overflow-y:auto;transform:scale(.92) translateY(14px);transition:.3s;
   box-shadow:0 28px 70px rgba(0,0,0,.4);
 }
+#m-register .mbox{
+  max-width:900px;
+  overflow-y:visible;
+  overflow-x:hidden;
+  display:flex;
+}
+@media(max-width:900px){
+  #m-register .mbox{
+    max-width:420px;
+    flex-direction:column;
+  }
+  #m-register #ads-container-signup{
+    width:100%!important;
+    border-left:none!important;
+    border-top:1px solid #e0e0e0!important;
+    max-height:280px;
+  }
+}
+
+/* Signup Local Ads Styles */
+.signup-ad-item{
+  border-radius:12px;
+  overflow:hidden;
+  background:#fff;
+  border:1px solid #e0e0e0;
+  cursor:pointer;
+  transition:all 0.3s;
+  display:flex;
+  flex-direction:column;
+}
+.signup-ad-item:hover{
+  border-color:var(--yellow);
+  box-shadow:0 4px 12px rgba(245,197,24,0.2);
+  transform:translateY(-2px);
+}
+.signup-ad-img{
+  width:100%;
+  height:140px;
+  object-fit:cover;
+  background:#eee;
+}
+.signup-ad-body{
+  padding:10px;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+.signup-ad-title{
+  font-size:13px;
+  font-weight:800;
+  color:#0D2B5E;
+  margin-bottom:3px;
+  line-height:1.2;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+.signup-ad-subtitle{
+  font-size:11px;
+  color:#666;
+  margin-bottom:6px;
+  line-height:1.2;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:-webkit-box;
+  -webkit-line-clamp:1;
+  -webkit-box-orient:vertical;
+}
+.signup-ad-btn{
+  background:linear-gradient(135deg, var(--yellow), var(--gold));
+  color:#0D2B5E;
+  border:none;
+  border-radius:8px;
+  padding:7px 10px;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+  text-align:center;
+  transition:all 0.2s;
+  margin-top:auto;
+}
+.signup-ad-btn:hover{
+  transform:scale(1.05);
+  box-shadow:0 4px 10px rgba(245,197,24,0.4);
+}
 .moverlay.show .mbox{transform:scale(1) translateY(0);}
 .mhd{
   background:linear-gradient(135deg,var(--navy),var(--blue));
@@ -1396,24 +1483,35 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
   </div>
 </div>
 
-<!-- Register -->
+<!-- Register with Local Ads -->
 <div class="moverlay" id="m-register" onclick="if(event.target===this)closeM('m-register')">
-  <div class="mbox">
-    <div class="ltop">
-      <div class="li">&#128100;</div>
-      <h3 id="reg-h">Inscrivez-vous Gratuitement!</h3>
-      <p id="reg-p">Creez un compte pour commencer a gagner des points maintenant</p>
+  <div class="mbox" style="max-width:900px;display:flex;gap:0;">
+    <!-- Left: Registration Form -->
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+      <div class="ltop">
+        <div class="li">&#128100;</div>
+        <h3 id="reg-h">Inscrivez-vous Gratuitement!</h3>
+        <p id="reg-p">Creez un compte pour commencer a gagner des points maintenant</p>
+      </div>
+      <div class="mbody" style="flex:1;overflow-y:auto;">
+        <input class="ipt" type="text" id="reg-name" placeholder="Votre nom (ex: Marie Jean)">
+        <input class="ipt" type="email" id="reg-email" placeholder="Votre adresse email">
+        <input class="ipt" type="password" id="reg-password" placeholder="Votre mot de passe">
+        <input class="ipt" type="tel" id="reg-phone" placeholder="Votre numero de telephone">
+        <button class="btn-enroll" onclick="doRegister()" id="reg-btn">&#128640; S inscrire - GRATUIT</button>
+        <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--gray);">
+          <span id="has-acc">Deja un compte?</span>
+          <a href="#" onclick="closeM('m-register');openM('m-login');return false;" style="color:var(--blue);font-weight:700;margin-left:4px;" id="login-a">Se Connecter</a>
+        </p>
+      </div>
     </div>
-    <div class="mbody">
-      <input class="ipt" type="text" id="reg-name" placeholder="Votre nom (ex: Marie Jean)">
-      <input class="ipt" type="email" id="reg-email" placeholder="Votre adresse email">
-      <input class="ipt" type="password" id="reg-password" placeholder="Votre mot de passe">
-      <input class="ipt" type="tel" id="reg-phone" placeholder="Votre numero de telephone">
-      <button class="btn-enroll" onclick="doRegister()" id="reg-btn">&#128640; S inscrire - GRATUIT</button>
-      <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--gray);">
-        <span id="has-acc">Deja un compte?</span>
-        <a href="#" onclick="closeM('m-register');openM('m-login');return false;" style="color:var(--blue);font-weight:700;margin-left:4px;" id="login-a">Se Connecter</a>
-      </p>
+    
+    <!-- Right: Local Ads Container -->
+    <div style="width:280px;background:#f9f9f9;border-left:1px solid #e0e0e0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;" id="ads-container-signup">
+      <div style="font-size:12px;font-weight:800;color:#666;text-transform:uppercase;letter-spacing:0.5px;">📢 PROMOTIONS LOCALES</div>
+      <div id="ads-list-signup" style="display:flex;flex-direction:column;gap:10px;flex:1;">
+        <div style="text-align:center;color:#999;font-size:12px;padding:16px;">Chargement des promotions...</div>
+      </div>
     </div>
   </div>
 </div>
@@ -3147,9 +3245,111 @@ function updNavPts(){document.getElementById("nav-pts").textContent=cust?Math.ma
 function openLogin(){openM("m-login");}
 
 // ==================================================
+//  LOCAL ADS FOR SIGNUP
+// ==================================================
+var _signupAdsCache = null;
+var _signupAdsLastFetch = 0;
+
+async function loadSignupAds(){
+  try {
+    // Cache ads for 30 seconds
+    var now = Date.now();
+    if(_signupAdsCache && (now - _signupAdsLastFetch < 30000)) {
+      return _signupAdsCache;
+    }
+    
+    var ads = [];
+    
+    // Try Supabase first
+    if(supabaseClient) {
+      try {
+        var {data, error} = await supabaseClient.from('local_ads')
+          .select('*')
+          .eq('active', true)
+          .order('position');
+        
+        if(!error && data && data.length > 0) {
+          ads = data;
+        }
+      } catch(e) {
+        console.warn('Supabase ads load failed, trying localStorage:', e);
+      }
+    }
+    
+    // Fallback to localStorage if no Supabase ads
+    if(ads.length === 0) {
+      try {
+        var localAds = JSON.parse(localStorage.getItem('kt_local_ads') || '[]');
+        if(localAds && localAds.length > 0) {
+          ads = localAds.filter(function(a) { return a.active !== false; });
+        }
+      } catch(e) {
+        console.warn('localStorage ads load failed:', e);
+      }
+    }
+    
+    _signupAdsCache = ads;
+    _signupAdsLastFetch = now;
+    return _signupAdsCache;
+  } catch(e) {
+    console.warn('Failed to load signup ads:', e);
+    return [];
+  }
+}
+
+function renderSignupAds(ads) {
+  var container = document.getElementById('ads-list-signup');
+  if(!container) return;
+  
+  if(!ads || ads.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:#999;font-size:12px;padding:16px;">Aucune promotion active pour le moment</div>';
+    return;
+  }
+  
+  var html = '';
+  ads.forEach(function(ad) {
+    if(!ad.active) return;
+    
+    var imgHtml = ad.img ? '<img src="' + ad.img + '" alt="' + (ad.title || 'Promotion') + '" class="signup-ad-img">' : '<div class="signup-ad-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;font-size:30px;">🛍️</div>';
+    
+    var link = ad.link || '#';
+    var target = link.startsWith('http') ? ' target="_blank"' : '';
+    var onclick = link.startsWith('http') ? '' : ' onclick="return false;"';
+    
+    // Get button text - handle different field name possibilities
+    var btnText = ad.button_text || ad.btnText || 'Wè plis';
+    var subtitle = ad.subtitle || ad.subtitle_text || '';
+    
+    html += '<a href="' + link + '"' + target + ' style="text-decoration:none;"' + onclick + '>';
+    html += '<div class="signup-ad-item">';
+    html += imgHtml;
+    html += '<div class="signup-ad-body">';
+    html += '<div class="signup-ad-title">' + (ad.title || 'Promotion') + '</div>';
+    if(subtitle) html += '<div class="signup-ad-subtitle">' + subtitle + '</div>';
+    html += '<button type="button" class="signup-ad-btn">' + btnText + '</button>';
+    html += '</div>';
+    html += '</div>';
+    html += '</a>';
+  });
+  
+  container.innerHTML = html;
+}
+
+async function loadAndRenderSignupAds() {
+  var ads = await loadSignupAds();
+  renderSignupAds(ads);
+}
+
+// ==================================================
 //  MODAL / UI UTILS
 // ==================================================
-function openM(id){document.getElementById(id).classList.add("show");}
+function openM(id){
+  document.getElementById(id).classList.add("show");
+  // Load ads when signup modal is opened
+  if(id === 'm-register') {
+    loadAndRenderSignupAds();
+  }
+}
 function closeM(id){document.getElementById(id).classList.remove("show");}
 function toggleMob(){document.getElementById("mob-nav").classList.toggle("show");}
 function closeMob(){document.getElementById("mob-nav").classList.remove("show");}
