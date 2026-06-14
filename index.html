@@ -543,14 +543,14 @@ nav.banner-visible{
 .pts-promo-sub{font-size:12px;color:#5b6472;line-height:1.15;margin-bottom:6px;}
 .pts-promo-btn{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5C518,#E8B400);color:#0D2B5E;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:800;text-decoration:none;}
 .pts-promo-slider{display:flex;flex-direction:column;gap:8px;max-width:100%;overflow:hidden;}
-.pts-promo-track{display:flex;transition:transform .35s ease;will-change:transform;width:100%;overflow:hidden;}
+.pts-promo-track{display:flex;transition:transform .35s ease;will-change:transform;width:100%;}
 .pts-promo-slide{flex:0 0 100%;min-width:100%;box-sizing:border-box;overflow:hidden;}
 .pts-promo-dots{display:flex;gap:6px;justify-content:center;align-items:center;}
 .pts-promo-stack{display:flex;flex-direction:column;gap:10px;}
 .pts-promo-dot{width:8px;height:8px;border-radius:999px;background:#d1d5db;cursor:pointer;transition:transform .18s,background .18s;}
 .pts-promo-dot.active{background:linear-gradient(135deg,#F5C518,#E8B400);transform:scale(1.12);} 
 .promo-carousel{display:flex;flex-direction:column;gap:8px;overflow:hidden;}
-.promo-track{display:flex;transition:transform .35s ease;will-change:transform;width:100%;overflow:hidden;}
+.promo-track{display:flex;transition:transform .35s ease;will-change:transform;width:100%;}
 .promo-slide{flex:0 0 100%;min-width:100%;width:100%;box-sizing:border-box;}
 .promo-dots{display:flex;gap:6px;justify-content:center;align-items:center;}
 .promo-dot{width:8px;height:8px;border-radius:999px;background:#d1d5db;cursor:pointer;transition:transform .18s,background .18s;}
@@ -1696,7 +1696,7 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
         </p>
       </div>
     </div>
-    
+
     <!-- Right: Local Ads Container -->
     <div style="width:320px;max-width:34vw;min-width:0;flex:0 0 320px;background:#fff;border-left:1px solid #e5e7eb;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;" id="ads-container-signup">
       <div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">📢 Promotions locales</div>
@@ -1758,13 +1758,13 @@ footer>p{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:14px;}
           Zelle
         </button>
       </div>
-      
+
       <div id="payment-details" style="background:rgba(13,43,94,.08);border-radius:12px;padding:16px;margin-bottom:16px;display:none;">
         <div id="payment-content"></div>
       </div>
-      
+
       <div style="text-align:center;margin-bottom:14px;font-size:13px;color:var(--gray);" id="total-payment"></div>
-      
+
       <button class="btn-y" style="width:100%;justify-content:center;margin-bottom:10px;display:none;" onclick="confirmPayment()" id="confirm-payment-btn">&#9989; Confirmer le Paiement</button>
       <button class="btn-ghost" style="width:100%;justify-content:center;" onclick="closeM('m-payment')">Annuler</button>
     </div>
@@ -3131,11 +3131,11 @@ function selectPayment(method){
   selectedPaymentMethod = method;
   var buttons = document.querySelectorAll(".payment-method");
   buttons.forEach(function(b) { b.style.borderColor = "var(--lgray)"; b.style.background = "#fff"; });
-  
+
   var detailsDiv = document.getElementById("payment-details");
   var contentDiv = document.getElementById("payment-content");
   var confirmBtn = document.getElementById("confirm-payment-btn");
-  
+
   if(method === "moncash"){
     event.target.closest("button").style.borderColor = "#E74C3C";
     event.target.closest("button").style.borderWidth = "3px";
@@ -3153,7 +3153,7 @@ function selectPayment(method){
     event.target.closest("button").style.borderWidth = "3px";
     contentDiv.innerHTML = '<strong style="color:var(--navy);">Zelle</strong><p style="font-size:13px;margin:10px 0 0 0;color:var(--gray);">Envoyer a:</p><div style="font-weight:700;color:var(--navy);margin:8px 0;font-size:14px;">patricia@email.com</div>';
   }
-  
+
   detailsDiv.style.display = "block";
   confirmBtn.style.display = "block";
 }
@@ -3163,7 +3163,7 @@ async function confirmPayment(){
     toast("Selectionnez un mode de paiement","e");
     return;
   }
-  
+
   var sub = cart.reduce(function(s,i){return s + safeNumber(i.price) * safeNumber(i.qty);},0);
   sub = safeNumber(sub);
   var rate = Math.max(1, safeNumber(settings.pointsRate,150));
@@ -3171,7 +3171,7 @@ async function confirmPayment(){
   var availablePoints = cust ? safeNumber(cust.points) : 0;
   var useP = document.getElementById("use-pts-chk").checked && cust && availablePoints >= maxPoints;
   var pE = 0, pU = 0;
-  
+
   if(useP && cust){
     pU = maxPoints;
     cust.points = Math.max(0, availablePoints - pU);
@@ -3179,12 +3179,12 @@ async function confirmPayment(){
     pE = Math.floor(sub / rate);
     if(cust) cust.points = Math.min(maxPoints, availablePoints + pE);
   }
-  
+
   if(cust){
     cust.points = safeNumber(cust.points, 0);
     cust = normalizeCustomer(await sbSaveCustomer(cust));
   }
-  
+
   var ordersList = await sbGetOrders();
   var num = ordersList.length + 1;
   var items = cart.map(function(i){return((L==="fr")?i.fr:i.kr)+" x"+safeNumber(i.qty);}).join(", ");
@@ -3203,7 +3203,7 @@ async function confirmPayment(){
     date: new Date().toLocaleDateString()
   };
   await sbSaveOrder(order);
-  
+
   if(cust){
     cust.totalOrders = safeNumber(cust.totalOrders) + 1;
     cust.history = cust.history || [];
@@ -3211,18 +3211,18 @@ async function confirmPayment(){
     cust = normalizeCustomer(await sbSaveCustomer(cust));
     updNavPts();
   }
-  
+
   var msg = "";
   if(useP) msg = tr("p-free") + " " + pU + " pts.";
   else if(pE > 0 && cust) msg = "+" + pE + " " + tr("p-earned") + " " + cust.points + " pts";
   else msg = tr("p-register");
   var custInfo = cust ? "Client: " + cust.name + " | " + cust.phone : "";
-  
+
   cart = [];
   document.getElementById("use-pts-chk").checked = false;
   updCartUI();
   closeM("m-payment");
-  
+
   document.getElementById("o-num").textContent = num;
   document.getElementById("o-cust-info").textContent = custInfo;
   document.getElementById("o-pts-msg").textContent = msg;
@@ -3241,7 +3241,7 @@ async function goWA(){
     document.getElementById("menu").scrollIntoView({behavior:"smooth"});
     return;
   }
-  
+
   var selectedPayment = document.querySelector('input[name="payment"]:checked');
   if(!selectedPayment){toast("Choisissez un mode de paiement","e");return;}
   var paymentMethod = selectedPayment.value;
@@ -3253,7 +3253,7 @@ async function goWA(){
   } else if(paymentMethod === 'pickup'){
     paymentText = "Lors de la récupération";
   }
-  
+
   var sub = cart.reduce(function(s,i){return s + safeNumber(i.price) * safeNumber(i.qty);},0);
   sub = safeNumber(sub);
   var rate = Math.max(1, safeNumber(settings.pointsRate,150));
@@ -3272,7 +3272,7 @@ async function goWA(){
     cust.points = safeNumber(cust.points, 0);
     cust = normalizeCustomer(await sbSaveCustomer(cust));
   }
-  
+
   var lines = cart.map(function(i){
     return "- "+((L==="fr")?i.fr:i.kr)+" x"+safeNumber(i.qty)+" = "+(safeNumber(i.price)*safeNumber(i.qty))+" HTG";
   }).join("\n");
@@ -3285,7 +3285,7 @@ async function goWA(){
       proofLine = "\n📎 Preuve: Aucune preuve chargee. Merci de joindre votre reçu ou capture d'écran sur WhatsApp.";
     }
   }
-  
+
   var msg = "📋 KIKTOP FRESCO - COMMANDE\n\n";
   msg += "━━━━━━━━━━━━━━━━━━━━\n";
   msg += lines;
@@ -3300,7 +3300,7 @@ async function goWA(){
     else if(pE) msg += "\nPoints gagnes: "+pE+" pts";
   }
   msg += "\n\nMerci pour votre commande!";
-  
+
   window.open("https://wa.me/"+WA_NUMBER+"?text="+encodeURIComponent(msg),"_blank");
   var ordersList = await sbGetOrders();
   var num = ordersList.length + 1;
@@ -3329,12 +3329,12 @@ async function goWA(){
     cust = normalizeCustomer(await sbSaveCustomer(cust));
     updNavPts();
   }
-  
+
   cart = [];
   document.getElementById("use-pts-chk").checked = false;
   updCartUI();
   closeCart();
-  
+
   document.getElementById("o-num").textContent = num;
   document.getElementById("o-cust-info").textContent = cust?"Client: "+cust.name+" | "+cust.phone:"";
   var ptsMsg = "";
@@ -3534,11 +3534,11 @@ async function doLogin(){
   }
 
   cust=normalizeCustomer(await sbSaveCustomer(c));
-  
+
   if(supabaseClient){
     await refreshCustomerFromSupabase(loginId);
   }
-  
+
   updNavPts();
   updCartUI();
   closeM("m-login");
@@ -3661,9 +3661,9 @@ async function loadSignupAds(){
     if(_signupAdsCache && (now - _signupAdsLastFetch < 30000)) {
       return _signupAdsCache;
     }
-    
+
     var ads = [];
-    
+
     if(supabaseClient) {
       try {
         var {data, error} = await supabaseClient.from('local_ads')
@@ -3678,7 +3678,7 @@ async function loadSignupAds(){
         console.warn('Supabase ads load failed:', e);
       }
     }
-    
+
     _signupAdsCache = ads;
     _signupAdsLastFetch = now;
     return _signupAdsCache;
@@ -3742,10 +3742,8 @@ function renderSignupAds(ads) {
     }
 
     var currentIndex = 0;
-    track.style.width = (visibleAds.length * 100) + '%';
     function showSlide(index) {
       currentIndex = (index + visibleAds.length) % visibleAds.length;
-      track.style.width = (visibleAds.length * 100) + '%';
       track.style.transform = 'translateX(-' + (currentIndex * 100) + '%)';
       Array.prototype.forEach.call(dots.children, function(dot, idx) {
         dot.classList.toggle('active', idx === currentIndex);
@@ -3853,7 +3851,6 @@ function renderCompactSiteAds(ads) {
     var currentIndex = 0;
     function showSlide(index) {
       currentIndex = (index + items.length) % items.length;
-      track.style.width = (items.length * 100) + '%';
       track.style.transform = 'translateX(-' + (currentIndex * 100) + '%)';
       Array.prototype.forEach.call(dots.children, function(dot, idx) {
         dot.classList.toggle('active', idx === currentIndex);
