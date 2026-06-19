@@ -143,8 +143,10 @@ const ADB = {
         throw error;
       }
     } else {
-      const {id,...rest} = remoteProduct;
-      const {data,error} = await sb.from('products').insert(rest).select();
+      // Generate a unique ID for new product
+      const newId = String(Date.now());
+      remoteProduct.id = newId;
+      const {data,error} = await sb.from('products').insert(remoteProduct).select();
       if(error) throw error;
       return Array.isArray(data) ? data[0] : data;
     }
